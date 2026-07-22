@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2563eb">
+  
+  <title>Asset Management Pro (GitHub)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>window.tailwind = { config: { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] } } } } };</script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+
+  <style>
+    body { background-image: url('https://lh3.googleusercontent.com/d/1OLzLjAVeda1nW3b9ldO5YMBMwE1i0Wo4'); background-size: cover; background-position: center; background-attachment: fixed; transition: background-color 0.3s; background-color: #f3f4f6; }
+    .dark body { background-color: rgba(15, 23, 42, 0.95); background-blend-mode: overlay; color: white; }
+    .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+    .dark .glass { background: rgba(17, 24, 39, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .page { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .page.active { display: flex; flex-direction: column; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+  </style>
+</head>
+<body class="text-gray-800">
+
+  <div id="loader">
+    <i class="fas fa-circle-notch fa-spin text-blue-500 text-5xl mb-4"></i>
+    <p class="text-white font-bold" id="loader-text">กำลังโหลดข้อมูล...</p>
+  </div>
+
+  <input type="file" accept="image/*" capture="environment" id="qr-fallback-input" class="hidden">
+
+  <!-- ==================== หน้าต่างเข้าสู่ระบบ (Login) ==================== -->
+  <div id="page-login" class="page active min-h-screen items-center justify-center w-full relative">
+    <div class="glass p-8 rounded-2xl shadow-xl w-11/12 max-w-sm text-center mb-8 mt-10">
+      <div class="mb-6"><div class="bg-blue-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg text-white"><i class="fas fa-boxes text-4xl"></i></div></div>
+      <h2 class="text-2xl font-bold mb-2 dark:text-white">Welcome to</h2>
+      <h3 class="text-lg text-gray-600 dark:text-gray-400 mb-6 font-medium">Asset Management</h3>
+      <input type="text" id="username" placeholder="Username" class="w-full mb-4 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white">
+      <input type="password" id="password" placeholder="Password" class="w-full mb-6 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white" onkeypress="if(event.key === 'Enter') login()">
+      <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 shadow-lg text-lg transition mb-4">เข้าสู่ระบบ</button>
+      <p class="text-sm text-gray-500 dark:text-gray-400">ยังไม่มีบัญชี? <a href="#" onclick="showRegister()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">สมัครสมาชิกที่นี่</a></p>
+    </div>
+  </div>
+
+  <!-- ==================== หน้าต่างสมัครสมาชิก (Register) ==================== -->
+  <div id="page-register" class="page min-h-screen items-center justify-center w-full relative">
+    <div class="glass p-8 rounded-2xl shadow-xl w-11/12 max-w-sm text-center mb-8 mt-10">
+      <h2 class="text-2xl font-bold mb-2 dark:text-white"><i class="fas fa-user-plus mr-2 text-blue-600"></i>สมัครสมาชิก</h2>
+      <h3 class="text-sm text-gray-500 dark:text-gray-400 mb-6">สร้างบัญชีสำหรับเจ้าหน้าที่ตรวจนับ</h3>
+      <input type="text" id="reg_name" placeholder="ชื่อ-นามสกุล" class="w-full mb-4 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <input type="email" id="reg_email" placeholder="อีเมล" class="w-full mb-4 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <input type="text" id="reg_username" placeholder="ตั้งชื่อ Username" class="w-full mb-4 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <input type="password" id="reg_password" placeholder="ตั้งรหัสผ่าน Password" class="w-full mb-6 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <button onclick="registerUser()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow-lg text-lg transition mb-4">ลงทะเบียน</button>
+      <p class="text-sm text-gray-500 dark:text-gray-400">มีบัญชีแล้ว? <a href="#" onclick="showLogin()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">กลับไปเข้าสู่ระบบ</a></p>
+    </div>
+  </div>
+
+  <!-- ==================== แอปหลัก (Main App) ==================== -->
+  <div id="page-app" class="page h-screen overflow-hidden hidden w-full !flex-row">
+    
+    <aside class="w-64 glass shadow-2xl flex flex-col transition-all duration-300 z-20 hidden md:flex" id="sidebar">
+      <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400"><i class="fas fa-cubes mr-2"></i>AssetPro</h1>
+        <button class="md:hidden text-gray-500 text-xl" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+      </div>
+      <nav class="flex-1 p-4 space-y-2 font-medium overflow-y-auto">
+        <a href="#" onclick="nav('dashboard')" class="block px-4 py-3 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200"><i class="fas fa-chart-pie w-6"></i> แดชบอร์ด</a>
+        <a href="#" onclick="nav('assets')" class="block px-4 py-3 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200"><i class="fas fa-list w-6"></i> รายการพัสดุ</a>
+        <a href="#" onclick="nav('print')" class="block px-4 py-3 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-2 bg-indigo-50/50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"><i class="fas fa-print w-6 text-indigo-500"></i> พิมพ์ป้าย QR Code</a>
+        <a href="#" onclick="nav('scan')" class="block px-4 py-3 rounded-xl bg-blue-600 text-white shadow-md hover:bg-blue-700 transition mt-2"><i class="fas fa-qrcode w-6"></i> ระบบตรวจนับ</a>
+        <a href="#" onclick="nav('report')" class="block px-4 py-3 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-2 border border-blue-200 dark:border-gray-600 bg-blue-50/50 dark:bg-gray-800/50"><i class="fas fa-chart-bar w-6 text-blue-500"></i> รายงานสรุป</a>
+        <a href="#" onclick="nav('add')" class="block px-4 py-3 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-2"><i class="fas fa-plus w-6"></i> เพิ่มข้อมูลใหม่</a>
+        <div class="border-t border-gray-300 dark:border-gray-600 my-2"></div>
+        <a href="#" onclick="nav('profile')" class="block px-4 py-3 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200"><i class="fas fa-user-circle w-6"></i> โปรไฟล์ส่วนตัว</a>
+        <a href="#" id="menu_admin_users" onclick="nav('admin_users')" class="hidden px-4 py-3 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-purple-600 dark:text-purple-400 font-bold border border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-900/30"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</a>
+        <a href="#" id="menu_admin_logs" onclick="nav('admin_logs')" class="hidden px-4 py-3 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-orange-600 dark:text-orange-400 font-bold border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-900/30 mt-2"><i class="fas fa-history w-6"></i> ประวัติระบบ (Logs)</a>
+        <a href="#" onclick="nav('settings')" class="block px-4 py-3 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200 border border-dashed border-gray-400 mt-4"><i class="fas fa-cog w-6"></i> ตั้งค่าระบบ</a>
+      </nav>
+      <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+        <button onclick="toggleDarkMode()" class="w-full mb-2 px-4 py-2 rounded-lg bg-gray-200/50 dark:bg-gray-700/50 text-sm font-bold dark:text-white hover:bg-gray-300 transition"><i class="fas fa-moon"></i> สลับโหมด</button>
+        <button onclick="logout()" class="w-full px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 shadow transition"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 relative flex flex-col">
+      <div class="flex-grow">
+        
+        <header class="flex justify-between items-center mb-6 glass p-3 md:p-4 rounded-xl shadow-sm">
+          <div class="flex items-center gap-3">
+            <button class="md:hidden text-blue-600 text-2xl" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            <h2 id="page-title" class="text-xl md:text-2xl font-bold dark:text-white">แดชบอร์ด</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="fetchGlobalData()" class="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm text-xs font-bold text-blue-700 dark:text-white"><i class="fas fa-sync-alt"></i></button>
+            <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')">
+              <span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="view">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="glass p-4 rounded-xl shadow text-center border-l-4 border-blue-500"><p class="text-gray-600 dark:text-gray-400 font-bold text-xs">ทั้งหมด</p><h3 class="text-2xl md:text-4xl font-bold mt-1 dark:text-white" id="dash-total">0</h3></div>
+            <div class="glass p-4 rounded-xl shadow text-center border-l-4 border-green-500"><p class="text-gray-600 dark:text-gray-400 font-bold text-xs">ปกติ / ดี</p><h3 class="text-2xl md:text-4xl font-bold mt-1 text-green-600" id="dash-normal">0</h3></div>
+            <div class="glass p-4 rounded-xl shadow text-center border-l-4 border-yellow-500"><p class="text-gray-600 dark:text-gray-400 font-bold text-xs">ชำรุด</p><h3 class="text-2xl md:text-4xl font-bold mt-1 text-yellow-600" id="dash-broken">0</h3></div>
+            <div class="glass p-4 rounded-xl shadow text-center border-l-4 border-red-500"><p class="text-gray-600 dark:text-gray-400 font-bold text-xs">สูญหาย</p><h3 class="text-2xl md:text-4xl font-bold mt-1 text-red-600" id="dash-lost">0</h3></div>
+          </div>
+          <div class="glass p-4 rounded-xl shadow max-w-lg mx-auto h-64 md:h-80 flex items-center justify-center"><canvas id="statusChart"></canvas></div>
+        </div>
+
+        <!-- ASSETS LIST -->
+        <div id="view-assets" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-xl shadow">
+            <div class="flex justify-between mb-4 gap-2">
+               <input type="text" id="searchInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ..." class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500 text-sm" onkeyup="filterTableAssets()">
+            </div>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40">
+                <thead><tr class="bg-gray-200/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300 text-sm"><th class="p-3 border-b dark:border-gray-700 text-center">รูป</th><th class="p-3 border-b dark:border-gray-700">รหัส</th><th class="p-3 border-b dark:border-gray-700">ลักษณะ</th><th class="p-3 border-b dark:border-gray-700">สถานที่</th><th class="p-3 border-b dark:border-gray-700">สถานะ</th></tr></thead>
+                <tbody id="asset-table-body"></tbody>
+              </table>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+               <span class="text-xs text-gray-500 dark:text-gray-400" id="asset-page-info">แสดง 1-25 จากทั้งหมด 0</span>
+               <div class="flex gap-1">
+                  <button onclick="changeAssetPage(-1)" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-sm hover:bg-gray-300 transition">&lt; ก่อนหน้า</button>
+                  <button onclick="changeAssetPage(1)" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition">ถัดไป &gt;</button>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRINT QR CODE -->
+        <div id="view-print" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-xl shadow pb-24 relative">
+            <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-print mr-2 text-indigo-500"></i>พิมพ์ป้าย QR (50x20 mm)</h2></div>
+            <div class="flex flex-col md:flex-row justify-between mb-4 gap-2">
+               <input type="text" id="searchPrintInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ..." class="w-full md:w-2/3 px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-indigo-500 text-sm" onkeyup="filterPrintTable()">
+               <select id="printPerPage" onchange="changePrintPerPage()" class="w-full md:w-1/3 px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none text-sm">
+                   <option value="50">แสดง 50 รายการ/หน้า</option><option value="100">แสดง 100 รายการ/หน้า</option><option value="all">แสดงทั้งหมด</option>
+               </select>
+            </div>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
+                <thead><tr class="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300"><th class="p-3 border-b dark:border-gray-700 w-10 text-center"><input type="checkbox" id="cb-select-all" onclick="toggleSelectAllPrint()" class="w-4 h-4 rounded cursor-pointer"></th><th class="p-3 border-b dark:border-gray-700">รหัสพัสดุ</th><th class="p-3 border-b dark:border-gray-700">ลักษณะ</th><th class="p-3 border-b dark:border-gray-700">สถานที่</th></tr></thead>
+                <tbody id="print-table-body"></tbody>
+              </table>
+            </div>
+            <div class="flex justify-between items-center mt-4 mb-6">
+               <span class="text-xs text-gray-500 dark:text-gray-400" id="print-page-info">แสดง 1-50 จากทั้งหมด 0</span>
+               <div class="flex gap-1" id="print-pagination-controls"><button onclick="changePrintPage(-1)" class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-sm hover:bg-gray-300 transition">&lt; ก่อนหน้า</button><button onclick="changePrintPage(1)" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 transition">ถัดไป &gt;</button></div>
+            </div>
+            <div class="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50">
+               <button onclick="printSelectedQRCodes()" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-2xl hover:bg-indigo-700 transition text-lg flex items-center gap-2 transform hover:scale-105"><i class="fas fa-print text-2xl"></i> สั่งพิมพ์ป้าย</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div id="view-profile" class="view hidden">
+          <div class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto text-center">
+            <div class="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg text-white mb-4"><i class="fas fa-user-edit text-5xl"></i></div>
+            <h2 class="font-bold text-2xl mb-1 dark:text-white">ข้อมูลส่วนตัว</h2>
+            <p class="text-blue-600 dark:text-blue-400 font-bold mb-6" id="profile_role">Role</p>
+            <div class="text-left bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border dark:border-gray-700 text-sm mb-6 dark:text-gray-200 space-y-4">
+               <div><label class="block font-bold mb-1 text-gray-600 dark:text-gray-400">Username</label><input type="text" id="prof_username" readonly class="w-full p-2 rounded border bg-gray-200 dark:bg-gray-700 text-gray-500 font-mono"></div>
+               <div><label class="block font-bold mb-1">ชื่อ-นามสกุล</label><input type="text" id="prof_name" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div>
+               <div><label class="block font-bold mb-1">อีเมล</label><input type="email" id="prof_email" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div>
+               <div class="border-t border-gray-300 dark:border-gray-600 pt-4 mt-2"><label class="block font-bold mb-1 text-red-500"><i class="fas fa-key mr-1"></i>เปลี่ยนรหัสผ่านใหม่</label><input type="password" id="prof_password" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500" placeholder="ปล่อยว่างไว้หากไม่เปลี่ยน"></div>
+            </div>
+            <button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition mb-3"><i class="fas fa-save mr-2"></i> บันทึกข้อมูลส่วนตัว</button>
+          </div>
+        </div>
+
+        <!-- ADMIN USERS -->
+        <div id="view-admin_users" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-xl shadow">
+            <h2 class="font-bold text-lg dark:text-white mb-4 border-b pb-2"><i class="fas fa-users-cog mr-2"></i> จัดการผู้ใช้งานในระบบ</h2>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
+                <thead><tr class="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300"><th class="p-3 border-b dark:border-gray-700">Username</th><th class="p-3 border-b dark:border-gray-700">ชื่อ-นามสกุล</th><th class="p-3 border-b dark:border-gray-700">อีเมล</th><th class="p-3 border-b dark:border-gray-700">สิทธิ์</th><th class="p-3 border-b dark:border-gray-700 text-center">จัดการ</th></tr></thead>
+                <tbody id="admin-users-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMIN LOGS -->
+        <div id="view-admin_logs" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-xl shadow">
+            <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-history mr-2 text-orange-500"></i> ประวัติการทำงานระบบ</h2><button onclick="loadAdminLogs()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt"></i> รีเฟรช</button></div>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-xs">
+                <thead><tr class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"><th class="p-2 border-b dark:border-gray-700">วัน/เวลา</th><th class="p-2 border-b dark:border-gray-700">ผู้ใช้งาน</th><th class="p-2 border-b dark:border-gray-700">หมวดหมู่</th><th class="p-2 border-b dark:border-gray-700">รายละเอียดกิจกรรม</th></tr></thead>
+                <tbody id="admin-logs-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- REPORT -->
+        <div id="view-report" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-xl shadow mb-6">
+            <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="w-full md:w-1/2"><label class="block text-sm font-bold mb-2 text-blue-700 dark:text-blue-300"><i class="fas fa-filter mr-1"></i> เลือกตัวกรองรายงานตามสภาพวัสดุ</label><select id="report-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-sm"></select></div>
+              <button onclick="exportReportCSV()" class="w-full md:w-auto bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-green-700 text-sm flex items-center justify-center gap-2"><i class="fas fa-file-excel"></i> ดาวน์โหลดเป็น Excel</button>
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-white mb-2"><i class="fas fa-chart-pie mr-1 text-blue-500"></i> ข้อมูลสรุป</h3>
+            <div class="overflow-x-auto rounded-lg mb-6">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/60 dark:bg-gray-800/60">
+                <thead><tr class="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-sm"><th class="p-3 border-b border-blue-200 dark:border-gray-700">สภาพพัสดุ (Status)</th><th class="p-3 border-b border-blue-200 dark:border-gray-700 text-center">จำนวน (ชิ้น)</th><th class="p-3 border-b border-blue-200 dark:border-gray-700 text-center">คิดเป็นร้อยละ (%)</th></tr></thead>
+                <tbody id="report-summary-body"></tbody>
+              </table>
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-white mb-2 border-b pb-2 border-gray-200 dark:border-gray-700" id="report-detail-title"><i class="fas fa-list mr-1 text-blue-500"></i> รายการพัสดุตามตัวกรอง</h3>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
+                <thead><tr class="bg-gray-200/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300"><th class="p-2 border-b dark:border-gray-700 text-center">รูป</th><th class="p-2 border-b dark:border-gray-700">รหัสพัสดุ</th><th class="p-2 border-b dark:border-gray-700">ลักษณะ</th><th class="p-2 border-b dark:border-gray-700">สถานที่</th><th class="p-2 border-b dark:border-gray-700">สภาพ</th><th class="p-2 border-b dark:border-gray-700">วันที่ตรวจ</th><th class="p-2 border-b dark:border-gray-700">ผู้ตรวจสอบ</th></tr></thead>
+                <tbody id="report-problem-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADD ASSET -->
+        <div id="view-add" class="view hidden">
+          <div class="glass p-6 md:p-8 rounded-xl shadow max-w-2xl mx-auto">
+            <h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-plus mr-2"></i>ลงทะเบียนพัสดุใหม่</h2>
+            <div class="grid grid-cols-2 gap-4 text-sm md:text-base">
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รหัสพัสดุ</label><input type="text" id="a_id" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white font-mono font-bold text-blue-600 focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" placeholder="พิมพ์เฉพาะตัวเลข..."></div>
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">ลักษณะ/คุณสมบัติ</label><input type="text" id="a_name" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div>
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รุ่น/ยี่ห้อ</label><input type="text" id="a_brand" class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div>
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">สถานที่ตั้ง</label><input type="text" id="a_loc" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div>
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">วันที่ (ที่รับ)</label><input type="text" id="a_date" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div>
+              <div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพ</label><input type="file" id="a_img" accept="image/*" capture="environment" class="w-full p-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white text-sm"></div>
+            </div>
+            <button type="button" onclick="submitAsset()" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-blue-700 transition">บันทึกข้อมูลพัสดุ</button>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="view-settings" class="view hidden">
+          <div class="glass p-6 md:p-8 rounded-xl shadow max-w-lg mx-auto">
+            <h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-cogs mr-2"></i>ตั้งค่าระบบ</h2>
+            <label class="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">รอบการตรวจสอบปัจจุบัน</label><input type="text" id="config_round" class="w-full p-3 mb-6 rounded-lg border bg-white/90 dark:bg-gray-700 dark:text-white focus:outline-none text-lg font-bold text-blue-600">
+            <button onclick="saveSettings()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow transition hover:bg-blue-700">บันทึกการตั้งค่า</button>
+          </div>
+        </div>
+
+        <!-- SCAN -->
+        <div id="view-scan" class="view hidden">
+          <div id="scan-step-1" class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto">
+            <div class="text-center mb-6"><h2 class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">ตรวจนับพัสดุ</h2></div>
+            <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">รอบการตรวจปัจจุบัน</label><div id="display_round" class="w-full p-3 mb-4 rounded-lg border dark:bg-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm">โหลดข้อมูล...</div>
+            <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">สถานที่ตั้ง (ที่กำลังตรวจ)</label><select id="s_location" class="w-full p-3 mb-6 rounded-lg border dark:bg-gray-700 bg-white/90 dark:text-white font-bold text-blue-600 text-sm focus:outline-none"></select>
+            <label class="block text-sm font-bold mb-2 text-blue-600 dark:text-blue-400"><i class="fas fa-qrcode mr-1"></i> วิธีที่ 1: สแกนผ่านกล้อง</label>
+            <button onclick="startScanner()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-blue-700 transition text-lg flex items-center justify-center gap-2 mb-2"><i class="fas fa-camera text-2xl"></i> เปิดกล้องสแกน</button>
+            <div id="reader-container" class="hidden relative mb-4 mt-2">
+              <video id="reader-video" class="w-full overflow-hidden rounded-lg bg-black border-2 border-blue-500 shadow" style="object-fit: cover;"></video>
+              <button onclick="stopScanner()" class="absolute top-2 right-2 bg-red-500/90 text-white px-3 py-1 rounded shadow text-xs font-bold hover:bg-red-600 z-50"><i class="fas fa-times mr-1"></i>ปิดกล้อง</button>
+            </div>
+            <div class="flex items-center my-6"><div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div><span class="px-3 text-xs text-gray-500 dark:text-gray-400">หรือ</span><div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div></div>
+            <label class="block text-sm font-bold mb-2 text-gray-600 dark:text-gray-300"><i class="fas fa-keyboard mr-1"></i> วิธีที่ 2: พิมพ์รหัสเอง</label>
+            <div class="flex gap-2">
+              <input type="text" id="s_barcode" placeholder="พิมพ์ตัวเลข..." class="w-full p-3 rounded-lg border dark:bg-gray-700 bg-white/90 dark:text-white font-mono font-bold text-sm focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" onkeypress="if(event.key === 'Enter') searchAsset()">
+              <button onclick="searchAsset()" class="bg-green-500 text-white font-bold px-4 rounded-lg shadow hover:bg-green-600"><i class="fas fa-search text-lg"></i></button>
+            </div>
+          </div>
+
+          <div id="scan-step-found" class="glass p-5 md:p-6 rounded-xl shadow max-w-md mx-auto hidden">
+            <h2 class="font-bold text-lg mb-3 dark:text-white border-b pb-2">รายละเอียดข้อมูล</h2>
+            <div class="flex justify-between bg-blue-50 dark:bg-gray-800 p-3 rounded-lg mb-3 border border-blue-100 dark:border-gray-700 text-xs">
+                <div class="text-gray-600 dark:text-gray-300"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-user-check"></i> ผู้ตรวจสอบ</span><span id="f_inspector_name" class="font-medium"></span></div>
+                <div class="text-gray-600 dark:text-gray-300 text-right"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-calendar-alt"></i> วันที่ตรวจสอบ</span><span id="f_inspect_date" class="font-medium"></span></div>
+            </div>
+            <div id="alert-already" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-2 mb-3 hidden text-xs rounded"><strong><i class="fas fa-info-circle"></i> ตรวจนับแล้ว</strong></div>
+            <div class="bg-blue-600 text-white p-2 rounded-t-lg text-xs font-medium">ปัจจุบัน: <span id="f_curr_loc" class="font-bold"></span></div>
+            <div id="alert-location-ok" class="bg-green-500 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden"><i class="fas fa-check-circle"></i> ที่อยู่ตรงกัน</div>
+            <div id="alert-location-bad" class="bg-red-500 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden"><i class="fas fa-times-circle"></i> ที่อยู่ไม่ตรงกัน</div>
+            <div class="text-xs space-y-1 mb-3 bg-white/70 dark:bg-gray-800/70 p-3 rounded-lg border dark:text-gray-200">
+              <p><strong>รหัส:</strong> <span id="f_id" class="font-mono text-blue-700 font-bold text-sm md:text-base"></span></p><p><strong>รายละเอียด:</strong> <span id="f_name"></span></p><p><strong>ที่เดิม:</strong> <span id="f_old_loc" class="text-red-600 font-bold"></span></p>
+            </div>
+            <select id="f_condition" class="w-full p-3 mb-3 rounded-lg border bg-white/90 dark:bg-gray-700 font-bold text-sm focus:outline-none text-blue-600"></select>
+            <label class="block text-xs font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพยืนยัน</label><input type="file" id="f_img" accept="image/*" capture="environment" class="w-full p-2 mb-3 rounded-lg border bg-white/90 dark:bg-gray-700 text-xs">
+            <textarea id="f_note" placeholder="หมายเหตุ..." class="w-full p-2 mb-4 rounded-lg border bg-white/90 dark:bg-gray-700 h-16 text-xs"></textarea>
+            <div class="flex gap-2"><button onclick="backToScan()" class="w-1/3 bg-gray-500 text-white py-2 rounded-lg font-bold text-sm">กลับ</button><button onclick="saveInspection()" class="w-2/3 bg-green-500 text-white py-2 rounded-lg font-bold shadow text-sm"><i class="fas fa-save mr-1"></i> บันทึกผล</button></div>
+          </div>
+
+          <div id="scan-step-notfound" class="glass p-5 md:p-6 rounded-xl shadow max-w-md mx-auto hidden">
+            <h2 class="font-bold text-lg mb-2 text-red-600 border-b pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>ไม่พบข้อมูล</h2>
+            <div class="flex justify-between bg-blue-50 dark:bg-gray-800 p-3 rounded-lg mb-3 border border-blue-100 dark:border-gray-700 text-xs mt-3">
+                <div class="text-gray-600 dark:text-gray-300"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-user-check"></i> ผู้ตรวจสอบ</span><span id="n_inspector_name" class="font-medium"></span></div>
+                <div class="text-gray-600 dark:text-gray-300 text-right"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-calendar-alt"></i> วันที่ตรวจสอบ</span><span id="n_inspect_date" class="font-medium"></span></div>
+            </div>
+            <label class="block text-xs font-bold mb-1 mt-2">สถานที่ปัจจุบัน</label><input type="text" id="n_loc" readonly class="w-full p-2 mb-2 rounded-lg border bg-gray-200/80 text-gray-600 text-xs">
+            <label class="block text-xs font-bold mb-1">รหัส (บาร์โค้ด)</label><input type="text" id="n_id" class="w-full p-2 mb-2 rounded-lg border bg-white/90 font-mono font-bold text-blue-600 text-sm focus:outline-none" oninput="formatAssetId(event)">
+            <label class="block text-xs font-bold mb-1">รายละเอียดลักษณะ</label><input type="text" id="n_name" class="w-full p-2 mb-2 rounded-lg border bg-white/90 text-sm focus:outline-none">
+            <label class="block text-xs font-bold mb-1">📸 ถ่ายภาพ</label><input type="file" id="n_img" accept="image/*" capture="environment" class="w-full p-2 mb-4 rounded-lg border bg-white/90 text-xs">
+            <div class="flex gap-2"><button onclick="backToScan()" class="w-1/3 bg-gray-500 text-white py-2 rounded-lg font-bold text-sm">กลับ</button><button onclick="saveNewAssetFromScan()" class="w-2/3 bg-blue-600 text-white py-2 rounded-lg font-bold shadow text-sm"><i class="fas fa-save mr-1"></i> บันทึกข้อมูล</button></div>
+          </div>
+        </div>
+      </div>
+      
+      <footer class="mt-8 pt-4 pb-2 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full">
+        <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+          <i class="fas fa-code text-blue-500 mr-1"></i> พัฒนาโดย <strong>นายวีระยุทธ ประชุมรักษ์</strong><br>พนักงานคอมพิวเตอร์ ประจำศาลแขวงอุบลราชธานี | กลุ่มงานเทคโนโลยีสารสนเทศ
+        </p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    // =========================================================================
+    // ⚠️ 1. ใส่ URL ของ GOOGLE APPS SCRIPT (ลงท้ายด้วย /exec) ที่คัดลอกมาจากขั้นตอนที่ 1
+    // =========================================================================
+    const GAS_API_URL = "ใส่_URL_ของ_APPS_SCRIPT_ที่นี่"; 
+
+    let currentUser = null;
+    let globalData = { assets: [], dash: {}, settings: {}, conditions: [] };
+    let chartInstance = null; let codeReader = null;
+    let currentAssetPage = 1; const itemsPerPage = 25; let filteredAssetsArray = [];
+    let currentPrintPage = 1; let printItemsPerPage = 50; let filteredPrintArray = []; let selectedPrintIds = new Set();
+
+    window.onload = function() {
+      try { if (typeof ZXing !== 'undefined') codeReader = new ZXing.BrowserMultiFormatReader(); } catch(e) {}
+      const savedUser = localStorage.getItem('assetUser');
+      if(savedUser) { currentUser = JSON.parse(savedUser); setupUserUI(); showPage('app'); fetchGlobalData(); }
+      document.getElementById('qr-fallback-input').addEventListener('change', handleFallbackScan);
+    };
+
+    // =========================================================================
+    // ⚠️ 2. ระบบสื่อสาร API อัจฉริยะ (ทำงานแทน google.script.run)
+    // =========================================================================
+    async function callAPI(action, payload = {}) {
+        try {
+            let response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: action, payload: payload })
+            });
+            let data = await response.json();
+            if(!data) throw new Error("ไม่สามารถติดต่อฐานข้อมูลได้");
+            return data;
+        } catch(e) {
+            throw new Error("ข้อผิดพลาดการเชื่อมต่อ: " + e.message);
+        }
+    }
+
+    // =========================================================================
+    // ฟังก์ชันต่างๆ ของแอป (ปรับให้ใช้ Async/Await ดึง API ทั้งหมด)
+    // =========================================================================
+    window.setupUserUI = function() {
+        document.getElementById('user-display').innerText = currentUser.name; document.getElementById('profile_role').innerText = currentUser.role; document.getElementById('prof_username').value = currentUser.username; document.getElementById('prof_name').value = currentUser.name; document.getElementById('prof_email').value = currentUser.email || '';
+        if(currentUser.role === 'Admin') { document.getElementById('menu_admin_users').classList.remove('hidden'); document.getElementById('menu_admin_users').classList.add('block'); document.getElementById('menu_admin_logs').classList.remove('hidden'); document.getElementById('menu_admin_logs').classList.add('block');
+        } else { document.getElementById('menu_admin_users').classList.add('hidden'); document.getElementById('menu_admin_users').classList.remove('block'); document.getElementById('menu_admin_logs').classList.add('hidden'); document.getElementById('menu_admin_logs').classList.remove('block'); }
+    };
+
+    window.formatAssetId = function(e) {
+      let input = e.target; let val = input.value;
+      if (e.inputType === 'deleteContentBackward') return; 
+      let parts = val.split('/'); let prefixRaw = parts[0].replace(/[^0-9]/g, ''); let suffixRaw = parts.length > 1 ? parts.slice(1).join('/') : ''; 
+      if (prefixRaw.length > 11) { suffixRaw = prefixRaw.substring(11) + suffixRaw; prefixRaw = prefixRaw.substring(0, 11); }
+      let formatted = '';
+      if (prefixRaw.length > 0) formatted += prefixRaw.substring(0, 4); if (prefixRaw.length > 4) formatted += '-' + prefixRaw.substring(4, 7); if (prefixRaw.length > 7) formatted += '-' + prefixRaw.substring(7, 11); if (prefixRaw.length === 11 || parts.length > 1) formatted += '/' + suffixRaw;
+      input.value = formatted;
+    };
+
+    window.showLoader = function(text = 'กำลังโหลดข้อมูล...') { document.getElementById('loader-text').innerText = text; document.getElementById('loader').style.display = 'flex'; };
+    window.hideLoader = function() { document.getElementById('loader').style.display = 'none'; };
+    window.showPage = function(pageId) { document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; }); document.getElementById('page-' + pageId).classList.add('active'); document.getElementById('page-' + pageId).style.display = 'flex'; };
+    window.showRegister = function() { showPage('register'); }; window.showLogin = function() { showPage('login'); };
+    window.toggleSidebar = function() { const sb = document.getElementById('sidebar'); sb.classList.toggle('hidden'); sb.classList.toggle('absolute'); sb.classList.toggle('h-full'); };
+    
+    window.nav = function(viewId) {
+      document.querySelectorAll('.view').forEach(function(v) { v.classList.add('hidden'); }); document.getElementById('view-' + viewId).classList.remove('hidden');
+      const titles = { dashboard: 'แดชบอร์ด', assets: 'รายการพัสดุ', print: 'พิมพ์ป้าย QR Code', add: 'ลงทะเบียนพัสดุใหม่', scan: 'ระบบตรวจนับพัสดุ', report: 'รายงานสรุปตามสภาพ', settings: 'ตั้งค่าระบบ', profile: 'ข้อมูลส่วนตัว', admin_users: 'จัดการผู้ใช้งาน', admin_logs: 'ประวัติระบบ (Logs)' };
+      document.getElementById('page-title').innerText = titles[viewId];
+      if(window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('hidden')) { toggleSidebar(); }
+      if(viewId !== 'scan') stopScanner();
+      if(viewId === 'report') renderReportView(); if(viewId === 'admin_users') loadAdminUsers(); if(viewId === 'print') renderPrintTablePaginated(currentPrintPage); if(viewId === 'admin_logs') loadAdminLogs(); 
+    };
+    window.toggleDarkMode = function() { document.documentElement.classList.toggle('dark'); };
+
+    window.login = async function() {
+      const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
+      if(!u || !p) return Swal.fire('แจ้งเตือน', 'กรุณากรอก Username และ Password', 'warning');
+      showLoader('กำลังเข้าสู่ระบบ...');
+      try {
+          let res = await callAPI('apiLogin', {username: u, password: p});
+          if(res.success) { currentUser = res.user; localStorage.setItem('assetUser', JSON.stringify(currentUser)); setupUserUI(); showPage('app'); fetchGlobalData(); 
+          } else { hideLoader(); Swal.fire('ล้มเหลว', res.message, 'error'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+    };
+
+    window.registerUser = async function() {
+      const n = document.getElementById('reg_name').value.trim(); const e = document.getElementById('reg_email').value.trim(); const u = document.getElementById('reg_username').value.trim(); const p = document.getElementById('reg_password').value.trim();
+      if(!n || !u || !p || !e) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+      showLoader('กำลังสมัครสมาชิก...');
+      try {
+          let res = await callAPI('apiRegister', {name: n, username: u, password: p, email: e});
+          hideLoader(); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success').then(() => { document.getElementById('username').value = u; document.getElementById('password').value = p; showLogin(); });
+          } else { Swal.fire('ล้มเหลว', res.message, 'error'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+    };
+
+    window.logout = function() { localStorage.removeItem('assetUser'); currentUser = null; stopScanner(); showPage('login'); };
+
+    window.updateProfile = async function() {
+      const newName = document.getElementById('prof_name').value.trim(); const newEmail = document.getElementById('prof_email').value.trim(); const newPassword = document.getElementById('prof_password').value.trim();
+      if(!newName || !newEmail) return Swal.fire('แจ้งเตือน', 'ชื่อและอีเมลห้ามเว้นว่าง', 'warning');
+      showLoader('กำลังบันทึกข้อมูล...');
+      try {
+          let res = await callAPI('apiUpdateProfile', {username: currentUser.username, newName: newName, newEmail: newEmail, newPassword: newPassword});
+          hideLoader(); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); currentUser = res.user; localStorage.setItem('assetUser', JSON.stringify(currentUser)); setupUserUI(); document.getElementById('prof_password').value = ''; 
+          } else { Swal.fire('ล้มเหลว', res.message, 'error'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+    };
+
+    window.loadAdminLogs = async function() {
+      showLoader('กำลังโหลดประวัติการทำงาน...');
+      try {
+          let res = await callAPI('apiGetLogs', {adminUsername: currentUser.username});
+          hideLoader();
+          if(res.success) {
+            const tbody = document.getElementById('admin-logs-body'); let html = '';
+            res.logs.forEach(L => { html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200"><td class="p-2 text-gray-500 whitespace-nowrap">${L.timestamp}</td><td class="p-2 font-bold">${L.user}</td><td class="p-2 text-blue-600">${L.action}</td><td class="p-2 truncate max-w-[200px]">${L.details}</td></tr>`; });
+            tbody.innerHTML = html;
+          } else { Swal.fire('ล้มเหลว', res.message, 'error'); nav('dashboard'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); nav('dashboard'); }
+    };
+
+    window.loadAdminUsers = async function() {
+      showLoader('กำลังดึงรายชื่อผู้ใช้...');
+      try {
+          let res = await callAPI('apiGetUsersList', {adminUsername: currentUser.username});
+          hideLoader();
+          if(res.success) {
+            const tbody = document.getElementById('admin-users-body'); let html = '';
+            res.users.forEach(u => {
+               let badge = u.role === 'Admin' ? '<span class="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-bold">Admin</span>' : '<span class="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs font-bold">User</span>';
+               html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm dark:text-gray-200"><td class="p-3 font-mono font-bold">${u.username}</td><td class="p-3">${u.name}</td><td class="p-3 text-gray-500">${u.email}</td><td class="p-3">${badge}</td><td class="p-3 text-center"><button onclick="adminResetPassword('${u.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs font-bold shadow hover:bg-yellow-600"><i class="fas fa-key mr-1"></i>รีเซ็ทรหัส</button></td></tr>`;
+            });
+            tbody.innerHTML = html;
+          } else { Swal.fire('ล้มเหลว', res.message, 'error'); nav('dashboard'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); nav('dashboard'); }
+    };
+
+    window.adminResetPassword = function(targetUser) {
+       Swal.fire({ title: 'ยืนยันการรีเซ็ทรหัสผ่าน?', text: 'ระบบจะสร้างรหัสผ่านใหม่แบบสุ่มและส่งไปยังอีเมลของ ' + targetUser, icon: 'warning', showCancelButton: true, confirmButtonColor: '#eab308', cancelButtonColor: '#6b7280', confirmButtonText: 'ยืนยันรีเซ็ท', cancelButtonText: 'ยกเลิก'
+       }).then(async (result) => {
+          if (result.isConfirmed) {
+             showLoader('กำลังส่งอีเมล...');
+             try {
+                 let res = await callAPI('apiResetUserPassword', {adminUsername: currentUser.username, targetUsername: targetUser});
+                 hideLoader(); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); } else { Swal.fire('ล้มเหลว', res.message, 'error'); }
+             } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+          }
+       });
+    };
+
+    window.fetchGlobalData = async function() {
+      showLoader('กำลังซิงค์ฐานข้อมูล...');
+      try {
+          let res = await callAPI('apiGetData', {});
+          globalData = res; filteredAssetsArray = globalData.assets; filteredPrintArray = globalData.assets; selectedPrintIds.clear();
+          renderAllViews(); hideLoader();
+          if(document.getElementById('view-dashboard').classList.contains('hidden') && document.getElementById('view-assets').classList.contains('hidden') && document.getElementById('view-print').classList.contains('hidden') && document.getElementById('view-scan').classList.contains('hidden') && document.getElementById('view-add').classList.contains('hidden') && document.getElementById('view-report').classList.contains('hidden') && document.getElementById('view-profile').classList.contains('hidden') && document.getElementById('view-admin_users').classList.contains('hidden') && document.getElementById('view-settings').classList.contains('hidden') && document.getElementById('view-admin_logs').classList.contains('hidden')) {
+              nav('dashboard'); 
+          }
+      } catch(err) { hideLoader(); Swal.fire('ข้อผิดพลาดการดึงข้อมูล', err.message, 'error'); }
+    };
+
+    window.viewImage = function(url) { Swal.fire({ imageUrl: url, imageAlt: 'Asset Image', confirmButtonText: 'ปิดหน้าต่าง', confirmButtonColor: '#3b82f6', customClass: { image: 'rounded-lg shadow-md max-h-96 object-contain' } }); };
+
+    window.filterTableAssets = function() {
+      const q = document.getElementById('searchInput').value.toLowerCase(); const searchTerms = q.split(/\s+/).filter(t => t !== ''); 
+      filteredAssetsArray = globalData.assets.filter(a => {
+         let textToSearch = (a.AssetID + " " + a.Name + " " + a.Location).toLowerCase().replace(/\s+/g, ''); return searchTerms.every(term => textToSearch.includes(term.replace(/\s+/g, '')));
+      });
+      renderAssetsTablePaginated(1);
+    };
+
+    window.renderAssetsTablePaginated = function(page) {
+        currentAssetPage = page; const tbody = document.getElementById('asset-table-body');
+        const start = (page - 1) * itemsPerPage; const end = start + itemsPerPage; const pageData = filteredAssetsArray.slice(start, end);
+        let htmlContent = '';
+        pageData.forEach(a => {
+           let c = (a.Status.includes('ชำรุด')) ? 'text-yellow-600 bg-yellow-100' : (a.Status.includes('สูญหาย')) ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100';
+           let imgBtn = a.ImageURL ? `<button onclick="viewImage('${a.ImageURL}')" class="text-blue-500 hover:text-blue-700 bg-blue-100 p-1.5 rounded-full shadow-sm"><i class="fas fa-image"></i></button>` : `<span class="text-gray-300">-</span>`;
+           htmlContent += `<tr class="border-b dark:border-gray-700 hover:bg-white/50 dark:hover:bg-gray-700/50 dark:text-gray-200 text-sm"><td class="p-2 text-center w-12">${imgBtn}</td><td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400">${a.AssetID}</td><td class="p-2">${a.Name}</td><td class="p-2 truncate max-w-[100px]">${a.Location}</td><td class="p-2"><span class="px-2 py-1 rounded-full text-xs font-bold ${c}">${a.Status}</span></td></tr>`;
+        });
+        tbody.innerHTML = htmlContent;
+        const totalItems = filteredAssetsArray.length; document.getElementById('asset-page-info').innerText = totalItems > 0 ? `แสดง ${start + 1}-${Math.min(end, totalItems)} จากทั้งหมด ${totalItems}` : 'ไม่พบข้อมูล';
+    };
+
+    window.changeAssetPage = function(step) { const maxPage = Math.ceil(filteredAssetsArray.length / itemsPerPage); let newPage = currentAssetPage + step; if (newPage >= 1 && newPage <= maxPage) renderAssetsTablePaginated(newPage); };
+
+    window.filterPrintTable = function() {
+        const q = document.getElementById('searchPrintInput').value.toLowerCase(); const searchTerms = q.split(/\s+/).filter(t => t !== '');
+        filteredPrintArray = globalData.assets.filter(a => { let textToSearch = (a.AssetID + " " + a.Name + " " + a.Location).toLowerCase().replace(/\s+/g, ''); return searchTerms.every(term => textToSearch.includes(term.replace(/\s+/g, ''))); });
+        renderPrintTablePaginated(1);
+    };
+
+    window.changePrintPerPage = function() { const val = document.getElementById('printPerPage').value; if(val === 'all') printItemsPerPage = filteredPrintArray.length > 0 ? filteredPrintArray.length : 1; else printItemsPerPage = parseInt(val); renderPrintTablePaginated(1); };
+
+    window.renderPrintTablePaginated = function(page) {
+        currentPrintPage = page; const tbody = document.getElementById('print-table-body');
+        let start = 0; let end = filteredPrintArray.length;
+        if(document.getElementById('printPerPage').value !== 'all') { start = (page - 1) * printItemsPerPage; end = start + printItemsPerPage; }
+        const pageData = filteredPrintArray.slice(start, end); let htmlContent = '';
+        pageData.forEach(a => {
+            const isChecked = selectedPrintIds.has(a.AssetID) ? 'checked' : '';
+            htmlContent += `<tr class="border-b dark:border-gray-700 hover:bg-white/50 dark:hover:bg-gray-700/50 dark:text-gray-200 text-sm"><td class="p-2 text-center"><input type="checkbox" class="cb-print w-4 h-4 rounded cursor-pointer" value="${a.AssetID}" onchange="togglePrintSelection(this)" ${isChecked}></td><td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400">${a.AssetID}</td><td class="p-2 truncate max-w-[150px]">${a.Name}</td><td class="p-2 truncate max-w-[100px] text-gray-500">${a.Location}</td></tr>`;
+        });
+        tbody.innerHTML = htmlContent; const totalItems = filteredPrintArray.length; document.getElementById('print-page-info').innerText = totalItems > 0 ? `แสดง ${start + 1}-${Math.min(end, totalItems)} จากทั้งหมด ${totalItems}` : 'ไม่พบข้อมูล';
+        if(document.getElementById('printPerPage').value === 'all') document.getElementById('print-pagination-controls').style.display = 'none'; else document.getElementById('print-pagination-controls').style.display = 'flex';
+        const allOnPageSelected = pageData.length > 0 && pageData.every(a => selectedPrintIds.has(a.AssetID)); document.getElementById('cb-select-all').checked = allOnPageSelected;
+    };
+
+    window.changePrintPage = function(step) { if(document.getElementById('printPerPage').value === 'all') return; const maxPage = Math.ceil(filteredPrintArray.length / printItemsPerPage); let newPage = currentPrintPage + step; if (newPage >= 1 && newPage <= maxPage) renderPrintTablePaginated(newPage); };
+    window.togglePrintSelection = function(cb) { if(cb.checked) selectedPrintIds.add(cb.value); else selectedPrintIds.delete(cb.value); let start = 0; let end = filteredPrintArray.length; if(document.getElementById('printPerPage').value !== 'all') { start = (currentPrintPage - 1) * printItemsPerPage; end = start + printItemsPerPage; } const pageData = filteredPrintArray.slice(start, end); const allOnPageSelected = pageData.length > 0 && pageData.every(a => selectedPrintIds.has(a.AssetID)); document.getElementById('cb-select-all').checked = allOnPageSelected; };
+    window.toggleSelectAllPrint = function() { const isChecked = document.getElementById('cb-select-all').checked; let start = 0; let end = filteredPrintArray.length; if(document.getElementById('printPerPage').value !== 'all') { start = (currentPrintPage - 1) * printItemsPerPage; end = start + printItemsPerPage; } const pageData = filteredPrintArray.slice(start, end); pageData.forEach(a => { if(isChecked) selectedPrintIds.add(a.AssetID); else selectedPrintIds.delete(a.AssetID); }); renderPrintTablePaginated(currentPrintPage); };
+
+    window.printSelectedQRCodes = function() {
+        if(selectedPrintIds.size === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกรายการที่ต้องการพิมพ์อย่างน้อย 1 รายการ', 'warning');
+        let selectedAssets = globalData.assets.filter(a => selectedPrintIds.has(a.AssetID)); showLoader('กำลังสร้างหน้ากระดาษพิมพ์...');
+        let labelsHtml = '';
+        selectedAssets.forEach(a => { let qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(a.AssetID); labelsHtml += `<div class="label"><img class="qr" src="${qrUrl}" /><div class="text-box"><div class="title">ศาลแขวงอุบลราชธานี</div><div class="name">${a.Name}</div><div class="id">${a.AssetID}</div></div></div>`; });
+        let printWindow = window.open('', '_blank');
+        let docHtml = '<html><head><title>Print QR Labels</title><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap" rel="stylesheet"><style>@page { size: 50mm 20mm; margin: 0; } body { margin: 0; padding: 0; font-family: "Prompt", sans-serif; background: #fff; color: #000; } .label { width: 50mm; height: 20mm; page-break-after: always; display: flex; align-items: center; box-sizing: border-box; padding: 1.5mm; overflow: hidden; } .qr { width: 16mm; height: 16mm; flex-shrink: 0; object-fit: contain; } .text-box { margin-left: 2mm; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; overflow: hidden; } .title { font-size: 7px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;} .name { font-size: 6px; margin: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; } .id { font-size: 9px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; letter-spacing: -0.2px; }</style></head><body>' + labelsHtml + '</body></html>';
+        printWindow.document.write(docHtml); printWindow.document.close(); 
+        setTimeout(() => { printWindow.print(); printWindow.close(); hideLoader(); }, 1500);
+    };
+
+    window.renderAllViews = function() {
+      document.getElementById('dash-total').innerText = globalData.dash.total; document.getElementById('dash-normal').innerText = globalData.dash.normal; document.getElementById('dash-broken').innerText = globalData.dash.broken; document.getElementById('dash-lost').innerText = globalData.dash.lost;
+      if(chartInstance) chartInstance.destroy(); const isDark = document.documentElement.classList.contains('dark');
+      chartInstance = new Chart(document.getElementById('statusChart').getContext('2d'), { type: 'doughnut', data: { labels: ['ปกติ', 'ชำรุด', 'สูญหาย'], datasets: [{ data: [globalData.dash.normal, globalData.dash.broken, globalData.dash.lost], backgroundColor: ['#22c55e', '#eab308', '#ef4444'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: isDark ? 'white' : 'black' } } } } });
+      renderAssetsTablePaginated(1);
+      let locSelect = document.getElementById('s_location'); let locations = []; globalData.assets.forEach(function(a) { if(a.Location && locations.indexOf(a.Location) === -1) locations.push(a.Location); });
+      locSelect.innerHTML = ''; locations.forEach(l => { locSelect.innerHTML += '<option value="' + l + '">' + l + '</option>'; });
+      const reportFilter = document.getElementById('report-filter'); const currentReportFilter = reportFilter.value || 'all'; reportFilter.innerHTML = '<option value="all">ดูทุกสถานะ (สรุปทั้งหมด)</option>';
+      let cleanConditions = []; globalData.conditions.forEach(cond => { let clean = cond.replace(/^[0-9]+\.\s*/, '').trim(); if(!cleanConditions.includes(clean)) cleanConditions.push(clean); });
+      cleanConditions.forEach(cond => { reportFilter.innerHTML += '<option value="' + cond + '">' + cond + '</option>'; }); reportFilter.value = currentReportFilter;
+      document.getElementById('config_round').value = globalData.settings.round; document.getElementById('display_round').innerText = globalData.settings.round;
+      if(!document.getElementById('view-report').classList.contains('hidden')) renderReportView();
+      if(!document.getElementById('view-print').classList.contains('hidden')) renderPrintTablePaginated(currentPrintPage);
+    };
+
+    window.renderReportView = function() {
+        const reportBody = document.getElementById('report-summary-body'); const problemBody = document.getElementById('report-problem-body'); const filterVal = document.getElementById('report-filter').value;
+        let summaryData = {}; let filteredAssets = globalData.assets;
+        if(filterVal !== 'all') filteredAssets = globalData.assets.filter(a => a.Status === filterVal);
+        let totalItemsForPct = globalData.assets.length;
+        globalData.assets.forEach(a => { if(filterVal === 'all' || a.Status === filterVal) { let s = a.Status; if(!summaryData[s]) summaryData[s] = 0; summaryData[s]++; } });
+        let htmlSummary = '';
+        for (const [status, count] of Object.entries(summaryData)) {
+            let pct = ((count / totalItemsForPct) * 100).toFixed(2); let c = (status.includes('ชำรุด')) ? 'text-yellow-600' : (status.includes('สูญหาย')) ? 'text-red-600' : 'text-green-600';
+            htmlSummary += `<tr class="border-b border-gray-200 dark:border-gray-700"><td class="p-3 font-bold ${c}">${status}</td><td class="p-3 text-center font-medium dark:text-white">${count}</td><td class="p-3 text-center text-gray-500">${pct}%</td></tr>`;
+        }
+        reportBody.innerHTML = htmlSummary;
+        let detailItems = filterVal === 'all' ? globalData.assets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('สูญหาย')) : filteredAssets;
+        document.getElementById('report-detail-title').innerHTML = filterVal === 'all' ? '<i class="fas fa-exclamation-circle mr-1 text-red-500"></i> รายการพัสดุที่มีปัญหา (ชำรุด / สูญหาย)' : '<i class="fas fa-list mr-1 text-blue-500"></i> รายการพัสดุทั้งหมด (สถานะ: ' + filterVal + ')';
+        let htmlProblems = '';
+        if(detailItems.length === 0) htmlProblems = '<tr><td colspan="7" class="p-4 text-center text-gray-500">ไม่พบรายการพัสดุ</td></tr>';
+        else {
+            detailItems.forEach(a => {
+                let c = (a.Status.includes('ชำรุด')) ? 'text-yellow-600 bg-yellow-100' : (a.Status.includes('สูญหาย')) ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100';
+                let imgBtn = a.ImageURL ? `<button onclick="viewImage('${a.ImageURL}')" class="text-blue-500 hover:text-blue-700 bg-white p-1 rounded-full"><i class="fas fa-image"></i></button>` : `<span class="text-gray-300">-</span>`;
+                htmlProblems += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200 text-xs"><td class="p-2 text-center w-10">${imgBtn}</td><td class="p-2 font-mono font-bold text-blue-600">${a.AssetID}</td><td class="p-2">${a.Name}</td><td class="p-2">${a.Location}</td><td class="p-2"><span class="px-2 py-1 rounded text-xs font-bold ${c}">${a.Status}</span></td><td class="p-2 text-gray-500">${a.InspectDate}</td><td class="p-2 text-gray-500 truncate max-w-[100px]">${a.Inspector}</td></tr>`;
+            });
+        }
+        problemBody.innerHTML = htmlProblems;
+    };
+
+    window.exportReportCSV = function() {
+        const filterVal = document.getElementById('report-filter').value; let exportData = globalData.assets;
+        if (filterVal !== 'all') exportData = globalData.assets.filter(a => a.Status === filterVal);
+        if(exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export', 'warning');
+        let csvContent = "data:text/csv;charset=utf-8,%EF%BB%BF"; csvContent += "รหัสพัสดุ,ลักษณะ,สถานที่ตั้ง,สภาพพัสดุ,ผู้รับผิดชอบ/ตรวจสอบ,วันที่ตรวจสอบ\n";
+        exportData.forEach(function(a) { let row = `"${a.AssetID}","${a.Name}","${a.Location}","${a.Status}","${a.Inspector}","${a.InspectDate}"`; csvContent += row + "\n"; });
+        const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); 
+        link.setAttribute("download", "Asset_Report_" + (filterVal === 'all' ? 'All' : filterVal) + "_" + new Date().toLocaleDateString('th-TH').replace(/\//g,'-') + ".csv"); 
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    };
+
+    window.saveSettings = async function() {
+      const roundText = document.getElementById('config_round').value.trim();
+      if(!roundText) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรอบการตรวจสอบ', 'warning');
+      showLoader('กำลังบันทึกตั้งค่า...'); 
+      try {
+          let res = await callAPI('apiSaveSettings', {roundText: roundText});
+          hideLoader(); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); globalData.settings.round = roundText; document.getElementById('display_round').innerText = roundText; }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+    };
+
+    window.startScanner = function() {
+      if(!codeReader) { Swal.fire('ข้อผิดพลาด', 'ระบบสแกนยังโหลดไม่เสร็จสมบูรณ์ กรุณารอสักครู่แล้วลองใหม่', 'error'); return; }
+      const readerContainer = document.getElementById('reader-container'); readerContainer.classList.remove('hidden'); document.getElementById('s_barcode').value = ''; 
+      codeReader.decodeFromConstraints({ audio: false, video: { facingMode: "environment" } }, 'reader-video', (result, err) => {
+          if (result) { document.getElementById('s_barcode').value = result.text; stopScanner(); searchAsset(); }
+      }).catch(err => {
+          readerContainer.classList.add('hidden'); 
+          Swal.fire({ title: 'กล้องถูกบล็อก', text: 'คุณสามารถใช้การ "ถ่ายรูป QR Code" แทนได้ครับ', icon: 'warning', showCancelButton: true, confirmButtonText: 'ถ่ายรูปเพื่อสแกน', cancelButtonText: 'ยกเลิก' 
+          }).then((res) => { if (res.isConfirmed) document.getElementById('qr-fallback-input').click(); });
+      });
+    };
+
+    window.stopScanner = function() { if(codeReader) codeReader.reset(); document.getElementById('reader-container').classList.add('hidden'); };
+
+    window.handleFallbackScan = function(e) {
+      if (e.target.files.length == 0 || !codeReader) return; 
+      showLoader('กำลังวิเคราะห์รูปภาพด้วย ZXing...'); const file = e.target.files[0]; const imgUrl = URL.createObjectURL(file);
+      codeReader.decodeFromImageUrl(imgUrl).then(result => {
+          hideLoader(); document.getElementById('s_barcode').value = result.text; document.getElementById('qr-fallback-input').value = ""; searchAsset();
+      }).catch(err => {
+          hideLoader(); document.getElementById('qr-fallback-input').value = ""; Swal.fire('อ่านไม่สำเร็จ', 'ระบบ ZXing ไม่พบ QR Code หรือ Barcode ในรูปภาพครับ กรุณาถ่ายใหม่ให้ชัดเจน', 'error');
+      });
+    };
+
+    window.searchAsset = function() {
+      const barcode = document.getElementById('s_barcode').value.trim(); const currentLoc = document.getElementById('s_location').value;
+      if(!barcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสบาร์โค้ด', 'warning');
+      let asset = globalData.assets.find(a => a.AssetID === barcode);
+      document.getElementById('scan-step-1').classList.add('hidden'); const todayStr = new Date().toLocaleDateString('th-TH');
+
+      if(asset) {
+        document.getElementById('scan-step-found').classList.remove('hidden'); document.getElementById('f_id').innerText = asset.AssetID; document.getElementById('f_name').innerText = asset.Name; document.getElementById('f_old_loc').innerText = asset.Location; document.getElementById('f_curr_loc').innerText = currentLoc; document.getElementById('f_inspector_name').innerText = currentUser.name; document.getElementById('f_inspect_date').innerText = todayStr;
+        if(asset.InspectDate && asset.InspectDate !== '') document.getElementById('alert-already').classList.remove('hidden'); else document.getElementById('alert-already').classList.add('hidden');
+        const condSelect = document.getElementById('f_condition'); condSelect.innerHTML = ''; globalData.conditions.forEach(cond => { condSelect.innerHTML += '<option value="' + cond + '">' + cond + '</option>'; });
+        if(asset.Location === currentLoc) { document.getElementById('alert-location-ok').classList.remove('hidden'); document.getElementById('alert-location-bad').classList.add('hidden'); } else { document.getElementById('alert-location-ok').classList.add('hidden'); document.getElementById('alert-location-bad').classList.remove('hidden'); }
+      } else {
+        document.getElementById('scan-step-notfound').classList.remove('hidden'); document.getElementById('n_id').value = barcode; document.getElementById('n_loc').value = currentLoc; document.getElementById('n_inspector_name').innerText = currentUser.name; document.getElementById('n_inspect_date').innerText = todayStr;
+      }
+    };
+
+    window.backToScan = function() { document.getElementById('scan-step-found').classList.add('hidden'); document.getElementById('scan-step-notfound').classList.add('hidden'); document.getElementById('scan-step-1').classList.remove('hidden'); document.getElementById('s_barcode').value = ''; document.getElementById('s_barcode').focus(); };
+
+    window.submitDataToGas = function(actionFunc, dataObj) {
+      dataObj.inspectorName = currentUser.name; dataObj.inspectDate = new Date().toLocaleDateString('th-TH');
+      showLoader('📍 กำลังดึงพิกัด GPS ของคุณ...');
+      if (navigator.geolocation) {
+         navigator.geolocation.getCurrentPosition(
+            function(position) { dataObj.gps = position.coords.latitude + "," + position.coords.longitude; executeGasSubmit(actionFunc, dataObj); },
+            function(error) { dataObj.gps = "ไม่อนุญาตการเข้าถึง GPS"; executeGasSubmit(actionFunc, dataObj); }, { timeout: 6000 }
+         );
+      } else { dataObj.gps = "อุปกรณ์ไม่รองรับ GPS"; executeGasSubmit(actionFunc, dataObj); }
+    };
+
+    window.executeGasSubmit = async function(actionFunc, dataObj) {
+      showLoader('กำลังบันทึกข้อมูลและรูปภาพ...');
+      try {
+          let res = await callAPI(actionFunc, { data: dataObj, user: currentUser.username });
+          hideLoader(); if(res.success) { Swal.fire('สำเร็จ', 'ระบบบันทึกข้อมูลเรียบร้อยแล้ว', 'success'); fetchGlobalData(); backToScan(); } else { Swal.fire('ล้มเหลว', res.message, 'error'); }
+      } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
+    };
+
+    window.saveInspection = function() {
+      const fileInput = document.getElementById('f_img');
+      const data = { assetId: document.getElementById('f_id').innerText, condition: document.getElementById('f_condition').value, newLocation: document.getElementById('f_curr_loc').innerText, note: document.getElementById('f_note').value, imageBase64: null };
+      if(fileInput.files.length > 0) { const reader = new FileReader(); reader.onload = e => { data.imageBase64 = e.target.result; submitDataToGas('apiAddInspection', data); }; reader.readAsDataURL(fileInput.files[0]); } else submitDataToGas('apiAddInspection', data);
+    };
+
+    window.saveNewAssetFromScan = function() {
+      const fileInput = document.getElementById('n_img');
+      const data = { assetId: document.getElementById('n_id').value, name: document.getElementById('n_name').value, brand: '', location: document.getElementById('n_loc').value, date: new Date().toLocaleDateString('th-TH'), note: 'ลงทะเบียนจากหน้าสแกน', imageBase64: null };
+      if(!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสและลักษณะ', 'warning');
+      if(fileInput.files.length > 0) { const reader = new FileReader(); reader.onload = e => { data.imageBase64 = e.target.result; submitDataToGas('apiAddAsset', data); }; reader.readAsDataURL(fileInput.files[0]); } else submitDataToGas('apiAddAsset', data);
+    };
+
+    window.submitAsset = function() {
+      const fileInput = document.getElementById('a_img');
+      const data = { assetId: document.getElementById('a_id').value.trim(), name: document.getElementById('a_name').value.trim(), brand: document.getElementById('a_brand').value.trim(), location: document.getElementById('a_loc').value.trim(), date: document.getElementById('a_date').value.trim(), note: 'ลงทะเบียนใหม่จากแอป', imageBase64: null };
+      if(!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสและลักษณะ', 'warning');
+      if(fileInput && fileInput.files.length > 0) { const reader = new FileReader(); reader.onload = e => { data.imageBase64 = e.target.result; submitDataToGas('apiAddAsset', data); }; reader.readAsDataURL(fileInput.files[0]); } else submitDataToGas('apiAddAsset', data);
+    };
+  </script>
+</body>
+</html>
