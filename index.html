@@ -77,7 +77,10 @@
         <a href="#" onclick="nav('add')" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-1"><i class="fas fa-plus w-6"></i> เพิ่มข้อมูลใหม่</a>
         
         <div class="border-t border-gray-300 dark:border-gray-600 my-2"></div>
-        <a href="#" onclick="nav('profile')" class="block px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200"><i class="fas fa-user-circle w-6"></i> โปรไฟล์ส่วนตัว</a>
+        <!-- เมนูใหม่: คู่มือการใช้งาน -->
+        <a href="#" onclick="nav('tutorial')" class="block px-3 py-2 rounded-xl hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 transition dark:text-gray-200 mt-1 bg-teal-50/80 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-800"><i class="fas fa-book-reader w-6 text-teal-600"></i> คู่มือการใช้งาน (ผู้เริ่มต้น)</a>
+        
+        <a href="#" onclick="nav('profile')" class="block px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200 mt-1"><i class="fas fa-user-circle w-6"></i> โปรไฟล์ส่วนตัว</a>
         <a href="#" id="menu_admin_assign" onclick="nav('assign')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-pink-600 dark:text-pink-400 font-bold mt-1"><i class="fas fa-tasks w-6"></i> มอบหมายงาน (Admin)</a>
         <a href="#" id="menu_admin_users" onclick="nav('admin_users')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-purple-600 dark:text-purple-400 font-bold mt-1"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</a>
         <a href="#" id="menu_admin_logs" onclick="nav('admin_logs')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-orange-600 dark:text-orange-400 font-bold mt-1"><i class="fas fa-history w-6"></i> ประวัติระบบ (Logs)</a>
@@ -103,6 +106,100 @@
             <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')"><span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span></div>
           </div>
         </header>
+
+        <!-- ==================== VIEW: คู่มือการใช้งาน (Tutorial) ==================== -->
+        <div id="view-tutorial" class="view hidden">
+          <div class="glass p-4 md:p-8 rounded-xl shadow mb-6 max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+              <h2 class="text-2xl md:text-3xl font-bold text-teal-600 dark:text-teal-400"><i class="fas fa-book-reader mr-2"></i>คู่มือการใช้งานระบบ Asset Management</h2>
+              <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">คู่มือฉบับเข้าใจง่ายสำหรับผู้เริ่มต้นใช้งาน</p>
+            </div>
+            
+            <!-- ส่วนของเจ้าหน้าที่ (User) -->
+            <div class="mb-10">
+              <h3 class="font-bold text-xl text-blue-600 dark:text-blue-400 border-b-2 border-blue-200 pb-2 mb-4"><i class="fas fa-user-check mr-2"></i>ส่วนที่ 1: สำหรับเจ้าหน้าที่ผู้ตรวจสอบ (User)</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">1. ดูรายการที่ต้องรับผิดชอบ</h4>
+                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>เข้าสู่ระบบด้วย Username ของคุณ</li>
+                    <li>กดเมนู <b>"งานที่ต้องตรวจ"</b> (สีเขียว) ด้านซ้ายมือ</li>
+                    <li>ระบบจะแสดงรายการครุภัณฑ์ที่คุณต้องไปตรวจนับทั้งหมด</li>
+                    <li>สามารถกด <b>"พิมพ์ใบเช็คของ"</b> เพื่อถือกระดาษไปเดินตรวจหน้างานได้</li>
+                  </ul>
+                </div>
+                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">2. วิธีการสแกนตรวจนับ</h4>
+                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"สแกนตรวจนับ"</b> ด้านซ้ายมือ</li>
+                    <li>เลือกสถานที่ตั้งที่คุณกำลังเดินตรวจอยู่</li>
+                    <li>กดปุ่ม <b>"เปิดกล้องสแกน"</b> นำมือถือไปส่องที่ป้าย QR Code</li>
+                    <li>ระบบจะดึงข้อมูลมาให้ ระบุสภาพ และกด <b>"บันทึกผล"</b></li>
+                  </ul>
+                </div>
+                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">3. กรณีจุดที่ตรวจไม่มีเน็ต (Offline)</h4>
+                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>ไม่ต้องกังวล! ระบบสามารถทำงานตอนไม่มีเน็ตได้</li>
+                    <li>สแกนและกดบันทึกตามปกติ ระบบจะขึ้นข้อความ <b>"โหมดออฟไลน์"</b> แจ้งเตือน</li>
+                    <li>เมื่อเดินกลับมาจุดที่มี Wi-Fi ให้กดปุ่ม <b>"ออฟไลน์ (รอซิงค์)"</b> มุมขวาบน ระบบจะส่งข้อมูลทั้งหมดเข้าเซิร์ฟเวอร์ให้อัตโนมัติ</li>
+                  </ul>
+                </div>
+                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">4. การทำเรื่อง ยืม-คืน พัสดุ</h4>
+                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"ยืม-คืน พัสดุ"</b> (สีเหลือง)</li>
+                    <li>สแกน QR Code พัสดุที่ต้องการทำรายการ</li>
+                    <li>พิมพ์ชื่อผู้ยืม แล้วกด <b>"ยืนยันการยืม"</b></li>
+                    <li>หากของถูกยืมอยู่ เมื่อสแกนระบบจะขึ้นปุ่ม <b>"รับคืนพัสดุ"</b> ให้กดรับคืนได้เลย</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนของผู้ดูแลระบบ (Admin) -->
+            <div>
+              <h3 class="font-bold text-xl text-pink-600 dark:text-pink-400 border-b-2 border-pink-200 pb-2 mb-4"><i class="fas fa-crown mr-2"></i>ส่วนที่ 2: สำหรับผู้ดูแลระบบ (Admin)</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
+                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">1. การตั้งรอบตรวจ (สำคัญมากต้องทำก่อน)</h4>
+                  <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">ก่อนเริ่มการตรวจนับประจำปีทุกครั้ง แอดมินต้องไปตั้งค่ารอบการตรวจใหม่ เพื่อให้ระบบล้างข้อมูลการตรวจของปีเก่าออกครับ</p>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"ตั้งค่าระบบ"</b> (รูปล้อเฟืองด้านล่าง)</li>
+                    <li>พิมพ์รอบปัจจุบัน เช่น <i>"ประจำปี 2567"</i></li>
+                    <li>กด <b>"บันทึกการตั้งค่า"</b></li>
+                  </ul>
+                </div>
+                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
+                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">2. การมอบหมายพื้นที่ให้ลูกน้อง</h4>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"มอบหมายงาน (Admin)"</b> (สีชมพู)</li>
+                    <li>เลือกสถานที่ที่ต้องการให้ตรวจ</li>
+                    <li>เลือกชื่อเจ้าหน้าที่ ที่ต้องการให้ไปตรวจ</li>
+                    <li>กดปุ่ม <b>"มอบหมายงานทันที"</b></li>
+                  </ul>
+                </div>
+                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
+                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">3. พิมพ์รายงานเสนอ ผอ. (รูปแบบ PDF)</h4>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"รายงานสรุป"</b></li>
+                    <li>เลือกตัวกรอง (เช่น ดูเฉพาะของชำรุด หรือดูทั้งหมด)</li>
+                    <li>กดปุ่มสีม่วง <b>"พิมพ์เอกสารราชการ (PDF)"</b></li>
+                    <li>ระบบจะสร้างรายงานฟอร์มทางการ พร้อมที่เซ็นชื่อให้ทันที</li>
+                  </ul>
+                </div>
+                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
+                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">4. วิธีช่วยเหลือคนลืมรหัสผ่าน</h4>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>กดเมนู <b>"จัดการผู้ใช้งาน"</b></li>
+                    <li>หาชื่อคนที่ลืมรหัส แล้วกดปุ่มสีเหลือง <b>"รีเซ็ทรหัส"</b></li>
+                    <li>ระบบจะสุ่มรหัสผ่านใหม่ตัวเลข 6 หลักขึ้นมาให้ และจะส่งเข้าอีเมลของเจ้าหน้าที่คนนั้นอัตโนมัติ</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- DASHBOARD -->
         <div id="view-dashboard" class="view">
@@ -405,7 +502,7 @@
     
     window.nav = function(viewId) {
       document.querySelectorAll('.view').forEach(function(v) { v.classList.add('hidden'); }); document.getElementById('view-' + viewId).classList.remove('hidden');
-      const titles = { dashboard: 'แดชบอร์ด', mytasks: 'งานที่ต้องตรวจ', assign: 'มอบหมายพื้นที่ตรวจ', borrow: 'ยืม-คืน พัสดุ', maintenance: 'จัดการงานแจ้งซ่อม', assets: 'รายการพัสดุ', print: 'พิมพ์ป้าย QR Code', add: 'ลงทะเบียนพัสดุ', scan: 'ระบบตรวจนับ', report: 'รายงานสรุป', settings: 'ตั้งค่าระบบ', profile: 'ข้อมูลส่วนตัว', admin_users: 'จัดการผู้ใช้', admin_logs: 'ประวัติระบบ' };
+      const titles = { dashboard: 'แดชบอร์ด', mytasks: 'งานที่ต้องตรวจ', assign: 'มอบหมายพื้นที่ตรวจ', borrow: 'ยืม-คืน พัสดุ', maintenance: 'จัดการงานแจ้งซ่อม', assets: 'รายการพัสดุ', print: 'พิมพ์ป้าย QR Code', add: 'ลงทะเบียนพัสดุ', scan: 'ระบบตรวจนับ', report: 'รายงานสรุป', settings: 'ตั้งค่าระบบ', profile: 'ข้อมูลส่วนตัว', admin_users: 'จัดการผู้ใช้', admin_logs: 'ประวัติระบบ', tutorial: 'คู่มือการใช้งานระบบ' };
       document.getElementById('page-title').innerText = titles[viewId];
       if(window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('hidden')) { toggleSidebar(); }
       
@@ -437,9 +534,6 @@
 
     window.viewImage = function(url) { Swal.fire({ imageUrl: url, imageAlt: 'Asset', confirmButtonText: 'ปิดหน้าต่าง', confirmButtonColor: '#3b82f6', customClass: { image: 'rounded-lg shadow-md max-h-96 object-contain' } }); };
 
-    // ==========================================
-    // ตารางรายการพัสดุ (ฟังก์ชันที่เคยเกิด Error)
-    // ==========================================
     window.filterTableAssets = function() {
       const q = document.getElementById('searchInput').value.toLowerCase(); 
       const searchTerms = q.split(/\s+/).filter(t => t !== ''); 
@@ -460,16 +554,12 @@
         
         let htmlContent = '';
         pageData.forEach(a => {
-            // กำหนดสีของ Status
-            let c = 'text-green-600 bg-green-100'; // Default ปกติ
+            let c = 'text-green-600 bg-green-100'; 
             if (a.Status.includes('ซ่อม')) c = 'text-blue-600 bg-blue-100';
             else if (a.Status.includes('ชำรุด')) c = 'text-yellow-600 bg-yellow-100';
             else if (a.Status.includes('สูญหาย')) c = 'text-red-600 bg-red-100';
             
-            // ปุ่มดูรูป
             let imgBtn = a.ImageURL ? `<button onclick="viewImage('${a.ImageURL}')" class="text-blue-500 hover:text-blue-700 bg-blue-100 p-1.5 rounded-full shadow-sm"><i class="fas fa-image"></i></button>` : `<span class="text-gray-300">-</span>`;
-            
-            // ป้ายกำกับ ยืม-คืน
             let borrowBadge = a.BorrowStatus === 'ถูกยืม' ? `<span class="text-red-500 font-bold"><i class="fas fa-user text-xs"></i> ${a.Borrower}</span>` : `<span class="text-green-500 font-bold">ว่าง</span>`;
 
             htmlContent += `
@@ -496,9 +586,6 @@
         if (newPage >= 1 && newPage <= maxPage) renderAssetsTablePaginated(newPage); 
     };
 
-    // ==========================================
-    // ฟีเจอร์: มอบหมายงาน (Admin)
-    // ==========================================
     window.renderAssignView = function() {
         let locSelect = document.getElementById('assign_location'); let locations = []; 
         globalData.assets.forEach(function(a) { if(a.Location && locations.indexOf(a.Location) === -1) locations.push(a.Location); });
@@ -531,9 +618,6 @@
         } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
     };
 
-    // ==========================================
-    // ฟีเจอร์: งานที่ต้องตรวจ (My Tasks)
-    // ==========================================
     window.renderMyTasksView = function() {
         document.getElementById('task-round-badge').innerText = `รอบ: ${globalData.settings.round}`;
         
@@ -590,9 +674,6 @@
         printWindow.document.write(docHtml); printWindow.document.close();
     };
 
-    // ==========================================
-    // พิมพ์ป้าย QR Code
-    // ==========================================
     window.filterPrintTable = function() {
         const q = document.getElementById('searchPrintInput').value.toLowerCase(); const searchTerms = q.split(/\s+/).filter(t => t !== '');
         filteredPrintArray = globalData.assets.filter(a => { let textToSearch = (a.AssetID + " " + a.Name + " " + a.Location).toLowerCase().replace(/\s+/g, ''); return searchTerms.every(term => textToSearch.includes(term.replace(/\s+/g, ''))); });
@@ -664,9 +745,6 @@
       showLoader('กำลังบันทึกตั้งค่า...'); try { let res = await callAPI('apiSaveSettings', {roundText: roundText}); hideLoader(); if(res.success) { Swal.fire('สำเร็จ', res.message, 'success'); globalData.settings.round = roundText; document.getElementById('display_round').innerText = roundText; fetchGlobalData(); } } catch(e) { hideLoader(); Swal.fire('ข้อผิดพลาด', e.message, 'error'); }
     };
 
-    // ==========================================
-    // สแกน QR / Barcode
-    // ==========================================
     window.startScanner = function(mode) {
       if(!codeReader) return Swal.fire('ข้อผิดพลาด', 'โหลดระบบสแกนไม่สำเร็จ', 'error');
       currentScannerMode = mode; 
@@ -694,9 +772,6 @@
       }).catch(err => { hideLoader(); document.getElementById('qr-fallback-input').value = ""; Swal.fire('อ่านไม่สำเร็จ', 'ไม่พบ QR Code', 'error'); });
     };
 
-    // ==========================================
-    // ทำรายการสแกน & บันทึก
-    // ==========================================
     window.searchAsset = function() {
       const barcode = document.getElementById('s_barcode').value.trim(); const currentLoc = document.getElementById('s_location').value;
       if(!barcode) return Swal.fire('แจ้งเตือน', 'ระบุรหัส', 'warning');
@@ -734,9 +809,6 @@
     window.saveNewAssetFromScan = function() { const fileInput = document.getElementById('n_img'); const data = { assetId: document.getElementById('n_id').value, name: document.getElementById('n_name').value, brand: '', location: document.getElementById('n_loc').value, date: new Date().toLocaleDateString('th-TH'), note: 'ลงทะเบียนจากหน้าสแกน', imageBase64: null }; if(!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกให้ครบ', 'warning'); if(fileInput.files.length > 0) { const reader = new FileReader(); reader.onload = e => { data.imageBase64 = e.target.result; submitDataToGas('apiAddAsset', data); }; reader.readAsDataURL(fileInput.files[0]); } else submitDataToGas('apiAddAsset', data); };
     window.submitAsset = function() { const fileInput = document.getElementById('a_img'); const data = { assetId: document.getElementById('a_id').value.trim(), name: document.getElementById('a_name').value.trim(), brand: document.getElementById('a_brand').value.trim(), location: document.getElementById('a_loc').value.trim(), date: document.getElementById('a_date').value.trim(), note: 'ลงทะเบียนใหม่จากแอป', imageBase64: null }; if(!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกให้ครบ', 'warning'); if(fileInput && fileInput.files.length > 0) { const reader = new FileReader(); reader.onload = e => { data.imageBase64 = e.target.result; submitDataToGas('apiAddAsset', data); }; reader.readAsDataURL(fileInput.files[0]); } else submitDataToGas('apiAddAsset', data); };
 
-    // ==========================================
-    // แจ้งซ่อม & ยืมคืน & ออกรายงาน
-    // ==========================================
     window.renderMaintenanceView = function() {
         const tbody = document.getElementById('maintenance-table-body'); let html = '';
         let mAssets = globalData.assets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม'));
