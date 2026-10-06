@@ -21,6 +21,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     body { background-image: url('https://lh3.googleusercontent.com/d/1OLzLjAVeda1nW3b9ldO5YMBMwE1i0Wo4'); background-size: cover; background-position: center; background-attachment: fixed; transition: background-color 0.3s; background-color: #f3f4f6; }
@@ -298,6 +299,25 @@
             <div class="glass p-4 rounded-xl shadow text-center border-l-4 border-red-500"><p class="text-gray-600 dark:text-gray-400 font-bold text-xs">สูญหาย</p><h3 class="text-2xl md:text-4xl font-bold mt-1 text-red-600" id="dash-lost">0</h3></div>
           </div>
           <div class="glass p-4 rounded-xl shadow max-w-lg mx-auto h-64 md:h-80 flex items-center justify-center"><canvas id="statusChart"></canvas></div>
+
+          <!-- 🏢 ความคืบหน้าการตรวจนับรายห้อง (Location Audit Tracker) -->
+          <div class="glass p-4 md:p-6 rounded-xl shadow mt-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 border-b pb-3 dark:border-gray-700">
+              <div>
+                <h3 class="font-bold text-base md:text-lg dark:text-white flex items-center gap-2">
+                  <i class="fas fa-building text-blue-600 dark:text-blue-400"></i>
+                  <span>ความคืบหน้าการตรวจนับรายห้อง / สถานที่</span>
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">ภาพรวมการตรวจนับพัสดุประจำรอบ <span id="location-tracker-round" class="font-bold text-blue-600 dark:text-blue-400"></span></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" id="location-tracker-stats">0 ห้อง</span>
+              </div>
+            </div>
+            <div id="location-progress-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <!-- การ์ดแต่ละห้องจะถูกแสดงผลอัตโนมัติ -->
+            </div>
+          </div>
         </div>
 
         <!-- ==================== VIEW: ระบบยืม-คืน (Borrow) ==================== -->
@@ -381,8 +401,24 @@
               <button onclick="setAssetQuickFilter('borrowed')" id="pill-borrowed" class="pill-btn px-3 py-1 rounded-full text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 transition">ถูกยืม (<span id="count-borrowed">0</span>)</button>
             </div>
 
-            <div class="flex justify-between mb-4 gap-2">
-                <input type="text" id="searchInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ, ยี่ห้อ, สถานที่, ผู้ตรวจ..." class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500 text-sm" onkeyup="filterTableAssets()">
+            <div class="flex flex-col sm:flex-row justify-between mb-4 gap-2">
+                <div class="flex-grow flex gap-2">
+                    <input type="text" id="searchInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ, ยี่ห้อ, สถานที่, ผู้ตรวจ..." class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500 text-sm" onkeyup="filterTableAssets()">
+                    <button id="btn-voice-search" type="button" onclick="toggleVoiceSearch()" title="ค้นหาด้วยเสียงภาษาไทย (Voice Search)" class="bg-blue-100 hover:bg-blue-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-lg transition flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-sm border border-blue-200 dark:border-gray-600">
+                        <i class="fas fa-microphone" id="voice-search-icon"></i>
+                        <span class="hidden sm:inline" id="voice-search-label">พูดค้นหา</span>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportAssetsExcel()" title="ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg transition text-xs font-bold flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Excel</span>
+                    </button>
+                    <button onclick="exportAssetsCSV()" title="ดาวน์โหลดเป็นไฟล์ CSV (UTF-8 BOM)" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg transition text-xs font-bold flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+                        <i class="fas fa-file-csv"></i>
+                        <span>CSV</span>
+                    </button>
+                </div>
             </div>
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40">
@@ -422,9 +458,10 @@
                   <select id="report-location-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-xs"></select>
                 </div>
               </div>
-              <div class="w-full md:w-1/2 flex flex-col sm:flex-row gap-2 justify-end mt-2 md:mt-0">
-                  <button onclick="exportReportCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-green-700 transition text-sm"><i class="fas fa-file-excel mr-1"></i> โหลด Excel</button>
-                  <button onclick="printOfficialReport()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition text-sm"><i class="fas fa-file-pdf mr-1"></i> พิมพ์เอกสารราชการ (PDF)</button>
+              <div class="w-full md:w-1/2 flex flex-wrap sm:flex-nowrap gap-2 justify-end mt-2 md:mt-0">
+                  <button onclick="exportReportExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-emerald-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-excel"></i> ส่งออก Excel</button>
+                  <button onclick="exportReportCSV()" class="bg-gray-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-csv"></i> CSV (UTF-8)</button>
+                  <button onclick="printOfficialReport()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-pdf"></i> พิมพ์เอกสารราชการ (PDF)</button>
               </div>
             </div>
             <h3 class="font-bold text-gray-800 dark:text-white mb-2"><i class="fas fa-chart-pie mr-1 text-blue-500"></i> ข้อมูลสรุป</h3>
@@ -544,7 +581,86 @@
         
         <div id="view-admin_logs" class="view hidden"><div class="glass p-4 md:p-6 rounded-xl shadow"><div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-history mr-2 text-orange-500"></i> ประวัติระบบ</h2><button onclick="loadAdminLogs()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button></div><div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-xs"><thead><tr class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"><th class="p-2 border-b dark:border-gray-700">วัน/เวลา</th><th class="p-2 border-b dark:border-gray-700">ผู้ใช้งาน</th><th class="p-2 border-b dark:border-gray-700">หมวดหมู่</th><th class="p-2 border-b dark:border-gray-700">รายละเอียด</th></tr></thead><tbody id="admin-logs-body"></tbody></table></div></div></div>
         
-        <div id="view-settings" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-lg mx-auto"><h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-cogs mr-2"></i>ตั้งค่าระบบ</h2><label class="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">รอบการตรวจสอบปัจจุบัน</label><input type="text" id="config_round" class="w-full p-3 mb-6 rounded-lg border bg-white/90 dark:bg-gray-700 dark:text-white focus:outline-none text-lg font-bold text-blue-600"><button onclick="saveSettings()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow transition hover:bg-blue-700">บันทึกการตั้งค่า</button></div></div>
+        <div id="view-settings" class="view hidden">
+          <div class="glass p-6 md:p-8 rounded-xl shadow max-w-xl mx-auto space-y-6">
+            <div class="border-b pb-3 dark:border-gray-700">
+              <h2 class="font-bold text-xl dark:text-white flex items-center gap-2">
+                <i class="fas fa-cogs text-blue-600 dark:text-blue-400"></i>
+                <span>ตั้งค่าระบบ (System Settings)</span>
+              </h2>
+              <p class="text-xs text-gray-500 dark:text-gray-400">กำหนดรอบการตรวจสอบและการแจ้งเตือนระบบ</p>
+            </div>
+
+            <!-- ส่วนที่ 1: รอบการตรวจสอบ -->
+            <div class="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border dark:border-gray-700">
+              <label class="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
+                <i class="fas fa-calendar-check text-blue-500 mr-1"></i> รอบการตรวจสอบปัจจุบัน
+              </label>
+              <input type="text" id="config_round" class="w-full p-2.5 rounded-lg border bg-white dark:bg-gray-700 dark:text-white focus:outline-none text-base font-bold text-blue-600 dark:text-blue-400" placeholder="เช่น ครั้งที่ 1 2567">
+              <p class="text-[11px] text-gray-400 mt-1">รอบที่ใช้ในการแยกสถานะพัสดุ "ตรวจแล้ว" หรือ "ยังไม่ตรวจ"</p>
+            </div>
+
+            <!-- ส่วนที่ 2: ตั้งค่า Telegram Notifications -->
+            <div class="bg-sky-50/60 dark:bg-gray-800/60 p-4 rounded-xl border border-sky-200 dark:border-gray-700 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="fab fa-telegram text-2xl text-sky-500"></i>
+                  <div>
+                    <h3 class="font-bold text-sm text-gray-800 dark:text-white">แจ้งเตือนผ่าน Telegram (Telegram Alert)</h3>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">ส่งข้อความอัตโนมัติเข้ากลุ่มหรือแชทส่วนตัว</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-300">Telegram Bot Token</label>
+                <input type="text" id="config_telegram_token" placeholder="เช่น 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" class="w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-300">Telegram Chat ID (กลุ่มหรือส่วนบุคคล)</label>
+                <input type="text" id="config_telegram_chat_id" placeholder="เช่น -1001234567890 หรือ 987654321" class="w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500">
+              </div>
+
+              <!-- เหตุการณ์ที่ต้องการแจ้งเตือน -->
+              <div class="pt-2 border-t border-sky-100 dark:border-gray-700">
+                <p class="text-xs font-bold text-gray-700 dark:text-gray-300 mb-2">เลือกรายการที่ต้องการให้แจ้งเตือน:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <label class="flex items-center gap-2 p-2 bg-white dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 cursor-pointer">
+                    <input type="checkbox" id="config_tg_inspect" class="rounded text-sky-500 focus:ring-0">
+                    <span>เมื่อตรวจนับพัสดุ</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 bg-white dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 cursor-pointer">
+                    <input type="checkbox" id="config_tg_maint" class="rounded text-sky-500 focus:ring-0">
+                    <span>เมื่องานแจ้งซ่อม</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2 bg-white dark:bg-gray-700/50 rounded-lg border dark:border-gray-600 cursor-pointer">
+                    <input type="checkbox" id="config_tg_borrow" class="rounded text-sky-500 focus:ring-0">
+                    <span>เมื่อยืม-คืนพัสดุ</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-1">
+                <button type="button" onclick="testTelegramConnection()" class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition">
+                  <i class="fab fa-telegram-plane"></i> ทดสอบส่งข้อความ Telegram
+                </button>
+              </div>
+
+              <!-- คำแนะนำสั้นๆ -->
+              <div class="bg-white/80 dark:bg-gray-900/60 p-2.5 rounded-lg border border-dashed border-sky-300 dark:border-gray-600 text-[11px] text-gray-600 dark:text-gray-300 space-y-1">
+                <div class="font-bold text-sky-600 dark:text-sky-400"><i class="fas fa-question-circle mr-1"></i>วิธีตั้งค่า Telegram Bot:</div>
+                <p>1. ค้นหา <b>@BotFather</b> ใน Telegram แล้วพิมพ์ <code>/newbot</code> เพื่อสร้างบอทและรับ Token</p>
+                <p>2. ดึงบอทเข้ากลุ่มที่ต้องการรับการแจ้งเตือน แล้วพิมพ์ข้อความทักทาย</p>
+                <p>3. ค้นหา <b>@userinfobot</b> หรือ <b>@RawDataBot</b> เพื่อดู Chat ID ของกลุ่ม (กลุ่มมักขึ้นต้นด้วยเครื่องหมายลบ เช่น <code>-100...</code>)</p>
+              </div>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg transition hover:bg-blue-700 flex items-center justify-center gap-2 text-base">
+              <i class="fas fa-save"></i> บันทึกการตั้งค่าทั้งหมด
+            </button>
+          </div>
+        </div>
       
       </div>
       <footer class="mt-8 pt-4 pb-2 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full"><p class="text-[11px] font-medium text-gray-500 dark:text-gray-400"><i class="fas fa-code text-blue-500 mr-1"></i> พัฒนาโดย <strong>นายวีระยุทธ ประชุมรักษ์</strong><br>พนักงานคอมพิวเตอร์ ประจำศาลแขวงอุบลราชธานี</p></footer>
@@ -753,11 +869,55 @@
       });
     };
 
-    // ลงทะเบียน Service Worker
+    // ==========================================
+    // 🔄 ระบบตรวจจับและแจ้งเตือนอัปเดตแอปอัตโนมัติ (PWA Auto-Update)
+    // ==========================================
+    let newWorkerRegistration = null;
+
+    function promptAppUpdate(worker) {
+      newWorkerRegistration = worker;
+      Swal.fire({
+        title: '🚀 มีเวอร์ชันใหม่พร้อมใช้งาน!',
+        text: 'ระบบ AssetPro ได้รับการอัปเดตบนเซิร์ฟเวอร์เรียบร้อยแล้ว กดปุ่มด้านล่างเพื่อโหลดเวอร์ชันล่าสุดทันที',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'อัปเดตเดี๋ยวนี้',
+        cancelButtonText: 'ไว้คราวหน้า',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b'
+      }).then((result) => {
+        if (result.isConfirmed && newWorkerRegistration) {
+          newWorkerRegistration.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW register note:', err));
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+          if (reg.waiting) {
+            promptAppUpdate(reg.waiting);
+          }
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  promptAppUpdate(newWorker);
+                }
+              });
+            }
+          });
+        }).catch(err => console.log('SW register note:', err));
         updatePWAVisibility();
+      });
+
+      let isRefreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          window.location.reload();
+        }
       });
     }
 
@@ -831,7 +991,7 @@
     // ==========================================
     // 🖼️ ฟังก์ชันบีบอัดรูปภาพฝั่ง Client เพื่อความเร็วสูงสุดและประหยัดพื้นที่
     // ==========================================
-    function compressImage(file, maxWidth = 1280, quality = 0.75) {
+    function compressImage(file, maxWidth = 1280, quality = 0.75, watermarkText = '') {
       return new Promise((resolve, reject) => {
         if (!file) return resolve(null);
         if (!file.type || !file.type.startsWith('image/')) {
@@ -861,6 +1021,24 @@
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
+
+            // 📸 ประทับตราลายน้ำราชการ (Timestamp & Watermark)
+            if (watermarkText) {
+              const fontSize = Math.max(13, Math.round(width * 0.022));
+              const barHeight = Math.round(fontSize * 2.2);
+              const barY = height - barHeight;
+
+              ctx.save();
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+              ctx.fillRect(0, barY, width, barHeight);
+
+              ctx.fillStyle = '#ffffff';
+              ctx.font = `600 ${fontSize}px Prompt, sans-serif`;
+              ctx.textBaseline = 'middle';
+              ctx.fillText(watermarkText, fontSize, barY + (barHeight / 2));
+              ctx.restore();
+            }
+
             resolve(canvas.toDataURL('image/jpeg', quality));
           };
           img.onerror = () => resolve(e.target.result);
@@ -1748,6 +1926,98 @@
       problemBody.innerHTML = htmlProblems;
     };
 
+    // ==========================================
+    // 📊 ส่งออกข้อมูลพัสดุเป็น Excel (.xlsx) และ CSV รองรับภาษาไทย 100%
+    // ==========================================
+    window.exportAssetsExcel = function() {
+      const dataToExport = (filteredAssetsArray && filteredAssetsArray.length > 0) ? filteredAssetsArray : globalData.assets;
+      if (!dataToExport || dataToExport.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลสำหรับส่งออก', 'warning');
+      }
+
+      if (typeof XLSX === 'undefined') {
+        return exportAssetsCSV();
+      }
+
+      const rows = dataToExport.map((a, idx) => ({
+        'ลำดับ': idx + 1,
+        'รหัสพัสดุ': a.AssetID || '',
+        'ลักษณะ/คุณสมบัติ': a.Name || '',
+        'รุ่น/ยี่ห้อ': a.Brand || '',
+        'สถานที่ตั้ง': a.Location || '',
+        'สภาพพัสดุ': a.Status || 'ปกติ',
+        'ผู้ตรวจนับ': a.Inspector || '',
+        'วันที่ตรวจ': a.InspectDate || '',
+        'รอบการตรวจ': a.InspectRound || '',
+        'สถานะการยืม': a.BorrowStatus || 'ว่าง',
+        'ผู้ยืม': a.Borrower || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 20 },
+        { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 18 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'บัญชีครุภัณฑ์');
+      const filename = `AssetPro_ศาลแขวงอุบล_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    };
+
+    window.exportAssetsCSV = function() {
+      const dataToExport = (filteredAssetsArray && filteredAssetsArray.length > 0) ? filteredAssetsArray : globalData.assets;
+      if (!dataToExport || dataToExport.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลสำหรับส่งออก', 'warning');
+      }
+
+      let csv = "\uFEFF"; // UTF-8 BOM
+      csv += "ลำดับ,รหัสพัสดุ,ลักษณะ,ยี่ห้อ,สถานที่ตั้ง,สภาพพัสดุ,ผู้ตรวจนับ,วันที่ตรวจ,รอบการตรวจ,การยืม,ผู้ยืม\n";
+      dataToExport.forEach((a, idx) => {
+        csv += `"${idx + 1}","${a.AssetID || ''}","${(a.Name || '').replace(/"/g, '""')}","${(a.Brand || '').replace(/"/g, '""')}","${(a.Location || '').replace(/"/g, '""')}","${a.Status || ''}","${a.Inspector || ''}","${a.InspectDate || ''}","${a.InspectRound || ''}","${a.BorrowStatus || ''}","${(a.Borrower || '').replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `AssetPro_ศาลแขวงอุบล_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    window.exportReportExcel = function() {
+      const filterVal = document.getElementById('report-filter').value;
+      const locFilterVal = document.getElementById('report-location-filter').value || 'all';
+      let exportData = globalData.assets;
+      if (locFilterVal !== 'all') exportData = exportData.filter(a => a.Location === locFilterVal);
+      if (filterVal !== 'all') exportData = exportData.filter(a => a.Status === filterVal);
+
+      if (exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export', 'warning');
+
+      if (typeof XLSX === 'undefined') return exportReportCSV();
+
+      const rows = exportData.map((a, idx) => ({
+        'ลำดับ': idx + 1,
+        'รหัสพัสดุ': a.AssetID || '',
+        'ลักษณะ/รายการ': a.Name || '',
+        'สถานที่ตั้ง': a.Location || '',
+        'สภาพพัสดุ': a.Status || '',
+        'ผู้ตรวจนับ': a.Inspector || '',
+        'วันที่ตรวจ': a.InspectDate || '',
+        'รอบการตรวจ': a.InspectRound || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 6 }, { wch: 22 }, { wch: 32 }, { wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 14 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'รายงานตรวจนับ');
+      const filename = `รายงานพัสดุ_${filterVal}_${locFilterVal !== 'all' ? locFilterVal : 'ทุกสถานที่'}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    };
+
     window.exportReportCSV = function() {
       const filterVal = document.getElementById('report-filter').value;
       const locFilterVal = document.getElementById('report-location-filter').value || 'all';
@@ -1756,37 +2026,246 @@
       if (filterVal !== 'all') exportData = exportData.filter(a => a.Status === filterVal);
 
       if (exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export', 'warning');
-      let csvContent = "data:text/csv;charset=utf-8,%EF%BB%BF";
-      csvContent += "รหัสพัสดุ,ลักษณะ,สถานที่ตั้ง,สภาพพัสดุ,ผู้รับผิดชอบ/ตรวจสอบ,วันที่ตรวจสอบ\n";
-      exportData.forEach(function(a) {
-        let row = `"${a.AssetID}","${a.Name}","${a.Location}","${a.Status}","${a.Inspector}","${a.InspectDate}"`;
-        csvContent += row + "\n";
+
+      let csv = "\uFEFF"; // UTF-8 BOM
+      csv += "ลำดับ,รหัสพัสดุ,ลักษณะ,สถานที่ตั้ง,สภาพพัสดุ,ผู้รับผิดชอบ/ตรวจสอบ,วันที่ตรวจสอบ\n";
+      exportData.forEach(function(a, idx) {
+        csv += `"${idx + 1}","${a.AssetID || ''}","${(a.Name || '').replace(/"/g, '""')}","${(a.Location || '').replace(/"/g, '""')}","${a.Status || ''}","${a.Inspector || ''}","${a.InspectDate || ''}"\n`;
       });
-      const encodedUri = encodeURI(csvContent);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Asset_Report_${filterVal}_${locFilterVal !== 'all' ? locFilterVal : ''}_${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.csv`);
+      link.href = URL.createObjectURL(blob);
+      link.download = `Asset_Report_${filterVal}_${locFilterVal !== 'all' ? locFilterVal : 'all'}_${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     };
 
+    // ==========================================
+    // 🎤 ค้นหาด้วยเสียงภาษาไทย (Voice Search)
+    // ==========================================
+    let voiceRecognition = null;
+    let isListeningVoice = false;
+
+    window.toggleVoiceSearch = function() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return Swal.fire('ไม่รองรับ', 'เบราว์เซอร์นี้ไม่รองรับการสั่งงานด้วยเสียง กรุณาใช้ Google Chrome หรือ Safari', 'info');
+      }
+
+      const icon = document.getElementById('voice-search-icon');
+      const label = document.getElementById('voice-search-label');
+      const searchInput = document.getElementById('searchInput');
+
+      if (isListeningVoice && voiceRecognition) {
+        voiceRecognition.stop();
+        return;
+      }
+
+      try {
+        voiceRecognition = new SpeechRecognition();
+        voiceRecognition.lang = 'th-TH';
+        voiceRecognition.continuous = false;
+        voiceRecognition.interimResults = false;
+
+        voiceRecognition.onstart = function() {
+          isListeningVoice = true;
+          if (icon) icon.className = 'fas fa-microphone text-red-500 animate-pulse';
+          if (label) label.innerText = 'กำลังฟัง...';
+        };
+
+        voiceRecognition.onresult = function(event) {
+          const transcript = event.results[0][0].transcript;
+          if (searchInput) {
+            searchInput.value = transcript;
+            filterTableAssets();
+          }
+          playScanBeep();
+        };
+
+        voiceRecognition.onerror = function(event) {
+          console.log('Voice recognition note: ', event.error);
+        };
+
+        voiceRecognition.onend = function() {
+          isListeningVoice = false;
+          if (icon) icon.className = 'fas fa-microphone';
+          if (label) label.innerText = 'พูดค้นหา';
+        };
+
+        voiceRecognition.start();
+      } catch(err) {
+        console.error('Voice search error:', err);
+      }
+    };
+
+    // ==========================================
+    // ⚙️ บันทึกการตั้งค่าระบบ & ทดสอบ Telegram
+    // ==========================================
     window.saveSettings = async function() {
       const roundText = document.getElementById('config_round').value.trim();
+      const tgToken = (document.getElementById('config_telegram_token') ? document.getElementById('config_telegram_token').value.trim() : '');
+      const tgChatId = (document.getElementById('config_telegram_chat_id') ? document.getElementById('config_telegram_chat_id').value.trim() : '');
+      const tgInspect = document.getElementById('config_tg_inspect') ? document.getElementById('config_tg_inspect').checked : false;
+      const tgMaint = document.getElementById('config_tg_maint') ? document.getElementById('config_tg_maint').checked : false;
+      const tgBorrow = document.getElementById('config_tg_borrow') ? document.getElementById('config_tg_borrow').checked : false;
+
       if (!roundText) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรอบการตรวจสอบ', 'warning');
-      showLoader('กำลังบันทึกตั้งค่า...');
+      showLoader('กำลังบันทึกการตั้งค่าระบบ...');
       try {
-        let res = await callAPI('apiSaveSettings', { roundText: roundText, user: currentUser ? currentUser.username : 'Admin' });
+        let res = await callAPI('apiSaveSettings', { 
+          roundText: roundText,
+          telegramToken: tgToken,
+          telegramChatId: tgChatId,
+          telegramNotifyInspect: tgInspect,
+          telegramNotifyMaint: tgMaint,
+          telegramNotifyBorrow: tgBorrow,
+          user: currentUser ? currentUser.username : 'Admin' 
+        });
         hideLoader();
         if (res.success) {
           Swal.fire('สำเร็จ', res.message, 'success');
           globalData.settings.round = roundText;
+          globalData.settings.telegramToken = tgToken;
+          globalData.settings.telegramChatId = tgChatId;
+          globalData.settings.telegramNotifyInspect = tgInspect;
+          globalData.settings.telegramNotifyMaint = tgMaint;
+          globalData.settings.telegramNotifyBorrow = tgBorrow;
           document.getElementById('display_round').innerText = roundText;
           fetchGlobalData();
+        } else {
+          Swal.fire('ผิดพลาด', res.message, 'error');
         }
-      } catch(e) {
+      } catch(err) {
         hideLoader();
-        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+        Swal.fire('ข้อผิดพลาด', err.toString(), 'error');
+      }
+    };
+
+    window.testTelegramConnection = async function() {
+      const token = document.getElementById('config_telegram_token') ? document.getElementById('config_telegram_token').value.trim() : '';
+      const chatId = document.getElementById('config_telegram_chat_id') ? document.getElementById('config_telegram_chat_id').value.trim() : '';
+
+      if (!token || !chatId) {
+        return Swal.fire('แจ้งเตือน', 'กรุณากรอก Telegram Bot Token และ Chat ID ก่อนทดสอบ', 'warning');
+      }
+
+      showLoader('กำลังส่งข้อความทดสอบเข้า Telegram...');
+      try {
+        let res = await callAPI('apiTestTelegram', { 
+          botToken: token, 
+          chatId: chatId, 
+          user: currentUser ? currentUser.username : 'Admin' 
+        });
+        hideLoader();
+        if (res.success) {
+          Swal.fire('เชื่อมต่อสำเร็จ!', res.message, 'success');
+        } else {
+          Swal.fire('การเชื่อมต่อล้มเหลว', res.message, 'error');
+        }
+      } catch(err) {
+        hideLoader();
+        Swal.fire('เกิดข้อผิดพลาด', err.toString(), 'error');
+      }
+    };
+
+    // ==========================================
+    // 🏢 ติดตามความคืบหน้ารายห้อง/สถานที่ (Location Audit Tracker)
+    // ==========================================
+    window.renderLocationTracker = function() {
+      const container = document.getElementById('location-progress-container');
+      const roundLabel = document.getElementById('location-tracker-round');
+      const statsLabel = document.getElementById('location-tracker-stats');
+      if (!container) return;
+
+      const currentRound = (globalData.settings && globalData.settings.round) || '';
+      if (roundLabel) roundLabel.innerText = currentRound;
+
+      if (!globalData.assets || globalData.assets.length === 0) {
+        container.innerHTML = '<div class="col-span-full text-center text-gray-400 py-6 text-sm">ยังไม่มีข้อมูลพัสดุ</div>';
+        return;
+      }
+
+      const locationMap = {};
+      globalData.assets.forEach(a => {
+        const loc = a.Location || 'ไม่ระบุสถานที่';
+        if (!locationMap[loc]) {
+          locationMap[loc] = { total: 0, done: 0, broken: 0 };
+        }
+        locationMap[loc].total++;
+        const isDone = (currentRound && a.InspectRound === currentRound) || (a.InspectDate && a.InspectDate.trim() !== '');
+        if (isDone) locationMap[loc].done++;
+        if (a.Status && (a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม'))) {
+          locationMap[loc].broken++;
+        }
+      });
+
+      const locKeys = Object.keys(locationMap);
+      if (statsLabel) statsLabel.innerText = `${locKeys.length} สถานที่`;
+
+      locKeys.sort((a, b) => {
+        const pctA = Math.round((locationMap[a].done / locationMap[a].total) * 100);
+        const pctB = Math.round((locationMap[b].done / locationMap[b].total) * 100);
+        if (pctA === 100 && pctB !== 100) return 1;
+        if (pctA !== 100 && pctB === 100) return -1;
+        return a.localeCompare(b, 'th');
+      });
+
+      let html = '';
+      locKeys.forEach(loc => {
+        const stat = locationMap[loc];
+        const pct = Math.round((stat.done / stat.total) * 100);
+        const isCompleted = pct === 100;
+        
+        let badgeColor = 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+        let barColor = 'bg-blue-600';
+        let statusIcon = '<i class="fas fa-hourglass-start text-blue-500"></i>';
+
+        if (isCompleted) {
+          badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+          barColor = 'bg-emerald-500';
+          statusIcon = '<i class="fas fa-check-circle text-emerald-500"></i>';
+        } else if (pct > 0) {
+          badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300';
+          barColor = 'bg-amber-500';
+          statusIcon = '<i class="fas fa-spinner fa-spin text-amber-500"></i>';
+        }
+
+        html += `
+          <div onclick="jumpToLocationAssets('${loc.replace(/'/g, "\\'")}')" class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border dark:border-gray-700 hover:shadow-md transition cursor-pointer hover:border-blue-400 group">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="min-w-0">
+                <h4 class="font-bold text-xs sm:text-sm text-gray-800 dark:text-white truncate group-hover:text-blue-600 transition" title="${loc}">
+                  <i class="fas fa-map-marker-alt text-red-500 mr-1 text-xs"></i>${loc}
+                </h4>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">ตรวจแล้ว ${stat.done}/${stat.total} ชิ้น</p>
+              </div>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full ${badgeColor} whitespace-nowrap flex items-center gap-1">
+                ${statusIcon} ${pct}%
+              </span>
+            </div>
+            
+            <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden mb-2">
+              <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-700/60">
+              <span>${stat.broken > 0 ? `<span class="text-amber-500 font-bold"><i class="fas fa-tools mr-0.5"></i>ชำรุด ${stat.broken}</span>` : 'ปกติทั้งหมด'}</span>
+              <span class="text-blue-500 font-bold group-hover:underline">ดูรายการ <i class="fas fa-arrow-right text-[8px]"></i></span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    };
+
+    window.jumpToLocationAssets = function(locationName) {
+      nav('assets');
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.value = locationName;
+        filterTableAssets();
       }
     };
 
@@ -2004,10 +2483,12 @@
         note: document.getElementById('f_note').value,
         imageBase64: null
       };
-      showLoader('กำลังประมวลผลรูปภาพ...');
+      showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
         if (fileInput.files.length > 0) {
-          data.imageBase64 = await compressImage(fileInput.files[0]);
+          const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} | ผู้ตรวจ: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddInspection', data);
       } catch(err) {
@@ -2028,10 +2509,12 @@
         imageBase64: null
       };
       if (!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
-      showLoader('กำลังประมวลผลรูปภาพ...');
+      showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
         if (fileInput.files.length > 0) {
-          data.imageBase64 = await compressImage(fileInput.files[0]);
+          const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
       } catch(err) {
@@ -2052,10 +2535,12 @@
         imageBase64: null
       };
       if (!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
-      showLoader('กำลังประมวลผลรูปภาพ...');
+      showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
         if (fileInput && fileInput.files.length > 0) {
-          data.imageBase64 = await compressImage(fileInput.files[0]);
+          const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
       } catch(err) {
@@ -2241,8 +2726,15 @@
       cleanConditions.forEach(cond => { reportFilter.innerHTML += `<option value="${cond}">${cond}</option>`; });
       reportFilter.value = currentReportFilter;
       
-      document.getElementById('config_round').value = globalData.settings.round || '';
-      document.getElementById('display_round').innerText = globalData.settings.round || '';
+      if (document.getElementById('config_round')) document.getElementById('config_round').value = globalData.settings.round || '';
+      if (document.getElementById('display_round')) document.getElementById('display_round').innerText = globalData.settings.round || '';
+      if (document.getElementById('config_telegram_token')) document.getElementById('config_telegram_token').value = globalData.settings.telegramToken || '';
+      if (document.getElementById('config_telegram_chat_id')) document.getElementById('config_telegram_chat_id').value = globalData.settings.telegramChatId || '';
+      if (document.getElementById('config_tg_inspect')) document.getElementById('config_tg_inspect').checked = !!globalData.settings.telegramNotifyInspect;
+      if (document.getElementById('config_tg_maint')) document.getElementById('config_tg_maint').checked = !!globalData.settings.telegramNotifyMaint;
+      if (document.getElementById('config_tg_borrow')) document.getElementById('config_tg_borrow').checked = !!globalData.settings.telegramNotifyBorrow;
+
+      renderLocationTracker();
       
       if (!document.getElementById('view-report').classList.contains('hidden')) renderReportView();
       if (!document.getElementById('view-print').classList.contains('hidden')) renderPrintTablePaginated(currentPrintPage);

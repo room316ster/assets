@@ -1,5 +1,5 @@
 // Service Worker for Asset Management Pro PWA
-const CACHE_NAME = 'asset-pro-pwa-v1';
+const CACHE_NAME = 'asset-pro-pwa-v5.2';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json'
@@ -23,6 +23,13 @@ self.addEventListener('activate', (event) => {
     })
   );
   self.clients.claim();
+});
+
+// ดักฟังข้อความจากหน้าเว็บเพื่อสั่งอัปเดต Service Worker ทันที
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (event) => {
