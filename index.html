@@ -47,9 +47,20 @@
       <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">ศาลแขวงอุบลราชธานี</p>
 
       <!-- ปุ่มติดตั้ง PWA หน้า Login -->
-      <button id="login-pwa-btn" onclick="installPWA()" class="hidden w-full mb-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-2 px-3 rounded-lg shadow-md hover:from-emerald-600 hover:to-teal-700 text-xs flex items-center justify-center gap-2 transform hover:scale-[1.02] transition">
-        <i class="fas fa-download text-yellow-300"></i> บันทึกแอปลงหน้าจอมือถือ
-      </button>
+      <div id="login-pwa-container" class="mb-4">
+        <button id="login-pwa-btn" type="button" onclick="installPWA()" class="w-full bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 text-white font-bold py-2.5 px-3 rounded-xl shadow-lg hover:from-emerald-600 hover:to-teal-700 text-xs flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-95 transition border border-emerald-400/30">
+          <i class="fas fa-mobile-screen-button text-yellow-300 text-sm animate-pulse"></i>
+          <span>บันทึกแอปลงหน้าจอมือถือ (Install App)</span>
+        </button>
+      </div>
+
+      <!-- แถบแนะนำกรณีเปิดจาก LINE -->
+      <div id="line-browser-alert" class="hidden mb-4 p-2.5 bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 rounded-xl text-left text-xs text-amber-800 dark:text-amber-200">
+        <div class="flex items-start gap-2">
+          <i class="fas fa-info-circle text-amber-500 mt-0.5"></i>
+          <span>หากเปิดผ่าน LINE แนะนำแตะ <b>(⋮)</b> หรือแชร์ ด้านขวาบน แล้วเลือก <b>"เปิดด้วยเบราว์เซอร์อื่น"</b> เพื่อติดตั้งแอปได้ราบรื่น</span>
+        </div>
+      </div>
 
       <div class="relative mb-3">
         <input type="text" id="username" placeholder="Username" class="w-full px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
@@ -102,7 +113,7 @@
       </div>
       
       <!-- ปุ่มติดตั้ง PWA ใน Sidebar -->
-      <div id="sidebar-pwa-container" class="hidden px-4 pt-3">
+      <div id="sidebar-pwa-container" class="px-4 pt-3">
         <button onclick="installPWA()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-2 px-3 rounded-xl shadow-md hover:from-emerald-600 hover:to-teal-700 text-xs flex items-center justify-center gap-2">
           <i class="fas fa-mobile-alt text-yellow-300"></i> ติดตั้งแอปลงมือถือ
         </button>
@@ -146,8 +157,8 @@
           </div>
           <div class="flex items-center gap-2">
             <!-- ปุ่มติดตั้ง PWA ใน Header -->
-            <button id="header-pwa-btn" onclick="installPWA()" class="hidden md:hidden bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow hover:bg-emerald-600 flex items-center gap-1">
-              <i class="fas fa-download"></i> โหลดแอป
+            <button id="header-pwa-btn" onclick="installPWA()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow hover:from-emerald-600 flex items-center gap-1.5 border border-emerald-300/40">
+              <i class="fas fa-download text-yellow-300"></i> <span class="hidden sm:inline">โหลดแอป</span><span class="sm:hidden">แอป</span>
             </button>
             <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="forceSyncOffline()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
             <button onclick="fetchGlobalData()" class="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm text-xs font-bold text-blue-700 dark:text-white hover:bg-blue-200 transition" title="รีเฟรชข้อมูล"><i class="fas fa-sync-alt"></i></button>
@@ -242,6 +253,35 @@
                     <li>กดเมนู <b>"จัดการผู้ใช้งาน"</b></li>
                     <li>หาชื่อคนที่ลืมรหัส แล้วกดปุ่มสีเหลือง <b>"รีเซ็ทรหัส"</b></li>
                     <li>ระบบจะสุ่มรหัสผ่านใหม่ตัวเลข 6 หลักขึ้นมาให้ และจะส่งเข้าอีเมลของเจ้าหน้าที่คนนั้นอัตโนมัติ</li>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 3: วิธีติดตั้งแอปลงบนมือถือ (PWA) -->
+            <div class="mt-8 border-t border-teal-200 dark:border-teal-800 pt-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl text-teal-700 dark:text-teal-300"><i class="fas fa-mobile-screen mr-2"></i>ส่วนที่ 3: วิธีบันทึกแอปลงหน้าจอมือถือ (PWA)</h3>
+                <button onclick="installPWA()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow hover:from-emerald-600 transition flex items-center gap-1">
+                  <i class="fas fa-download text-yellow-300"></i> กดติดตั้งตอนนี้
+                </button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-blue-50/60 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2"><i class="fab fa-apple mr-1"></i> สำหรับ iPhone / iPad (Safari)</h4>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>เปิดเว็บด้วย <b>Safari</b> (หากเปิดจาก LINE ให้กด ... แล้วเลือก "เปิดด้วยเบราว์เซอร์อื่น")</li>
+                    <li>แตะปุ่ม <b>แชร์ (Share 📤)</b> ที่แถบด้านล่างของหน้าจอ</li>
+                    <li>เลื่อนลงเลือก <b>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen ➕)</b></li>
+                    <li>แตะ <b>"เพิ่ม" (Add)</b> ที่มุมบนขวา</li>
+                  </ul>
+                </div>
+                <div class="bg-emerald-50/60 dark:bg-gray-800 p-4 rounded-lg border border-emerald-100 dark:border-gray-700">
+                  <h4 class="font-bold text-emerald-800 dark:text-emerald-300 mb-2"><i class="fab fa-android mr-1"></i> สำหรับ Android (Chrome)</h4>
+                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
+                    <li>แตะปุ่มสีเขียว <b>"บันทึกแอปลงหน้าจอมือถือ"</b> บนหน้าจอ</li>
+                    <li>หรือแตะปุ่มจุดสามจุด <b>(⋮)</b> ที่มุมขวาบนของเบราว์เซอร์</li>
+                    <li>เลือก <b>"ติดตั้งแอป" (Install)</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></li>
+                    <li>กดยืนยัน ไอคอนแอปจะไปอยู่ที่หน้าจอหลักทันที</li>
                   </ul>
                 </div>
               </div>
@@ -498,7 +538,7 @@
         <!-- VIEW: Add, Profile, Settings, Admin -->
         <div id="view-add" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-2xl mx-auto"><h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-plus mr-2"></i>ลงทะเบียนพัสดุใหม่</h2><div class="grid grid-cols-2 gap-4 text-sm md:text-base"><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รหัสพัสดุ</label><input type="text" id="a_id" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white font-mono font-bold text-blue-600 focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" placeholder="พิมพ์ตัวเลข..."></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">ลักษณะ/คุณสมบัติ</label><input type="text" id="a_name" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รุ่น/ยี่ห้อ</label><input type="text" id="a_brand" class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">สถานที่ตั้ง</label><input type="text" id="a_loc" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">วันที่ (ที่รับ)</label><input type="text" id="a_date" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพ</label><input type="file" id="a_img" accept="image/*" capture="environment" onchange="previewThumbnail(this, 'a_img_preview')" class="w-full p-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white text-sm"><div id="a_img_preview" class="hidden relative mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg border flex items-center justify-between"><img src="" class="h-14 w-14 object-cover rounded shadow" alt="Preview"><button onclick="clearImagePreview('a_img', 'a_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"><i class="fas fa-trash-alt mr-1"></i>ลบรูป</button></div></div></div><button type="button" onclick="submitAsset()" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-blue-700 transition">บันทึกข้อมูล</button></div></div>
         
-        <div id="view-profile" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto text-center"><div class="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg text-white mb-4"><i class="fas fa-user-edit text-5xl"></i></div><h2 class="font-bold text-2xl mb-1 dark:text-white">ข้อมูลส่วนตัว</h2><p class="text-blue-600 dark:text-blue-400 font-bold mb-6" id="profile_role">Role</p><div class="text-left bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border dark:border-gray-700 text-sm mb-6 dark:text-gray-200 space-y-4"><div><label class="block font-bold mb-1 text-gray-600 dark:text-gray-400">Username</label><input type="text" id="prof_username" readonly class="w-full p-2 rounded border bg-gray-200 dark:bg-gray-700 text-gray-500 font-mono"></div><div><label class="block font-bold mb-1">ชื่อ-นามสกุล</label><input type="text" id="prof_name" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div><label class="block font-bold mb-1">อีเมล</label><input type="email" id="prof_email" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div class="border-t border-gray-300 dark:border-gray-600 pt-4 mt-2"><label class="block font-bold mb-1 text-red-500"><i class="fas fa-key mr-1"></i>เปลี่ยนรหัสผ่าน</label><div class="relative"><input type="password" id="prof_password" class="w-full p-2 pr-10 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500" placeholder="ปล่อยว่างไว้หากไม่เปลี่ยน"><button type="button" onclick="togglePasswordVisibility('prof_password', this)" class="absolute right-3 top-2.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button></div></div></div><button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition mb-3"><i class="fas fa-save mr-2"></i> บันทึกข้อมูลส่วนตัว</button></div></div>
+        <div id="view-profile" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto text-center"><div class="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg text-white mb-4"><i class="fas fa-user-edit text-5xl"></i></div><h2 class="font-bold text-2xl mb-1 dark:text-white">ข้อมูลส่วนตัว</h2><p class="text-blue-600 dark:text-blue-400 font-bold mb-6" id="profile_role">Role</p><div class="text-left bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border dark:border-gray-700 text-sm mb-6 dark:text-gray-200 space-y-4"><div><label class="block font-bold mb-1 text-gray-600 dark:text-gray-400">Username</label><input type="text" id="prof_username" readonly class="w-full p-2 rounded border bg-gray-200 dark:bg-gray-700 text-gray-500 font-mono"></div><div><label class="block font-bold mb-1">ชื่อ-นามสกุล</label><input type="text" id="prof_name" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div><label class="block font-bold mb-1">อีเมล</label><input type="email" id="prof_email" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div class="border-t border-gray-300 dark:border-gray-600 pt-4 mt-2"><label class="block font-bold mb-1 text-red-500"><i class="fas fa-key mr-1"></i>เปลี่ยนรหัสผ่าน</label><div class="relative"><input type="password" id="prof_password" class="w-full p-2 pr-10 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500" placeholder="ปล่อยว่างไว้หากไม่เปลี่ยน"><button type="button" onclick="togglePasswordVisibility('prof_password', this)" class="absolute right-3 top-2.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button></div></div></div><button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition mb-3"><i class="fas fa-save mr-2"></i> บันทึกข้อมูลส่วนตัว</button><button onclick="installPWA()" type="button" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow hover:from-emerald-600 transition mb-3"><i class="fas fa-mobile-alt text-yellow-300"></i> บันทึกแอปลงหน้าจอมือถือ (Install PWA)</button></div></div>
         
         <div id="view-admin_users" class="view hidden"><div class="glass p-4 md:p-6 rounded-xl shadow"><div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-users-cog mr-2 text-purple-600"></i> จัดการผู้ใช้งานในระบบ</h2><button onclick="loadAdminUsers()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button></div><div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm"><thead><tr class="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300"><th class="p-3 border-b dark:border-gray-700">Username</th><th class="p-3 border-b dark:border-gray-700">ชื่อ-นามสกุล</th><th class="p-3 border-b dark:border-gray-700">อีเมล</th><th class="p-3 border-b dark:border-gray-700">สิทธิ์</th><th class="p-3 border-b dark:border-gray-700 text-center">จัดการ</th></tr></thead><tbody id="admin-users-body"></tbody></table></div></div></div>
         
@@ -544,55 +584,185 @@
     // ==========================================
     let deferredInstallPrompt = null;
 
+    // ตรวจสอบว่าเปิดใช้งานในโหมดแอปที่ติดตั้งแล้ว (Standalone) หรือไม่
+    function isStandaloneApp() {
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+             (window.navigator.standalone === true) ||
+             document.referrer.includes('android-app://');
+    }
+
+    // อัปเดตการแสดงผลปุ่มติดตั้ง PWA
+    function updatePWAVisibility() {
+      const isStandalone = isStandaloneApp();
+      const loginPwa = document.getElementById('login-pwa-container');
+      const headerPwa = document.getElementById('header-pwa-btn');
+      const sidebarPwa = document.getElementById('sidebar-pwa-container');
+      const lineAlert = document.getElementById('line-browser-alert');
+
+      const ua = navigator.userAgent || '';
+      const isLine = /Line/i.test(ua);
+      if (lineAlert) {
+        if (isLine && !isStandalone) lineAlert.classList.remove('hidden');
+        else lineAlert.classList.add('hidden');
+      }
+
+      if (isStandalone) {
+        // หากติดตั้งและเปิดจากไอคอนแอปบนหน้าจอแล้ว ให้ซ่อนปุ่มติดตั้งเพื่อความสะอาดตา
+        if (loginPwa) loginPwa.style.display = 'none';
+        if (headerPwa) headerPwa.style.display = 'none';
+        if (sidebarPwa) sidebarPwa.style.display = 'none';
+      } else {
+        // หากเปิดผ่านเบราว์เซอร์ปกติ ให้แสดงปุ่มให้ผู้ใช้เห็นชัดเจน
+        if (loginPwa) loginPwa.style.display = 'block';
+        if (headerPwa) headerPwa.style.display = 'inline-flex';
+        if (sidebarPwa) sidebarPwa.style.display = 'block';
+      }
+    }
+
+    // ดักจับ Event เมื่อ Android/Chrome พร้อมให้ติดตั้ง
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
-      // แสดงปุ่มติดตั้งแอป
-      const loginPwaBtn = document.getElementById('login-pwa-btn');
-      const headerPwaBtn = document.getElementById('header-pwa-btn');
-      const sidebarPwaContainer = document.getElementById('sidebar-pwa-container');
-      if (loginPwaBtn) loginPwaBtn.classList.remove('hidden');
-      if (headerPwaBtn) headerPwaBtn.classList.remove('hidden');
-      if (sidebarPwaContainer) sidebarPwaContainer.classList.remove('hidden');
+      updatePWAVisibility();
+    });
+
+    // เมื่อติดตั้งเรียบร้อยแล้ว
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      updatePWAVisibility();
+      Swal.fire({
+        title: 'ติดตั้งสำเร็จ!',
+        text: 'AssetPro ได้รับการติดตั้งลงบนหน้าจอมือถือของคุณเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonColor: '#10b981'
+      });
     });
 
     window.installPWA = async function() {
+      const ua = navigator.userAgent || '';
+      const isLine = /Line/i.test(ua);
+      const isFB = /FBAN|FBAV|Instagram|Messenger/i.test(ua);
+
+      // 1. กรณีเปิดอยู่ในแอป LINE หรือ Facebook
+      if (isLine || isFB) {
+        Swal.fire({
+          title: 'เปิดด้วยเบราว์เซอร์หลัก',
+          html: `
+            <div class="text-left text-sm space-y-3">
+              <p class="text-amber-600 font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ตรวจพบการเปิดผ่านแอป ${isLine ? 'LINE' : 'Facebook'}</p>
+              <p class="text-gray-600 dark:text-gray-300">แอป LINE/Facebook ไม่อนุญาตให้ติดตั้งแอปลงเครื่องโดยตรง กรุณาเปิดด้วยเบราว์เซอร์หลักดังนี้:</p>
+              <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl border dark:border-gray-700 space-y-2">
+                <div class="flex items-center gap-2"><span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">1</span> <span>แตะปุ่ม <b>จุดสามจุด (⋮ หรือ ...)</b> หรือปุ่มแชร์ ด้านขวาบน</span></div>
+                <div class="flex items-center gap-2"><span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">2</span> <span>เลือก <b>"เปิดด้วยเบราว์เซอร์อื่น"</b> (Open in Safari / Chrome)</span></div>
+                <div class="flex items-center gap-2"><span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold">3</span> <span>กดปุ่มติดตั้งแอปลงหน้าจอมือถือได้ทันที</span></div>
+              </div>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'เข้าใจแล้ว',
+          confirmButtonColor: '#2563eb'
+        });
+        return;
+      }
+
+      // 2. กรณี Android Chrome ที่มี Prompt พร้อม
       if (deferredInstallPrompt) {
         deferredInstallPrompt.prompt();
         const { outcome } = await deferredInstallPrompt.userChoice;
         if (outcome === 'accepted') {
-          Swal.fire('สำเร็จ', 'กำลังติดตั้ง AssetPro ลงหน้าจอมือถือ...', 'success');
+          Swal.fire({
+            title: 'กำลังติดตั้ง...',
+            text: 'ระบบกำลังนำไอคอนแอปไปวางบนหน้าจอหลักของคุณ',
+            icon: 'success',
+            confirmButtonColor: '#10b981'
+          });
         }
         deferredInstallPrompt = null;
-      } else {
-        // แนะนำการติดตั้งสำหรับ iOS (Safari) หรือเบราว์เซอร์อื่น
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
-          Swal.fire({
-            title: 'วิธีติดตั้งบน iPhone / iPad',
-            html: '<div class="text-left text-sm space-y-2"><p>1. แตะที่ปุ่ม <b>แชร์ (Share 📤)</b> ด้านล่างของ Safari</p><p>2. เลื่อนลงแล้วเลือก <b>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen ➕)</b></p><p>3. แตะ <b>"เพิ่ม" (Add)</b> ที่มุมขวาบน</p></div>',
-            icon: 'info',
-            confirmButtonText: 'เข้าใจแล้ว',
-            confirmButtonColor: '#2563eb'
-          });
-        } else {
-          Swal.fire({
-            title: 'วิธีบันทึกแอปลงหน้าจอ',
-            html: '<div class="text-left text-sm space-y-2"><p>แตะที่เมนูจุดสามจุด <b>(⋮)</b> ของเบราว์เซอร์</p><p>แล้วเลือก <b>"ติดตั้งแอป" (Install App)</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></p></div>',
-            icon: 'info',
-            confirmButtonText: 'ตกลง',
-            confirmButtonColor: '#2563eb'
-          });
-        }
+        updatePWAVisibility();
+        return;
       }
+
+      // 3. กรณี iOS Safari (iPhone / iPad) - Apple ไม่รองรับ beforeinstallprompt ต้องสอนผู้ใช้กด Share
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (isIOS) {
+        Swal.fire({
+          title: 'วิธีติดตั้งบน iPhone / iPad',
+          html: `
+            <div class="text-left text-sm space-y-3">
+              <div class="flex items-start gap-3 bg-blue-50 dark:bg-gray-800 p-3 rounded-xl border border-blue-200 dark:border-gray-700">
+                <span class="text-2xl">📤</span>
+                <div>
+                  <p class="font-bold text-blue-700 dark:text-blue-300">ขั้นตอนที่ 1</p>
+                  <p class="text-gray-700 dark:text-gray-300">แตะที่ปุ่ม <b>แชร์ (Share 📤)</b> ที่แถบเมนูด้านล่างของ Safari</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-teal-50 dark:bg-gray-800 p-3 rounded-xl border border-teal-200 dark:border-gray-700">
+                <span class="text-2xl">➕</span>
+                <div>
+                  <p class="font-bold text-teal-700 dark:text-teal-300">ขั้นตอนที่ 2</p>
+                  <p class="text-gray-700 dark:text-gray-300">เลื่อนลงแล้วเลือก <b>"เพิ่มไปยังหน้าจอโฮม"</b><br><span class="text-xs text-gray-500">(Add to Home Screen ➕)</span></p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-emerald-50 dark:bg-gray-800 p-3 rounded-xl border border-emerald-200 dark:border-gray-700">
+                <span class="text-2xl">✅</span>
+                <div>
+                  <p class="font-bold text-emerald-700 dark:text-emerald-300">ขั้นตอนที่ 3</p>
+                  <p class="text-gray-700 dark:text-gray-300">แตะ <b>"เพิ่ม" (Add)</b> ที่มุมบนขวา เป็นอันเสร็จสิ้น!</p>
+                </div>
+              </div>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'เข้าใจแล้ว',
+          confirmButtonColor: '#2563eb'
+        });
+        return;
+      }
+
+      // 4. กรณี Android Chrome หรือเบราว์เซอร์อื่น (เมื่อ prompt ยังไม่เด้งอัตโนมัติ)
+      Swal.fire({
+        title: 'วิธีติดตั้งลงหน้าจอมือถือ',
+        html: `
+          <div class="text-left text-sm space-y-3">
+            <div class="flex items-start gap-3 bg-emerald-50 dark:bg-gray-800 p-3 rounded-xl border border-emerald-200 dark:border-gray-700">
+              <span class="text-2xl">⋮</span>
+              <div>
+                <p class="font-bold text-emerald-700 dark:text-emerald-300">ขั้นตอนที่ 1</p>
+                <p class="text-gray-700 dark:text-gray-300">แตะปุ่ม <b>จุดสามจุด (⋮)</b> ที่มุมขวาบนของเบราว์เซอร์ Chrome</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 bg-teal-50 dark:bg-gray-800 p-3 rounded-xl border border-teal-200 dark:border-gray-700">
+              <span class="text-2xl">📲</span>
+              <div>
+                <p class="font-bold text-teal-700 dark:text-teal-300">ขั้นตอนที่ 2</p>
+                <p class="text-gray-700 dark:text-gray-300">เลือก <b>"ติดตั้งแอป" (Install app)</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 bg-blue-50 dark:bg-gray-800 p-3 rounded-xl border border-blue-200 dark:border-gray-700">
+              <span class="text-2xl">🚀</span>
+              <div>
+                <p class="font-bold text-blue-700 dark:text-blue-300">ขั้นตอนที่ 3</p>
+                <p class="text-gray-700 dark:text-gray-300">กดยืนยัน ไอคอนแอปจะไปอยู่ที่หน้าจอมือถือทันที</p>
+              </div>
+            </div>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#2563eb'
+      });
     };
 
     // ลงทะเบียน Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW register note:', err));
+        updatePWAVisibility();
       });
     }
+
+    // ตรวจสอบและแสดงปุ่ม PWA ทันที
+    setTimeout(updatePWAVisibility, 100);
 
     // ==========================================
     // 🔊 เสียงสังเคราะห์ "ตี๊ด" (Web Audio API) และสั่นเมื่อสแกนติด
