@@ -140,7 +140,7 @@
         <a href="#" id="menu_admin_assign" onclick="nav('assign')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-pink-600 dark:text-pink-400 font-bold mt-1"><i class="fas fa-tasks w-6"></i> มอบหมายงาน (Admin)</a>
         <a href="#" id="menu_admin_users" onclick="nav('admin_users')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-purple-600 dark:text-purple-400 font-bold mt-1"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</a>
         <a href="#" id="menu_admin_logs" onclick="nav('admin_logs')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-orange-600 dark:text-orange-400 font-bold mt-1"><i class="fas fa-history w-6"></i> ประวัติระบบ (Logs)</a>
-        <a href="#" onclick="nav('settings')" class="block px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200 border border-dashed border-gray-400 mt-2"><i class="fas fa-cog w-6"></i> ตั้งค่าระบบ</a>
+        <a href="#" id="menu_settings" onclick="nav('settings')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-blue-600 dark:text-blue-400 font-bold border border-dashed border-gray-400 mt-2"><i class="fas fa-cog w-6"></i> ตั้งค่าระบบ</a>
       </nav>
       <div class="p-4 border-t border-gray-200 dark:border-gray-700">
         <button onclick="toggleDarkMode()" class="w-full mb-2 px-4 py-2 rounded-lg bg-gray-200/50 dark:bg-gray-700/50 text-sm font-bold dark:text-white hover:bg-gray-300 transition"><i class="fas fa-moon"></i> สลับโหมด</button>
@@ -163,7 +163,10 @@
             </button>
             <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="forceSyncOffline()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
             <button onclick="fetchGlobalData()" class="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm text-xs font-bold text-blue-700 dark:text-white hover:bg-blue-200 transition" title="รีเฟรชข้อมูล"><i class="fas fa-sync-alt"></i></button>
-            <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')"><span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span></div>
+            <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')">
+              <span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span>
+              <span id="user-role-badge" class="text-[11px] px-2 py-0.5 rounded-full font-bold"></span>
+            </div>
           </div>
         </header>
 
@@ -1148,7 +1151,18 @@
       document.getElementById('prof_name').value = currentUser.name; 
       document.getElementById('prof_email').value = currentUser.email || '';
       
-      const adminElements = ['menu_admin_assign', 'menu_admin_users', 'menu_admin_logs'];
+      const roleBadge = document.getElementById('user-role-badge');
+      if (roleBadge) {
+        if (currentUser.role === 'Admin') {
+          roleBadge.innerHTML = '<i class="fas fa-crown text-amber-500 mr-1"></i>Admin';
+          roleBadge.className = 'text-[11px] px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800';
+        } else {
+          roleBadge.innerHTML = '<i class="fas fa-user text-blue-500 mr-1"></i>User';
+          roleBadge.className = 'text-[11px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+        }
+      }
+
+      const adminElements = ['menu_admin_assign', 'menu_admin_users', 'menu_admin_logs', 'menu_settings'];
       if (currentUser.role === 'Admin') {
         adminElements.forEach(id => {
           const el = document.getElementById(id);
@@ -1212,6 +1226,16 @@
     };
     
     window.nav = function(viewId) {
+      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+      if (adminOnlyViews.includes(viewId) && (!currentUser || currentUser.role !== 'Admin')) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีสิทธิ์เข้าถึง',
+          text: 'เมนูนี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น'
+        });
+        nav('dashboard');
+        return;
+      }
       document.querySelectorAll('.view').forEach(function(v) { v.classList.add('hidden'); });
       const targetView = document.getElementById('view-' + viewId);
       if (targetView) targetView.classList.remove('hidden');
@@ -1577,15 +1601,24 @@
           let html = '';
           res.users.forEach(u => {
             let isCurrent = u.username === currentUser.username;
-            let resetBtn = isCurrent ? '<span class="text-xs text-gray-400">บัญชีปัจจุบัน</span>' :
-              `<button onclick="resetPasswordForUser('${u.username}')" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-yellow-600 transition shadow"><i class="fas fa-key mr-1"></i>รีเซ็ทรหัส</button>`;
-            let roleBadge = u.role === 'Admin' ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700">Admin</span>' : '<span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">User</span>';
+            let actionBtns = isCurrent ? '<span class="text-xs text-gray-400">บัญชีปัจจุบัน</span>' :
+              `<div class="flex items-center justify-center gap-1.5 flex-wrap">
+                <button onclick="changeUserRole('${u.username}', '${u.role}')" class="${u.role === 'Admin' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-purple-600 hover:bg-purple-700'} text-white px-2.5 py-1 rounded text-xs font-bold transition shadow" title="สลับสิทธิ์การใช้งาน">
+                  <i class="fas fa-user-shield mr-1"></i>${u.role === 'Admin' ? 'ปรับเป็น User' : 'ตั้งเป็น Admin'}
+                </button>
+                <button onclick="resetPasswordForUser('${u.username}')" class="bg-yellow-500 text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-yellow-600 transition shadow" title="รีเซ็ตรหัสผ่าน">
+                  <i class="fas fa-key mr-1"></i>รีเซ็ทรหัส
+                </button>
+              </div>`;
+            let roleBadge = u.role === 'Admin' 
+              ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800"><i class="fas fa-crown text-amber-500 mr-1"></i>Admin</span>' 
+              : '<span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"><i class="fas fa-user text-blue-500 mr-1"></i>User</span>';
             html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm dark:text-gray-200">
-              <td class="p-3 font-mono font-bold text-purple-600">${u.username}</td>
+              <td class="p-3 font-mono font-bold text-purple-600 dark:text-purple-400">${u.username}</td>
               <td class="p-3">${u.name}</td>
-              <td class="p-3 text-gray-500">${u.email}</td>
+              <td class="p-3 text-gray-500 dark:text-gray-400">${u.email}</td>
               <td class="p-3">${roleBadge}</td>
-              <td class="p-3 text-center">${resetBtn}</td>
+              <td class="p-3 text-center">${actionBtns}</td>
             </tr>`;
           });
           tbody.innerHTML = html;
@@ -1595,6 +1628,42 @@
       } catch(e) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">${e.message}</td></tr>`;
       }
+    };
+
+    window.changeUserRole = function(targetUsername, currentRole) {
+      const newRole = currentRole === 'Admin' ? 'User' : 'Admin';
+      const confirmColor = newRole === 'Admin' ? '#7e22ce' : '#2563eb';
+      Swal.fire({
+        title: 'เปลี่ยนสิทธิ์การใช้งาน?',
+        text: `คุณต้องการเปลี่ยนสิทธิ์ของ "${targetUsername}" จาก "${currentRole}" เป็น "${newRole}" หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: confirmColor,
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: `ยืนยันเป็น ${newRole}`,
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          showLoader('กำลังบันทึกการเปลี่ยนสิทธิ์...');
+          try {
+            let res = await callAPI('apiChangeUserRole', { 
+              adminUsername: currentUser.username, 
+              targetUsername: targetUsername, 
+              newRole: newRole 
+            });
+            hideLoader();
+            if (res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              loadAdminUsers();
+            } else {
+              Swal.fire('ล้มเหลว', res.message, 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
     };
 
     window.resetPasswordForUser = function(targetUsername) {
