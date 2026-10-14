@@ -632,9 +632,14 @@
               <span>มอบหมายงานทันที (<span id="assign-btn-count">0</span> สถานที่)</span>
             </button>
 
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
               <h3 class="font-bold text-gray-800 dark:text-white text-sm"><i class="fas fa-list-alt text-pink-500 mr-1"></i> สรุปการมอบหมายงานรอบปัจจุบัน</h3>
-              <span class="text-xs text-gray-500" id="assign-summary-count">ทั้งหมด 0 รายการ</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500 font-medium" id="assign-summary-count">ทั้งหมด 0 รายการ</span>
+                <button type="button" onclick="deleteAllAssignments()" id="btn-delete-all-assign" class="hidden text-[11px] font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-2 py-0.5 rounded-lg transition flex items-center gap-1 shadow-2xs">
+                  <i class="fas fa-trash-alt"></i> ล้างทั้งหมด
+                </button>
+              </div>
             </div>
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
@@ -644,6 +649,7 @@
                     <th class="p-3 border-b dark:border-gray-700 text-center">จำนวนพัสดุในห้อง</th>
                     <th class="p-3 border-b dark:border-gray-700">ผู้รับผิดชอบตรวจ</th>
                     <th class="p-3 border-b dark:border-gray-700">ผู้มอบหมาย</th>
+                    <th class="p-3 border-b dark:border-gray-700 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody id="assign-table-body"></tbody>
@@ -1836,13 +1842,17 @@
 
       const tbody = document.getElementById('assign-table-body');
       const countEl = document.getElementById('assign-summary-count');
+      const btnDelAll = document.getElementById('btn-delete-all-assign');
       if (tbody) {
         let htmlRows = '';
         if (globalData.assignments) {
           let currentAssignments = globalData.assignments.filter(a => a.Round === currentRound);
           if (countEl) countEl.innerText = `ทั้งหมด ${currentAssignments.length} รายการ`;
+          if (btnDelAll) {
+            btnDelAll.classList.toggle('hidden', currentAssignments.length === 0);
+          }
           if (currentAssignments.length === 0) {
-            htmlRows = '<tr><td colspan="4" class="p-4 text-center text-gray-500">ยังไม่มีการมอบหมายงานในรอบนี้</td></tr>';
+            htmlRows = '<tr><td colspan="5" class="p-4 text-center text-gray-500">ยังไม่มีการมอบหมายงานในรอบนี้</td></tr>';
           } else {
             currentAssignments.forEach(a => {
               let uName = (globalData.users || []).find(u => u.username === a.AssignedTo)?.name || a.AssignedTo;
@@ -1853,6 +1863,16 @@
                   <td class="p-3 text-center font-bold text-gray-600 dark:text-gray-300">${locCount}</td>
                   <td class="p-3 font-medium"><i class="fas fa-user-check text-green-500 mr-1 text-xs"></i>${uName}</td>
                   <td class="p-3 text-xs text-gray-500">${a.AssignedBy || 'แอดมิน'}</td>
+                  <td class="p-3 text-center">
+                    <div class="inline-flex items-center gap-1.5">
+                      <button type="button" onclick="editSingleAssignment('${a.Location}', '${a.AssignedTo}')" class="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="เปลี่ยนผู้รับผิดชอบ">
+                        <i class="fas fa-user-edit"></i> <span class="hidden sm:inline">เปลี่ยนผู้ตรวจ</span>
+                      </button>
+                      <button type="button" onclick="deleteSingleAssignment('${a.Location}')" class="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="ยกเลิกการมอบหมาย">
+                        <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">ลบ</span>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               `;
             });
@@ -1860,6 +1880,136 @@
         }
         tbody.innerHTML = htmlRows;
       }
+    };
+
+    window.editSingleAssignment = function(locName, currentAssignedTo) {
+      if (!globalData.users || globalData.users.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่พบรายชื่อผู้ใช้ในระบบ', 'warning');
+      }
+
+      let optionsHtml = '';
+      globalData.users.forEach(u => {
+        const isSelected = u.username === currentAssignedTo ? 'selected' : '';
+        optionsHtml += `<option value="${u.username}" ${isSelected}>${u.name} (${u.username})</option>`;
+      });
+
+      Swal.fire({
+        title: '✏️ แก้ไขผู้รับผิดชอบ',
+        html: `
+          <div class="text-left text-xs mb-3 space-y-1">
+            <p class="text-gray-500">สถานที่ตั้ง:</p>
+            <p class="text-base font-bold text-pink-600"><i class="fas fa-map-marker-alt mr-1"></i>${locName}</p>
+          </div>
+          <div class="text-left text-xs font-bold mb-1 text-gray-700 dark:text-gray-300">เลือกผู้รับผิดชอบใหม่:</div>
+          <select id="swal_edit_assignee" class="swal2-select !w-full !m-0 text-sm">
+            ${optionsHtml}
+          </select>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save mr-1"></i> บันทึกการเปลี่ยนแปลง',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ec4899',
+        preConfirm: () => {
+          const newAssignee = document.getElementById('swal_edit_assignee').value;
+          if (!newAssignee) {
+            Swal.showValidationMessage('กรุณาเลือกผู้รับผิดชอบ');
+            return false;
+          }
+          return newAssignee;
+        }
+      }).then(async (result) => {
+        if (result.isConfirmed && result.value) {
+          const newAssignee = result.value;
+          showLoader(`กำลังเปลี่ยนผู้รับผิดชอบเป็น ${newAssignee}...`);
+          try {
+            let res = await callAPI('apiAssignLocation', {
+              round: globalData.settings.round,
+              location: locName,
+              locations: [locName],
+              assignTo: newAssignee,
+              user: currentUser.username
+            });
+            hideLoader();
+            if (res && res.success) {
+              Swal.fire('สำเร็จ', `เปลี่ยนผู้รับผิดชอบสถานที่ "${locName}" เรียบร้อยแล้ว`, 'success');
+              fetchGlobalData();
+            } else {
+              Swal.fire('ล้มเหลว', res ? res.message : 'ไม่สามารถแก้ไขได้', 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
+    };
+
+    window.deleteSingleAssignment = function(locName) {
+      Swal.fire({
+        title: 'ยืนยันการลบ?',
+        html: `คุณต้องการยกเลิกการมอบหมายสถานที่ <b class="text-pink-600">"${locName}"</b> ใช่หรือไม่?<br><span class="text-xs text-gray-400">ผู้ตรวจสอบจะไม่เห็นสถานที่นี้ในรายการตรวจอีกต่อไป</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-trash-alt mr-1"></i> ใช่, ลบการมอบหมาย',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          showLoader(`กำลังลบการมอบหมาย ${locName}...`);
+          try {
+            let res = await callAPI('apiDeleteAssignment', {
+              round: globalData.settings.round,
+              location: locName,
+              user: currentUser.username
+            });
+            hideLoader();
+            if (res && res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              fetchGlobalData();
+            } else {
+              Swal.fire('ล้มเหลว', res ? res.message : 'ไม่สามารถลบได้', 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
+    };
+
+    window.deleteAllAssignments = function() {
+      Swal.fire({
+        title: '⚠️ ลบการมอบหมายทั้งหมด?',
+        html: `คุณต้องการยกเลิกการมอบหมายงาน<b>ทั้งหมด</b>ในรอบ <b>${globalData.settings.round}</b> ใช่หรือไม่?<br><span class="text-xs text-red-500">การดำเนินการนี้จะล้างข้อมูลการมอบหมายทั้งหมดในรอบนี้</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-trash-alt mr-1"></i> ยืนยันลบทั้งหมด',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          showLoader('กำลังลบการมอบหมายทั้งหมด...');
+          try {
+            let res = await callAPI('apiDeleteAssignment', {
+              round: globalData.settings.round,
+              location: '__ALL__',
+              user: currentUser.username
+            });
+            hideLoader();
+            if (res && res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              fetchGlobalData();
+            } else {
+              Swal.fire('ล้มเหลว', res ? res.message : 'ไม่สามารถลบได้', 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
     };
 
     window.updateAssignSelectedCount = function() {
