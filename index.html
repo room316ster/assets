@@ -14,14 +14,48 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath fill='%23ffffff' d='M256 96L80 184l176 88 176-88-176-88zm0 184l-160-80v120l160 80 160-80V200l-160 80z'/%3E%3C/svg%3E">
   
   <title>Asset Management Pro (ERP) - ศาลแขวงอุบลราชธานี</title>
+  
+  <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>window.tailwind = { config: { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] } } } } };</script>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@zxing/library@latest/umd/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';">
+  
+  <!-- Core Libraries with Multi-CDN Fallbacks (jsDelivr -> CDNJS / unpkg) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';document.head.appendChild(s);"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.8/sweetalert2.all.min.js';document.head.appendChild(s);"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';document.head.appendChild(s);"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
+
+  <!-- Universal Polyfill & Failsafe Fallbacks for Mobile Browsers -->
+  <script>
+    // Failsafe Mock for SweetAlert2 so no mobile phone ever crashes if CDN is delayed or blocked
+    if (typeof window.Swal === 'undefined') {
+      window.Swal = {
+        fire: function(arg1, arg2, arg3) {
+          return new Promise(function(resolve) {
+            var title = '', text = '', showCancel = false;
+            if (typeof arg1 === 'object' && arg1 !== null) {
+              title = arg1.title || '';
+              text = arg1.text || '';
+              showCancel = !!arg1.showCancelButton;
+            } else {
+              title = arg1 || '';
+              text = arg2 || '';
+            }
+            var msg = (title ? (title + (text ? '\n\n' + text : '')) : text);
+            if (showCancel) {
+              var confirmed = window.confirm(msg);
+              resolve({ isConfirmed: confirmed, isDismissed: !confirmed });
+            } else {
+              window.alert(msg);
+              resolve({ isConfirmed: true, isDismissed: false });
+            }
+          });
+        }
+      };
+    }
+  </script>
 
   <style>
     body { background-image: url('https://lh3.googleusercontent.com/d/1OLzLjAVeda1nW3b9ldO5YMBMwE1i0Wo4'); background-size: cover; background-position: center; background-attachment: fixed; transition: background-color 0.3s; background-color: #f3f4f6; }
@@ -368,23 +402,90 @@
         </div>
 
         <!-- MY TASKS -->
+        <!-- MY TASKS / ADMIN AUDIT TRACKING -->
         <div id="view-mytasks" class="view hidden">
           <div class="glass p-4 md:p-6 rounded-xl shadow mb-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-clipboard-list mr-2 text-green-500"></i> กระดานงานที่ได้รับมอบหมาย</h2><span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full" id="task-round-badge">รอบปัจจุบัน</span></div>
-            <div class="grid grid-cols-3 gap-3 mb-6">
-               <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center"><p class="text-xs text-gray-500 dark:text-gray-400 font-bold">ที่ต้องตรวจ</p><h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1" id="task-total">0</h3></div>
-               <div class="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-800 text-center"><p class="text-xs text-green-600 dark:text-green-400 font-bold">ตรวจแล้ว</p><h3 class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1" id="task-done">0</h3></div>
-               <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg border border-red-200 dark:border-red-800 text-center"><p class="text-xs text-red-600 dark:text-red-400 font-bold">ยังไม่ตรวจ</p><h3 class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1" id="task-pending">0</h3></div>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b pb-3 dark:border-gray-700">
+              <div>
+                <h2 class="font-bold text-lg dark:text-white flex items-center gap-2">
+                  <i class="fas fa-clipboard-check text-green-500"></i>
+                  <span id="mytasks-title">กระดานงานที่ต้องตรวจสอบ</span>
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400" id="mytasks-subtitle">ติดตามความคืบหน้าการตรวจนับรายบุคคลหรือภาพรวมทั้งหน่วยงาน</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-bold px-3 py-1 rounded-full" id="task-round-badge">รอบปัจจุบัน</span>
+                <button onclick="printMyTasks()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5 whitespace-nowrap">
+                  <i class="fas fa-print"></i> พิมพ์ใบตรวจ
+                </button>
+              </div>
             </div>
-            
-            <div class="flex justify-between items-center mb-2">
-               <p class="text-sm font-bold text-gray-700 dark:text-gray-300">รายการครุภัณฑ์ (เฉพาะพื้นที่ของคุณ)</p>
-               <button onclick="printMyTasks()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition"><i class="fas fa-print mr-1"></i> พิมพ์ใบเช็คของ</button>
+
+            <!-- ตัวเลือกผู้ตรวจสอบ (สำหรับ Admin / ผู้ได้รับมอบหมาย) -->
+            <div id="mytasks-admin-filter-container" class="hidden mb-4 p-3 bg-blue-50/70 dark:bg-gray-800/80 rounded-xl border border-blue-100 dark:border-gray-700">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-bold text-blue-800 dark:text-blue-300 whitespace-nowrap flex items-center gap-1">
+                    <i class="fas fa-user-tag"></i> เลือกผู้ตรวจสอบ:
+                  </label>
+                  <select id="mytasks-user-filter" onchange="renderMyTasksView()" class="p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white font-bold text-xs focus:outline-none">
+                    <option value="__ALL__">👥 ผู้ตรวจสอบทั้งหมด (ภาพรวมทั้งศาลฯ)</option>
+                  </select>
+                </div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 font-medium" id="mytasks-assigned-locs-info">
+                  <!-- ข้อมูลพื้นที่ของผู้ตรวจที่เลือก -->
+                </div>
+              </div>
+            </div>
+
+            <!-- สรุปผลตัวเลข 3 การ์ด -->
+            <div class="grid grid-cols-3 gap-3 mb-5">
+               <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 text-center shadow-sm">
+                 <p class="text-xs text-gray-500 dark:text-gray-400 font-bold">ที่ต้องตรวจทั้งหมด</p>
+                 <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1" id="task-total">0</h3>
+               </div>
+               <div class="bg-green-50 dark:bg-green-900/30 p-3 rounded-xl border border-green-200 dark:border-green-800 text-center shadow-sm">
+                 <p class="text-xs text-green-600 dark:text-green-400 font-bold">สแกนตรวจแล้ว</p>
+                 <h3 class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1" id="task-done">0</h3>
+                 <p class="text-[10px] text-green-700 dark:text-green-300 font-bold mt-0.5" id="task-pct">0%</p>
+               </div>
+               <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-xl border border-red-200 dark:border-red-800 text-center shadow-sm">
+                 <p class="text-xs text-red-600 dark:text-red-400 font-bold">ยังไม่สแกนตรวจ</p>
+                 <h3 class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1" id="task-pending">0</h3>
+                 <p class="text-[10px] text-red-700 dark:text-red-300 font-bold mt-0.5" id="task-pending-pct">0%</p>
+               </div>
+            </div>
+
+            <!-- แถบกรองสถานะ (Tabs: ยังไม่ตรวจ / ตรวจแล้ว / ทั้งหมด) และช่องค้นหา -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+               <div class="flex flex-wrap gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-xs font-bold">
+                 <button type="button" id="tab-mytasks-pending" onclick="switchMyTasksTab('pending')" class="px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-red-600 shadow-sm transition">
+                   🔴 ยังไม่ตรวจ (<span id="task-tab-pending-count">0</span>)
+                 </button>
+                 <button type="button" id="tab-mytasks-done" onclick="switchMyTasksTab('done')" class="px-3 py-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:text-green-600 transition">
+                   🟢 ตรวจแล้ว (<span id="task-tab-done-count">0</span>)
+                 </button>
+                 <button type="button" id="tab-mytasks-all" onclick="switchMyTasksTab('all')" class="px-3 py-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:text-blue-600 transition">
+                   📋 ทั้งหมด (<span id="task-tab-all-count">0</span>)
+                 </button>
+               </div>
+               <div class="w-full sm:w-64 relative">
+                 <input type="text" id="mytasks-search" placeholder="ค้นหารหัส, รายการ, สถานที่..." onkeyup="filterMyTasksList()" class="w-full text-xs p-2 pl-7 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none">
+                 <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+               </div>
             </div>
             
             <div class="overflow-x-auto rounded-lg">
               <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
-                <thead><tr class="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"><th class="p-3 border-b dark:border-gray-700">รหัสพัสดุ</th><th class="p-3 border-b dark:border-gray-700">ลักษณะ</th><th class="p-3 border-b dark:border-gray-700">สถานที่</th><th class="p-3 border-b dark:border-gray-700 text-center">สถานะการตรวจรอบนี้</th></tr></thead>
+                <thead>
+                  <tr class="bg-gray-200/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 text-xs font-bold">
+                    <th class="p-3 border-b dark:border-gray-700">รหัสพัสดุ</th>
+                    <th class="p-3 border-b dark:border-gray-700">ลักษณะ/ชื่อรายการ</th>
+                    <th class="p-3 border-b dark:border-gray-700">สถานที่ตั้ง</th>
+                    <th class="p-3 border-b dark:border-gray-700">ผู้รับผิดชอบ</th>
+                    <th class="p-3 border-b dark:border-gray-700 text-center">สถานะการตรวจรอบนี้</th>
+                  </tr>
+                </thead>
                 <tbody id="mytasks-table-body"></tbody>
               </table>
             </div>
@@ -395,6 +496,12 @@
         <div id="view-assets" class="view hidden">
           <div class="glass p-4 md:p-6 rounded-xl shadow">
             
+            <!-- ป้ายแจ้งเตือนสำหรับ User ทั่วไป (แสดงเฉพาะพื้นที่ที่ได้รับมอบหมาย) -->
+            <div id="user-assigned-assets-banner" class="hidden mb-3 p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-sm">
+              <span class="flex items-center gap-1.5"><i class="fas fa-user-shield text-blue-600"></i> แสดงเฉพาะพัสดุในพื้นที่ที่ได้รับมอบหมาย (<span id="user-assigned-locs-count">0</span> สถานที่)</span>
+              <span class="font-normal text-[11px] text-gray-500 dark:text-gray-400" id="user-assigned-locs-list"></span>
+            </div>
+
             <!-- Quick Filter Pills -->
             <div class="flex flex-wrap gap-1.5 mb-3">
               <button onclick="setAssetQuickFilter('all')" id="pill-all" class="pill-btn px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-sm transition">ทั้งหมด (<span id="count-all">0</span>)</button>
@@ -477,14 +584,67 @@
         <!-- VIEW: ADMIN ASSIGN -->
         <div id="view-assign" class="view hidden">
           <div class="glass p-4 md:p-6 rounded-xl shadow mb-6">
-            <h2 class="font-bold text-lg dark:text-white mb-4 border-b pb-2"><i class="fas fa-tasks mr-2 text-pink-500"></i> มอบหมายพื้นที่ตรวจสอบ (สำหรับรอบปัจจุบัน)</h2>
+            <h2 class="font-bold text-lg dark:text-white mb-1 border-b pb-2"><i class="fas fa-tasks mr-2 text-pink-500"></i> มอบหมายพื้นที่ตรวจสอบ (สำหรับรอบปัจจุบัน)</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">สามารถเลือกมอบหมายสถานที่ได้มากกว่า 1 รายการ ต่อผู้ตรวจสอบ 1 คน</p>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div><label class="block text-sm font-bold mb-1 dark:text-gray-300">เลือกสถานที่ตั้ง</label><select id="assign_location" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white text-sm focus:outline-none"></select></div>
-                <div><label class="block text-sm font-bold mb-1 dark:text-gray-300">เลือกผู้ตรวจสอบ</label><select id="assign_user" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white text-sm focus:outline-none"></select></div>
+              <!-- เลือกผู้ตรวจสอบ -->
+              <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300"><i class="fas fa-user-check text-pink-500 mr-1"></i> 1. เลือกผู้ตรวจสอบ</label>
+                <select id="assign_user" class="w-full p-2.5 rounded-lg border dark:bg-gray-700 bg-white dark:text-white text-sm focus:outline-none font-bold text-gray-800"></select>
+                
+                <div class="mt-3 p-3 bg-pink-50/60 dark:bg-pink-900/20 rounded-xl border border-pink-100 dark:border-pink-800 text-xs">
+                  <span class="font-bold text-pink-700 dark:text-pink-300 block mb-1.5"><i class="fas fa-map-pin mr-1"></i> สถานที่ที่เลือกไว้ขณะนี้ (<span id="assign-selected-count">0</span>):</span>
+                  <div id="assign_selected_pills" class="flex flex-wrap gap-1 min-h-[32px] items-center text-gray-500">
+                    <span class="text-[11px] italic text-gray-400">ยังไม่ได้เลือกสถานที่ (ติ๊กถูกจากรายการด้านขวา)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- เลือกสถานที่ (เลือกได้มากกว่า 1 รายการ) -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-sm font-bold dark:text-gray-300"><i class="fas fa-map-marked-alt text-pink-500 mr-1"></i> 2. เลือกสถานที่ (ได้หลายรายการ)</label>
+                  <div class="flex gap-2">
+                    <button type="button" onclick="selectAllAssignLocations(true)" class="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline">เลือกทั้งหมด</button>
+                    <span class="text-gray-300">|</span>
+                    <button type="button" onclick="selectAllAssignLocations(false)" class="text-[11px] font-bold text-gray-500 hover:underline">ล้างทั้งหมด</button>
+                  </div>
+                </div>
+                
+                <div class="relative mb-2">
+                  <input type="text" id="assign_loc_search" placeholder="พิมพ์ค้นหาสถานที่..." onkeyup="filterAssignLocationsCheckboxList()" class="w-full text-xs p-2 pl-7 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none">
+                  <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+
+                <div id="assign_locations_checkbox_container" class="border rounded-xl p-2.5 max-h-56 overflow-y-auto space-y-1 dark:bg-gray-800 bg-white dark:border-gray-700 text-xs shadow-inner">
+                  <!-- Checkboxes generated dynamically -->
+                </div>
+              </div>
             </div>
-            <button onclick="assignLocation()" class="w-full bg-pink-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-pink-700 transition mb-6">มอบหมายงานทันที</button>
-            <h3 class="font-bold text-gray-800 dark:text-white mb-2">สรุปการมอบหมายงานรอบปัจจุบัน</h3>
-            <div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm"><thead><tr class="bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300"><th class="p-3 border-b dark:border-gray-700">สถานที่ตั้ง</th><th class="p-3 border-b dark:border-gray-700">ผู้รับผิดชอบตรวจ</th><th class="p-3 border-b dark:border-gray-700">ผู้มอบหมาย</th></tr></thead><tbody id="assign-table-body"></tbody></table></div>
+
+            <button onclick="assignLocation()" id="btn-submit-assign" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition mb-6 flex items-center justify-center gap-2">
+              <i class="fas fa-check-circle text-lg"></i>
+              <span>มอบหมายงานทันที (<span id="assign-btn-count">0</span> สถานที่)</span>
+            </button>
+
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-bold text-gray-800 dark:text-white text-sm"><i class="fas fa-list-alt text-pink-500 mr-1"></i> สรุปการมอบหมายงานรอบปัจจุบัน</h3>
+              <span class="text-xs text-gray-500" id="assign-summary-count">ทั้งหมด 0 รายการ</span>
+            </div>
+            <div class="overflow-x-auto rounded-lg">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
+                <thead>
+                  <tr class="bg-pink-100 dark:bg-pink-900/40 text-pink-800 dark:text-pink-300 text-xs font-bold">
+                    <th class="p-3 border-b dark:border-gray-700">สถานที่ตั้ง</th>
+                    <th class="p-3 border-b dark:border-gray-700 text-center">จำนวนพัสดุในห้อง</th>
+                    <th class="p-3 border-b dark:border-gray-700">ผู้รับผิดชอบตรวจ</th>
+                    <th class="p-3 border-b dark:border-gray-700">ผู้มอบหมาย</th>
+                  </tr>
+                </thead>
+                <tbody id="assign-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -522,11 +682,43 @@
           <div id="scan-step-1" class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto">
             <div class="text-center mb-6"><h2 class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">ตรวจนับพัสดุ</h2></div>
             <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">รอบการตรวจปัจจุบัน</label><div id="display_round" class="w-full p-3 mb-4 rounded-lg border dark:bg-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm">โหลดข้อมูล...</div>
-            <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">สถานที่ตั้ง (ที่กำลังตรวจ)</label><select id="s_location" class="w-full p-3 mb-6 rounded-lg border dark:bg-gray-700 bg-white/90 dark:text-white font-bold text-blue-600 text-sm focus:outline-none"></select>
+            <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">สถานที่ตั้ง (ที่กำลังตรวจ)</label>
+            <select id="s_location" onchange="renderScanLocationAssets()" class="w-full p-3 mb-3 rounded-lg border dark:bg-gray-700 bg-white/90 dark:text-white font-bold text-blue-600 text-sm focus:outline-none"></select>
+
+            <!-- หน้าต่างแยกรายการที่ตรวจแล้ว และยังไม่ตรวจ ในสถานที่นี้ -->
+            <div id="scan-location-panel" class="mb-5 p-3.5 bg-blue-50/70 dark:bg-gray-800/80 rounded-xl border border-blue-200 dark:border-gray-700 shadow-sm">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <h4 class="font-bold text-xs text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <i class="fas fa-list-check text-blue-600"></i> รายการในสถานที่นี้
+                  </h4>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400" id="scan-loc-summary">เลือกสถานที่ด้านบนเพื่อดูรายการ</p>
+                </div>
+                <div class="flex gap-1 bg-white dark:bg-gray-700 p-0.5 rounded-lg text-xs font-bold border border-blue-100 dark:border-gray-600">
+                  <button type="button" id="tab-scan-pending-btn" onclick="switchScanListTab('pending')" class="px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 transition text-[11px] shadow-xs">
+                    🔴 ยังไม่ตรวจ (<span id="scan-count-pending">0</span>)
+                  </button>
+                  <button type="button" id="tab-scan-done-btn" onclick="switchScanListTab('done')" class="px-2 py-1 rounded text-gray-500 dark:text-gray-400 hover:text-green-600 transition text-[11px]">
+                    🟢 ตรวจแล้ว (<span id="scan-count-done">0</span>)
+                  </button>
+                </div>
+              </div>
+
+              <!-- ค้นหาในสถานที่นี้ -->
+              <div class="relative mb-2">
+                <input type="text" id="scan-loc-search" placeholder="ค้นหาชื่อหรือรหัสในสถานที่นี้..." onkeyup="filterScanLocAssetList()" class="w-full text-xs p-1.5 pl-6 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none">
+                <i class="fas fa-search absolute left-2 top-2 text-gray-400 text-[10px]"></i>
+              </div>
+
+              <!-- รายการพัสดุในสถานที่นี้ -->
+              <div id="scan-loc-asset-list" class="max-h-48 overflow-y-auto space-y-1 pr-0.5 text-xs">
+                <!-- dynamic items -->
+              </div>
+            </div>
             <label class="block text-sm font-bold mb-2 text-blue-600 dark:text-blue-400"><i class="fas fa-qrcode mr-1"></i> วิธีที่ 1: สแกนผ่านกล้อง</label>
             <button onclick="startScanner('inspect')" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-blue-700 transition text-lg flex items-center justify-center gap-2 mb-2"><i class="fas fa-camera text-2xl"></i> เปิดกล้องสแกน</button>
             <div id="reader-container" class="hidden relative mb-4 mt-2">
-               <video id="reader-video" class="w-full overflow-hidden rounded-lg bg-black border-2 border-blue-500 shadow" style="object-fit: cover;"></video>
+               <video id="reader-video" playsinline webkit-playsinline muted autoplay class="w-full overflow-hidden rounded-lg bg-black border-2 border-blue-500 shadow" style="object-fit: cover;"></video>
                <div class="absolute top-2 right-2 flex gap-1 z-50">
                  <button id="btn-switch-cam" onclick="switchCamera()" class="hidden bg-gray-700/90 text-white px-2 py-1 rounded shadow text-xs font-bold hover:bg-gray-600" title="สลับกล้อง"><i class="fas fa-sync-alt"></i></button>
                  <button id="btn-torch" onclick="toggleTorch()" class="hidden bg-yellow-500 text-black px-2 py-1 rounded shadow text-xs font-bold hover:bg-yellow-400"><i class="fas fa-lightbulb"></i> ไฟฉาย</button>
@@ -1110,18 +1302,9 @@
 
     window.onload = function() {
       try {
-        if (typeof ZXing !== 'undefined') {
-          codeReader = new ZXing.BrowserMultiFormatReader();
-          codeReader.listVideoInputDevices().then(devices => {
-            videoInputDevices = devices || [];
-            if (videoInputDevices.length > 1) {
-              const btnSwitch = document.getElementById('btn-switch-cam');
-              if (btnSwitch) btnSwitch.classList.remove('hidden');
-            }
-          }).catch(e => {});
-        }
+        initCodeReader();
       } catch(e) {
-        console.error("ZXing Init Error:", e);
+        console.warn("Scanner Init Note:", e);
       }
 
       // ตรวจสอบ Remember Me
@@ -1270,6 +1453,8 @@
       if (viewId === 'assign') renderAssignView(); 
       if (viewId === 'mytasks') renderMyTasksView(); 
       if (viewId === 'maintenance') renderMaintenanceView();
+      if (viewId === 'scan') renderScanLocationAssets();
+      if (viewId === 'assets') filterTableAssets();
     };
 
     window.login = async function() {
@@ -1416,15 +1601,37 @@
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const currentRound = globalData.settings.round || '';
       
-      let baseList = globalData.assets;
+      let myAssignedLocations = [];
+      if (globalData.assignments && currentUser) {
+        myAssignedLocations = globalData.assignments
+          .filter(a => a.Round === currentRound && a.AssignedTo === currentUser.username)
+          .map(a => a.Location);
+      }
+
+      let accessibleAssets = globalData.assets;
+      const banner = document.getElementById('user-assigned-assets-banner');
+      if (currentUser && currentUser.role !== 'Admin') {
+        accessibleAssets = globalData.assets.filter(a => myAssignedLocations.includes(a.Location));
+        if (banner) {
+          banner.classList.remove('hidden');
+          const cntEl = document.getElementById('user-assigned-locs-count');
+          const listEl = document.getElementById('user-assigned-locs-list');
+          if (cntEl) cntEl.innerText = myAssignedLocations.length;
+          if (listEl) listEl.innerText = myAssignedLocations.length > 0 ? myAssignedLocations.join(', ') : 'ยังไม่ได้รับมอบหมายพื้นที่';
+        }
+      } else {
+        if (banner) banner.classList.add('hidden');
+      }
+
+      let baseList = accessibleAssets;
       if (activeQuickFilter === 'pending') {
-        baseList = globalData.assets.filter(a => a.InspectRound !== currentRound);
+        baseList = accessibleAssets.filter(a => a.InspectRound !== currentRound);
       } else if (activeQuickFilter === 'done') {
-        baseList = globalData.assets.filter(a => a.InspectRound === currentRound);
+        baseList = accessibleAssets.filter(a => a.InspectRound === currentRound);
       } else if (activeQuickFilter === 'broken') {
-        baseList = globalData.assets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม'));
+        baseList = accessibleAssets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม'));
       } else if (activeQuickFilter === 'borrowed') {
-        baseList = globalData.assets.filter(a => a.BorrowStatus === 'ถูกยืม');
+        baseList = accessibleAssets.filter(a => a.BorrowStatus === 'ถูกยืม');
       }
 
       if (!q) {
@@ -1525,50 +1732,151 @@
     };
 
     window.renderAssignView = function() {
-      let locSelect = document.getElementById('assign_location');
-      let locations = []; 
+      const userSelect = document.getElementById('assign_user');
+      if (userSelect) {
+        userSelect.innerHTML = '<option value="">-- เลือกเจ้าหน้าที่ผู้รับผิดชอบ --</option>';
+        if (globalData.users) {
+          globalData.users.forEach(u => {
+            userSelect.innerHTML += `<option value="${u.username}">${u.name} (${u.username})</option>`;
+          });
+        }
+      }
+
+      let locations = [];
+      const currentRound = globalData.settings.round || '';
       globalData.assets.forEach(function(a) {
         if (a.Location && locations.indexOf(a.Location) === -1) locations.push(a.Location);
       });
-      locSelect.innerHTML = '<option value="">-- เลือกสถานที่ --</option>'; 
-      locations.forEach(l => { locSelect.innerHTML += `<option value="${l}">${l}</option>`; });
+      locations.sort((a, b) => a.localeCompare(b, 'th'));
 
-      let userSelect = document.getElementById('assign_user');
-      userSelect.innerHTML = '<option value="">-- เลือกเจ้าหน้าที่ --</option>';
-      if (globalData.users) {
-        globalData.users.forEach(u => {
-          userSelect.innerHTML += `<option value="${u.username}">${u.name} (${u.username})</option>`;
-        });
+      const container = document.getElementById('assign_locations_checkbox_container');
+      if (container) {
+        let html = '';
+        if (locations.length === 0) {
+          html = '<p class="text-center text-gray-400 py-3">ไม่พบรายการสถานที่ในระบบ</p>';
+        } else {
+          locations.forEach(loc => {
+            const count = globalData.assets.filter(a => a.Location === loc).length;
+            const existingAssign = (globalData.assignments || []).find(a => a.Round === currentRound && a.Location === loc);
+            let assignBadge = '';
+            if (existingAssign) {
+              const uName = (globalData.users || []).find(u => u.username === existingAssign.AssignedTo)?.name || existingAssign.AssignedTo;
+              assignBadge = `<span class="text-[10px] bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 ml-auto font-medium truncate max-w-[120px]" title="มอบหมายให้ ${uName} แล้ว"><i class="fas fa-user-check mr-0.5"></i>${uName}</span>`;
+            }
+            html += `
+              <label class="assign-loc-item flex items-center gap-2 p-1.5 hover:bg-pink-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition select-none" data-location="${loc}">
+                <input type="checkbox" class="assign-loc-cb rounded text-pink-600 focus:ring-pink-500 w-4 h-4 cursor-pointer" value="${loc}" onchange="updateAssignSelectedCount()">
+                <span class="font-bold text-gray-800 dark:text-gray-200 text-xs">${loc}</span>
+                <span class="text-[10px] text-gray-400">(${count} ชิ้น)</span>
+                ${assignBadge}
+              </label>
+            `;
+          });
+        }
+        container.innerHTML = html;
       }
+
+      updateAssignSelectedCount();
 
       const tbody = document.getElementById('assign-table-body');
-      let html = '';
-      if (globalData.assignments) {
-        let currentAssignments = globalData.assignments.filter(a => a.Round === globalData.settings.round);
-        if (currentAssignments.length === 0) {
-          html = '<tr><td colspan="3" class="p-4 text-center text-gray-500">ยังไม่มีการมอบหมายงานในรอบนี้</td></tr>';
+      const countEl = document.getElementById('assign-summary-count');
+      if (tbody) {
+        let htmlRows = '';
+        if (globalData.assignments) {
+          let currentAssignments = globalData.assignments.filter(a => a.Round === currentRound);
+          if (countEl) countEl.innerText = `ทั้งหมด ${currentAssignments.length} รายการ`;
+          if (currentAssignments.length === 0) {
+            htmlRows = '<tr><td colspan="4" class="p-4 text-center text-gray-500">ยังไม่มีการมอบหมายงานในรอบนี้</td></tr>';
+          } else {
+            currentAssignments.forEach(a => {
+              let uName = (globalData.users || []).find(u => u.username === a.AssignedTo)?.name || a.AssignedTo;
+              let locCount = globalData.assets.filter(item => item.Location === a.Location).length;
+              htmlRows += `
+                <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm dark:text-gray-200">
+                  <td class="p-3 font-bold text-pink-600 dark:text-pink-400"><i class="fas fa-map-marker-alt mr-1 text-xs"></i>${a.Location}</td>
+                  <td class="p-3 text-center font-bold text-gray-600 dark:text-gray-300">${locCount}</td>
+                  <td class="p-3 font-medium"><i class="fas fa-user-check text-green-500 mr-1 text-xs"></i>${uName}</td>
+                  <td class="p-3 text-xs text-gray-500">${a.AssignedBy || 'แอดมิน'}</td>
+                </tr>
+              `;
+            });
+          }
         }
-        currentAssignments.forEach(a => {
-          let uName = globalData.users.find(u => u.username === a.AssignedTo)?.name || a.AssignedTo;
-          html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm dark:text-gray-200">
-            <td class="p-3 font-bold text-pink-600">${a.Location}</td>
-            <td class="p-3">${uName}</td>
-            <td class="p-3 text-gray-500">${a.AssignedBy || 'แอดมิน'}</td>
-          </tr>`;
-        });
+        tbody.innerHTML = htmlRows;
       }
-      tbody.innerHTML = html;
+    };
+
+    window.updateAssignSelectedCount = function() {
+      const checkedBoxes = Array.from(document.querySelectorAll('.assign-loc-cb:checked'));
+      const count = checkedBoxes.length;
+      const countEl = document.getElementById('assign-selected-count');
+      const btnCountEl = document.getElementById('assign-btn-count');
+      const pillsContainer = document.getElementById('assign_selected_pills');
+
+      if (countEl) countEl.innerText = count;
+      if (btnCountEl) btnCountEl.innerText = count;
+
+      if (pillsContainer) {
+        if (count === 0) {
+          pillsContainer.innerHTML = '<span class="text-[11px] italic text-gray-400">ยังไม่ได้เลือกสถานที่ (ติ๊กถูกจากรายการด้านขวา)</span>';
+        } else {
+          let pillsHtml = '';
+          checkedBoxes.forEach(cb => {
+            const locVal = cb.value;
+            pillsHtml += `
+              <span class="inline-flex items-center gap-1 bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300 px-2 py-0.5 rounded-full text-[11px] font-bold">
+                ${locVal}
+                <button type="button" onclick="removeAssignSelectedLocation('${locVal}')" class="hover:text-red-600 font-bold ml-0.5">&times;</button>
+              </span>
+            `;
+          });
+          pillsContainer.innerHTML = pillsHtml;
+        }
+      }
+    };
+
+    window.removeAssignSelectedLocation = function(locVal) {
+      const cb = document.querySelector(`.assign-loc-cb[value="${locVal}"]`);
+      if (cb) {
+        cb.checked = false;
+        updateAssignSelectedCount();
+      }
+    };
+
+    window.selectAllAssignLocations = function(select) {
+      const items = document.querySelectorAll('.assign-loc-item');
+      items.forEach(item => {
+        if (item.style.display !== 'none') {
+          const cb = item.querySelector('.assign-loc-cb');
+          if (cb) cb.checked = select;
+        }
+      });
+      updateAssignSelectedCount();
+    };
+
+    window.filterAssignLocationsCheckboxList = function() {
+      const query = (document.getElementById('assign_loc_search')?.value || '').toLowerCase().trim();
+      const items = document.querySelectorAll('.assign-loc-item');
+      items.forEach(item => {
+        const locName = (item.getAttribute('data-location') || '').toLowerCase();
+        item.style.display = locName.includes(query) ? 'flex' : 'none';
+      });
     };
 
     window.assignLocation = async function() {
-      const loc = document.getElementById('assign_location').value;
       const user = document.getElementById('assign_user').value;
-      if (!loc || !user) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกสถานที่และผู้ตรวจสอบ', 'warning');
-      showLoader('กำลังมอบหมายงาน...');
+      const selectedBoxes = Array.from(document.querySelectorAll('.assign-loc-cb:checked'));
+      const selectedLocs = selectedBoxes.map(cb => cb.value);
+
+      if (!user) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกผู้ตรวจสอบ', 'warning');
+      if (selectedLocs.length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกสถานที่ตั้งอย่างน้อย 1 รายการ', 'warning');
+
+      showLoader(`กำลังมอบหมาย ${selectedLocs.length} สถานที่...`);
       try {
         let res = await callAPI('apiAssignLocation', {
           round: globalData.settings.round,
-          location: loc,
+          locations: selectedLocs,
+          location: selectedLocs[0], // fallback
           assignTo: user,
           user: currentUser.username
         });
@@ -1729,68 +2037,220 @@
       }
     };
 
-    window.renderMyTasksView = function() {
-      document.getElementById('task-round-badge').innerText = `รอบ: ${globalData.settings.round}`;
-      
-      let myLocs = [];
-      if (globalData.assignments) {
-        myLocs = globalData.assignments
-          .filter(a => a.Round === globalData.settings.round && a.AssignedTo === currentUser.username)
-          .map(a => a.Location);
+    let activeMyTasksTab = 'pending';
+
+    window.switchMyTasksTab = function(tab) {
+      activeMyTasksTab = tab;
+      const btnPending = document.getElementById('tab-mytasks-pending');
+      const btnDone = document.getElementById('tab-mytasks-done');
+      const btnAll = document.getElementById('tab-mytasks-all');
+
+      [btnPending, btnDone, btnAll].forEach(btn => {
+        if (btn) btn.className = 'px-3 py-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:text-blue-600 transition font-bold text-xs';
+      });
+
+      if (tab === 'pending' && btnPending) {
+        btnPending.className = 'px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-red-600 shadow-sm transition font-bold text-xs';
+      } else if (tab === 'done' && btnDone) {
+        btnDone.className = 'px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-green-600 shadow-sm transition font-bold text-xs';
+      } else if (tab === 'all' && btnAll) {
+        btnAll.className = 'px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-blue-600 shadow-sm transition font-bold text-xs';
       }
-      myAssignedAssets = globalData.assets.filter(a => myLocs.includes(a.Location));
 
-      let inspectedCount = myAssignedAssets.filter(a => a.InspectRound === globalData.settings.round).length;
-      let pendingCount = myAssignedAssets.length - inspectedCount;
+      renderMyTasksView();
+    };
 
-      document.getElementById('task-total').innerText = myAssignedAssets.length;
-      document.getElementById('task-done').innerText = inspectedCount;
-      document.getElementById('task-pending').innerText = pendingCount;
+    window.filterMyTasksList = function() {
+      renderMyTasksView();
+    };
+
+    window.renderMyTasksView = function() {
+      const currentRound = globalData.settings.round || '';
+      document.getElementById('task-round-badge').innerText = `รอบ: ${currentRound}`;
+      const isAdmin = currentUser && currentUser.role === 'Admin';
+      
+      const adminFilterContainer = document.getElementById('mytasks-admin-filter-container');
+      const userSelect = document.getElementById('mytasks-user-filter');
+      const titleEl = document.getElementById('mytasks-title');
+      const subtitleEl = document.getElementById('mytasks-subtitle');
+
+      let selectedUser = currentUser ? currentUser.username : '';
+
+      if (isAdmin) {
+        if (adminFilterContainer) adminFilterContainer.classList.remove('hidden');
+        if (titleEl) titleEl.innerText = 'ติดตามความคืบหน้าการตรวจนับพัสดุ';
+        if (subtitleEl) subtitleEl.innerText = 'ตรวจสอบภาพรวมทั้งหน่วยงาน หรือเลือกดูรายบุคคลเพื่อตรวจเช็คความครบถ้วน';
+        
+        // เติมรายชื่อผู้ตรวจใน dropdown หากยังไม่มี
+        if (userSelect && userSelect.options.length <= 1 && globalData.users) {
+          userSelect.innerHTML = '<option value="__ALL__">👥 ผู้ตรวจสอบทั้งหมด (ภาพรวมทั้งศาลฯ)</option>';
+          globalData.users.forEach(u => {
+            userSelect.innerHTML += `<option value="${u.username}">👤 ${u.name} (${u.username})</option>`;
+          });
+        }
+        if (userSelect) selectedUser = userSelect.value || '__ALL__';
+      } else {
+        if (adminFilterContainer) adminFilterContainer.classList.add('hidden');
+        if (titleEl) titleEl.innerText = 'กระดานงานที่ได้รับมอบหมาย';
+        if (subtitleEl) subtitleEl.innerText = 'รายการครุภัณฑ์เฉพาะพื้นที่ที่คุณรับผิดชอบในรอบปัจจุบัน';
+        selectedUser = currentUser ? currentUser.username : '';
+      }
+
+      // ค้นหาสถานที่ที่เกี่ยวข้อง
+      let targetLocations = [];
+      let locationUserMap = {}; // location -> assigned user
+      const assignments = globalData.assignments ? globalData.assignments.filter(a => a.Round === currentRound) : [];
+      
+      assignments.forEach(a => {
+        locationUserMap[a.Location] = a.AssignedTo;
+      });
+
+      if (selectedUser === '__ALL__') {
+        targetLocations = assignments.map(a => a.Location);
+      } else {
+        targetLocations = assignments.filter(a => a.AssignedTo === selectedUser).map(a => a.Location);
+      }
+
+      const assignedLocsInfo = document.getElementById('mytasks-assigned-locs-info');
+      if (assignedLocsInfo) {
+        if (selectedUser === '__ALL__') {
+          assignedLocsInfo.innerHTML = `<span>มอบหมายแล้ว <strong>${targetLocations.length}</strong> สถานที่</span>`;
+        } else {
+          assignedLocsInfo.innerHTML = `<span>พื้นที่รับผิดชอบ: <strong>${targetLocations.length}</strong> สถานที่ (${targetLocations.join(', ') || 'ยังไม่มี'})</span>`;
+        }
+      }
+
+      myAssignedAssets = globalData.assets.filter(a => targetLocations.includes(a.Location));
+
+      const doneAssets = myAssignedAssets.filter(a => a.InspectRound === currentRound);
+      const pendingAssets = myAssignedAssets.filter(a => a.InspectRound !== currentRound);
+
+      const totalCount = myAssignedAssets.length;
+      const doneCount = doneAssets.length;
+      const pendingCount = pendingAssets.length;
+      const donePct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+      const pendingPct = totalCount > 0 ? Math.round((pendingCount / totalCount) * 100) : 0;
+
+      if (document.getElementById('task-total')) document.getElementById('task-total').innerText = totalCount;
+      if (document.getElementById('task-done')) document.getElementById('task-done').innerText = doneCount;
+      if (document.getElementById('task-pending')) document.getElementById('task-pending').innerText = pendingCount;
+      if (document.getElementById('task-pct')) document.getElementById('task-pct').innerText = `${donePct}%`;
+      if (document.getElementById('task-pending-pct')) document.getElementById('task-pending-pct').innerText = `${pendingPct}% คงเหลือ`;
+
+      if (document.getElementById('task-tab-pending-count')) document.getElementById('task-tab-pending-count').innerText = pendingCount;
+      if (document.getElementById('task-tab-done-count')) document.getElementById('task-tab-done-count').innerText = doneCount;
+      if (document.getElementById('task-tab-all-count')) document.getElementById('task-tab-all-count').innerText = totalCount;
+
+      let displayAssets = myAssignedAssets;
+      if (activeMyTasksTab === 'pending') {
+        displayAssets = pendingAssets;
+      } else if (activeMyTasksTab === 'done') {
+        displayAssets = doneAssets;
+      }
+
+      const searchVal = (document.getElementById('mytasks-search')?.value || '').toLowerCase().trim();
+      if (searchVal) {
+        displayAssets = displayAssets.filter(a => {
+          const assigneeName = (globalData.users || []).find(u => u.username === locationUserMap[a.Location])?.name || locationUserMap[a.Location] || '';
+          return `${a.AssetID || ''} ${a.Name || ''} ${a.Location || ''} ${assigneeName}`.toLowerCase().includes(searchVal);
+        });
+      }
 
       const tbody = document.getElementById('mytasks-table-body');
-      let html = '';
-      if (myAssignedAssets.length === 0) {
-        html = '<tr><td colspan="4" class="p-4 text-center text-gray-500">คุณยังไม่ได้รับมอบหมายพื้นที่ในรอบนี้</td></tr>';
+      if (!tbody) return;
+
+      if (displayAssets.length === 0) {
+        let emptyMsg = 'ไม่พบรายการที่ตรงกับเงื่อนไข';
+        if (totalCount === 0) {
+          emptyMsg = selectedUser === '__ALL__' ? 'ยังไม่มีการมอบหมายสถานที่ในรอบนี้' : 'ผู้ใช้นี้ยังไม่ได้รับมอบหมายพื้นที่ในรอบนี้';
+        } else if (activeMyTasksTab === 'pending') {
+          emptyMsg = '🎉 ยอดเยี่ยม! สแกนตรวจนับครบถ้วนแล้ว ไม่มีรายการคงค้าง';
+        }
+        tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-gray-500 dark:text-gray-400 font-bold">${emptyMsg}</td></tr>`;
+        return;
       }
-      
-      myAssignedAssets.forEach(a => {
-        let isDone = a.InspectRound === globalData.settings.round;
-        let statusHtml = isDone ? '<span class="text-green-600 bg-green-100 px-2 py-1 rounded font-bold text-xs"><i class="fas fa-check-circle"></i> ตรวจแล้ว</span>' : '<span class="text-red-600 bg-red-100 px-2 py-1 rounded font-bold text-xs"><i class="fas fa-times-circle"></i> ยังไม่ตรวจ</span>';
-        html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm dark:text-gray-200">
-          <td class="p-3 font-mono font-bold text-blue-600">${a.AssetID}</td>
-          <td class="p-3 truncate max-w-[150px]">${a.Name}</td>
-          <td class="p-3 truncate max-w-[100px] text-gray-500">${a.Location}</td>
-          <td class="p-3 text-center">${statusHtml}</td>
-        </tr>`;
+
+      let htmlRows = '';
+      displayAssets.forEach(a => {
+        const isDone = a.InspectRound === currentRound;
+        const assigneeUsername = locationUserMap[a.Location] || '';
+        const assigneeName = (globalData.users || []).find(u => u.username === assigneeUsername)?.name || assigneeUsername || '-';
+        
+        let statusHtml = '';
+        if (isDone) {
+          statusHtml = `<span class="inline-flex items-center gap-1 text-green-700 bg-green-100 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-1 rounded-full font-bold text-xs shadow-2xs"><i class="fas fa-check-circle"></i> ตรวจแล้ว (${a.Inspector || assigneeName})</span>`;
+        } else {
+          statusHtml = `<span class="inline-flex items-center gap-1 text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300 px-2.5 py-1 rounded-full font-bold text-xs shadow-2xs animate-pulse"><i class="fas fa-hourglass-half"></i> ยังไม่สแกน</span>`;
+        }
+
+        htmlRows += `
+          <tr class="border-b dark:border-gray-700 hover:bg-blue-50/40 dark:hover:bg-gray-700/60 text-sm dark:text-gray-200 transition">
+            <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+              <a href="javascript:void(0)" onclick="showAssetDetailModal('${a.AssetID}')" class="hover:underline flex items-center gap-1">
+                ${a.AssetID}
+              </a>
+            </td>
+            <td class="p-3">
+              <p class="font-medium text-gray-800 dark:text-white truncate max-w-[200px]" title="${a.Name}">${a.Name}</p>
+              ${a.Brand ? `<span class="text-[10px] text-gray-400 block">${a.Brand}</span>` : ''}
+            </td>
+            <td class="p-3 text-gray-600 dark:text-gray-300 font-medium">
+              <span class="inline-flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500 text-xs"></i>${a.Location}</span>
+            </td>
+            <td class="p-3 text-gray-700 dark:text-gray-300 font-medium">
+              <span class="inline-flex items-center gap-1"><i class="fas fa-user-check text-green-500 text-xs"></i>${assigneeName}</span>
+            </td>
+            <td class="p-3 text-center">${statusHtml}</td>
+          </tr>
+        `;
       });
-      tbody.innerHTML = html;
+      tbody.innerHTML = htmlRows;
     };
 
     window.printMyTasks = function() {
       if (myAssignedAssets.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีรายการให้พิมพ์', 'warning');
+      const currentRound = globalData.settings.round || '';
+      const userSelect = document.getElementById('mytasks-user-filter');
+      const selectedUser = (currentUser && currentUser.role === 'Admin' && userSelect) ? userSelect.value : currentUser.username;
       
+      let inspectorTitle = currentUser.name;
+      if (currentUser.role === 'Admin') {
+        if (selectedUser === '__ALL__') {
+          inspectorTitle = 'ผู้ตรวจสอบทุกคน (ภาพรวม)';
+        } else {
+          inspectorTitle = (globalData.users || []).find(u => u.username === selectedUser)?.name || selectedUser;
+        }
+      }
+
+      let printAssets = myAssignedAssets;
+      if (activeMyTasksTab === 'pending') {
+        printAssets = myAssignedAssets.filter(a => a.InspectRound !== currentRound);
+      } else if (activeMyTasksTab === 'done') {
+        printAssets = myAssignedAssets.filter(a => a.InspectRound === currentRound);
+      }
+
       let htmlRows = '';
-      myAssignedAssets.forEach((a, index) => {
-        let isDone = a.InspectRound === globalData.settings.round;
-        let st = isDone ? 'ตรวจแล้ว' : 'ยังไม่ตรวจ';
-        htmlRows += `<tr><td style="text-align:center;">${index+1}</td><td>${a.AssetID}</td><td>${a.Name}</td><td>${a.Location}</td><td style="text-align:center;">${st}</td></tr>`;
+      printAssets.forEach((a, index) => {
+        let isDone = a.InspectRound === currentRound;
+        let st = isDone ? `ตรวจแล้ว (${a.Inspector || '-'})` : 'ยังไม่ตรวจ';
+        htmlRows += `<tr><td style="text-align:center;">${index+1}</td><td>${a.AssetID}</td><td>${a.Name}</td><td>${a.Location}</td><td style="text-align:center; font-weight:bold; color:${isDone?'green':'red'};">${st}</td></tr>`;
       });
 
       let printWindow = window.open('', '_blank');
-      let docHtml = `<html><head><title>รายการพัสดุที่ต้องตรวจสอบ</title>
+      let docHtml = `<html><head><title>รายงานการตรวจสอบพัสดุ</title>
         <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap" rel="stylesheet">
         <style>
           body { font-family: 'Prompt', sans-serif; padding: 20px; color: #000; }
           h2 { text-align: center; margin-bottom: 5px; }
           h4 { text-align: center; color: #555; margin-top: 0; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-          th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+          th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
           th { background-color: #f3f4f6; }
           @media print { @page { margin: 15mm; } }
         </style></head><body>
-        <h2>รายการพัสดุที่ต้องตรวจสอบ</h2>
-        <h4>รอบการตรวจ: ${globalData.settings.round} | ผู้รับผิดชอบ: ${currentUser.name}</h4>
-        <table><thead><tr><th>ลำดับ</th><th>รหัสพัสดุ</th><th>ลักษณะ</th><th>สถานที่</th><th>สถานะ</th></tr></thead><tbody>${htmlRows}</tbody></table>
+        <h2>รายงานการตรวจสอบครุภัณฑ์ประจำปี</h2>
+        <h4>รอบการตรวจ: ${currentRound} | ผู้รับผิดชอบ: ${inspectorTitle} | เงื่อนไข: ${activeMyTasksTab === 'pending' ? 'เฉพาะที่ยังไม่ตรวจ' : activeMyTasksTab === 'done' ? 'เฉพาะที่ตรวจแล้ว' : 'ทั้งหมด'} (${printAssets.length} รายการ)</h4>
+        <table><thead><tr><th style="width:40px; text-align:center;">ลำดับ</th><th>รหัสพัสดุ</th><th>ลักษณะ</th><th>สถานที่</th><th style="text-align:center;">สถานะ</th></tr></thead><tbody>${htmlRows}</tbody></table>
         <script>setTimeout(function(){ window.print(); window.close(); }, 1000);<\/script></body></html>`;
       printWindow.document.write(docHtml);
       printWindow.document.close();
@@ -2339,60 +2799,300 @@
     };
 
     // ==========================================
-    // 📷 ระบบสแกนผ่านกล้อง: เสียง Beep, ไฟฉาย, สลับกล้อง
+    // 📷 ระบบสแกนอเนกประสงค์รองรับทุกอุปกรณ์ (Universal Barcode/QR Scanner)
+    // รองรับ: Native BarcodeDetector (เร็วสูงสุด ไม่พึ่ง library), ZXing (ทุกแพลตฟอร์ม), และ Photo Fallback
     // ==========================================
+    let nativeBarcodeDetector = null;
+    let nativeScanRafId = null;
+    let activeMediaStream = null;
+
+    if ('BarcodeDetector' in window) {
+      try {
+        nativeBarcodeDetector = new BarcodeDetector({
+          formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'data_matrix']
+        });
+      } catch(e) {
+        console.warn("BarcodeDetector formats note:", e);
+      }
+    }
+
+    function initCodeReader() {
+      if (codeReader) return codeReader;
+      if (typeof ZXing !== 'undefined') {
+        try {
+          codeReader = new ZXing.BrowserMultiFormatReader();
+          return codeReader;
+        } catch(e) {
+          console.warn("ZXing Init note:", e);
+        }
+      }
+      return null;
+    }
+
+    function updateCameraDevices() {
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+          videoInputDevices = (devices || []).filter(d => d.kind === 'videoinput');
+          const btnSwitch = document.getElementById('btn-switch-cam');
+          if (btnSwitch) {
+            if (videoInputDevices.length > 1) {
+              btnSwitch.classList.remove('hidden');
+            } else {
+              btnSwitch.classList.add('hidden');
+            }
+          }
+        }).catch(e => console.warn(e));
+      }
+    }
+
+    function handleScanSuccess(codeText) {
+      if (!codeText) return;
+      playScanBeep();
+      if (currentScannerMode === 'inspect') {
+        const sInput = document.getElementById('s_barcode');
+        if (sInput) sInput.value = codeText;
+        stopScanner();
+        searchAsset();
+      } else {
+        const bInput = document.getElementById('b_barcode');
+        if (bInput) bInput.value = codeText;
+        stopScanner();
+        searchForBorrow();
+      }
+    }
+
+    // ==========================================
+    // 📋 ระบบแสดงและแยกรายการพัสดุในสถานที่ที่กำลังตรวจ (ตรวจแล้ว vs ยังไม่ตรวจ)
+    // ==========================================
+    let activeScanTab = 'pending';
+
+    window.switchScanListTab = function(tab) {
+      activeScanTab = tab;
+      const btnPending = document.getElementById('tab-scan-pending-btn');
+      const btnDone = document.getElementById('tab-scan-done-btn');
+      if (tab === 'pending') {
+        if (btnPending) { btnPending.className = 'px-2 py-1 rounded bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 transition text-[11px] shadow-xs font-bold'; }
+        if (btnDone) { btnDone.className = 'px-2 py-1 rounded text-gray-500 dark:text-gray-400 hover:text-green-600 transition text-[11px] font-bold'; }
+      } else {
+        if (btnPending) { btnPending.className = 'px-2 py-1 rounded text-gray-500 dark:text-gray-400 hover:text-red-600 transition text-[11px] font-bold'; }
+        if (btnDone) { btnDone.className = 'px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 transition text-[11px] shadow-xs font-bold'; }
+      }
+      renderScanLocationAssets();
+    };
+
+    window.renderScanLocationAssets = function() {
+      const locSelect = document.getElementById('s_location');
+      const loc = locSelect ? locSelect.value : '';
+      const listContainer = document.getElementById('scan-loc-asset-list');
+      const summaryEl = document.getElementById('scan-loc-summary');
+      const countPendingEl = document.getElementById('scan-count-pending');
+      const countDoneEl = document.getElementById('scan-count-done');
+      const searchVal = (document.getElementById('scan-loc-search')?.value || '').toLowerCase().trim();
+      const currentRound = globalData.settings.round || '';
+
+      if (!loc) {
+        if (summaryEl) summaryEl.innerText = 'กรุณาเลือกสถานที่ตั้งด้านบน';
+        if (countPendingEl) countPendingEl.innerText = '0';
+        if (countDoneEl) countDoneEl.innerText = '0';
+        if (listContainer) listContainer.innerHTML = '<p class="text-center text-gray-400 py-3">ยังไม่ได้เลือกสถานที่</p>';
+        return;
+      }
+
+      const locAssets = globalData.assets.filter(a => a.Location === loc);
+      const pendingAssets = locAssets.filter(a => a.InspectRound !== currentRound);
+      const doneAssets = locAssets.filter(a => a.InspectRound === currentRound);
+
+      if (countPendingEl) countPendingEl.innerText = pendingAssets.length;
+      if (countDoneEl) countDoneEl.innerText = doneAssets.length;
+      if (summaryEl) {
+        const pct = locAssets.length > 0 ? Math.round((doneAssets.length / locAssets.length) * 100) : 0;
+        summaryEl.innerText = `${loc} (ตรวจแล้ว ${doneAssets.length}/${locAssets.length} ชิ้น • ${pct}%)`;
+      }
+
+      let targetList = activeScanTab === 'pending' ? pendingAssets : doneAssets;
+      if (searchVal) {
+        targetList = targetList.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
+      }
+
+      if (!listContainer) return;
+
+      if (targetList.length === 0) {
+        if (activeScanTab === 'pending') {
+          listContainer.innerHTML = '<div class="text-center py-4 text-green-600 dark:text-green-400 font-bold bg-green-50/50 dark:bg-green-900/20 rounded-lg"><i class="fas fa-check-circle mr-1"></i>สถานที่นี้สแกนตรวจครบทั้งหมดแล้ว!</div>';
+        } else {
+          listContainer.innerHTML = '<div class="text-center py-4 text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-lg">ยังไม่มีรายการที่ตรวจแล้วในรอบนี้</div>';
+        }
+        return;
+      }
+
+      let html = '';
+      targetList.forEach(a => {
+        if (activeScanTab === 'pending') {
+          html += `
+            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-red-100 dark:border-gray-700 flex items-center justify-between gap-2 shadow-2xs hover:border-blue-400 transition">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">${a.AssetID}</span>
+                  ${a.Brand ? `<span class="text-[10px] text-gray-400 truncate">(${a.Brand})</span>` : ''}
+                </div>
+                <p class="text-gray-700 dark:text-gray-300 truncate text-[11px] font-medium">${a.Name}</p>
+              </div>
+              <button type="button" onclick="quickSelectAssetToInspect('${a.AssetID}')" class="px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] whitespace-nowrap shadow-xs flex items-center gap-1 transition">
+                <i class="fas fa-qrcode"></i> ตรวจ
+              </button>
+            </div>
+          `;
+        } else {
+          const isBroken = (a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม');
+          const statusBadge = isBroken ? '<span class="text-red-500 font-bold text-[10px]"><i class="fas fa-tools"></i> ชำรุด</span>' : '<span class="text-green-600 font-bold text-[10px]"><i class="fas fa-check"></i> ปกติ</span>';
+          html += `
+            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-green-100 dark:border-gray-700 flex items-center justify-between gap-2 shadow-2xs">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-mono font-bold text-gray-700 dark:text-gray-300 text-xs">${a.AssetID}</span>
+                  ${statusBadge}
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 truncate text-[11px]">${a.Name}</p>
+                <div class="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
+                  <span><i class="fas fa-user-check"></i> ${a.Inspector || '-'}</span>
+                  <span><i class="fas fa-clock"></i> ${a.InspectDate || '-'}</span>
+                </div>
+              </div>
+              <button type="button" onclick="showAssetDetailModal('${a.AssetID}')" class="p-1.5 text-gray-400 hover:text-blue-500 transition" title="ดูรายละเอียด">
+                <i class="fas fa-info-circle text-sm"></i>
+              </button>
+            </div>
+          `;
+        }
+      });
+      listContainer.innerHTML = html;
+    };
+
+    window.filterScanLocAssetList = function() {
+      renderScanLocationAssets();
+    };
+
+    window.quickSelectAssetToInspect = function(assetId) {
+      stopScanner();
+      const sInput = document.getElementById('s_barcode');
+      if (sInput) sInput.value = assetId;
+      searchAsset();
+    };
+
     window.startScanner = function(mode) {
-      if (!codeReader) return Swal.fire('ข้อผิดพลาด', 'โหลดระบบสแกนไม่สำเร็จ', 'error');
-      currentScannerMode = mode; 
+      currentScannerMode = mode;
       const readerContainer = document.getElementById('reader-container');
-      readerContainer.classList.remove('hidden'); 
+      if (!readerContainer) return;
+
+      // จัดตำแหน่ง reader-container ให้ตรงกับมุมมองที่กำลังใช้งาน (Inspect หรือ Borrow)
+      if (mode === 'borrow') {
+        const borrowBtn = document.querySelector('#borrow-step-1 button');
+        if (borrowBtn) borrowBtn.insertAdjacentElement('afterend', readerContainer);
+      } else {
+        const scanBtn = document.querySelector('#scan-step-1 button');
+        if (scanBtn) scanBtn.insertAdjacentElement('afterend', readerContainer);
+      }
+      readerContainer.classList.remove('hidden');
+
       if (document.getElementById('s_barcode')) document.getElementById('s_barcode').value = '';
       if (document.getElementById('b_barcode')) document.getElementById('b_barcode').value = '';
-      
-      const deviceId = (videoInputDevices.length > 0) ? videoInputDevices[currentDeviceIndex].deviceId : undefined;
-      const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: "environment" } };
 
-      codeReader.decodeFromConstraints(constraints, 'reader-video', (result, err) => {
-        if (result) {
-          playScanBeep(); // 🔔 เล่นเสียง Beep & สั่นเตือนทันทีที่สแกนติด
-          if (currentScannerMode === 'inspect') {
-            document.getElementById('s_barcode').value = result.text;
-            stopScanner();
-            searchAsset();
-          } else {
-            document.getElementById('b_barcode').value = result.text;
-            stopScanner();
-            searchForBorrow();
+      const deviceId = (videoInputDevices.length > 0 && videoInputDevices[currentDeviceIndex]) ? videoInputDevices[currentDeviceIndex].deviceId : undefined;
+      const constraints = deviceId ? { video: { deviceId: deviceId } } : { video: { facingMode: { ideal: "environment" } } };
+
+      const reader = initCodeReader();
+      
+      // วิธีที่ 1: สแกนผ่าน ZXing
+      if (reader) {
+        reader.decodeFromConstraints(constraints, 'reader-video', (result, err) => {
+          if (result && result.text) {
+            handleScanSuccess(result.text);
+          }
+        }).then(() => {
+          inspectVideoTrack();
+          updateCameraDevices();
+        }).catch(err => {
+          console.warn("ZXing constraints decode failed, switching to native camera stream:", err);
+          startNativeCameraStream(constraints);
+        });
+      } else {
+        // วิธีที่ 2: หากโหลด ZXing ไม่ได้ ให้ใช้ Native BarcodeDetector ร่วมกับ getUserMedia
+        startNativeCameraStream(constraints);
+      }
+    };
+
+    function inspectVideoTrack() {
+      const videoElem = document.getElementById('reader-video');
+      if (videoElem && videoElem.srcObject) {
+        const tracks = videoElem.srcObject.getVideoTracks();
+        if (tracks.length > 0) {
+          currentVideoTrack = tracks[0];
+          const capabilities = currentVideoTrack.getCapabilities ? currentVideoTrack.getCapabilities() : {};
+          if (capabilities.torch) {
+            const btnTorch = document.getElementById('btn-torch');
+            if (btnTorch) btnTorch.classList.remove('hidden');
           }
         }
-      }).then(() => {
-        // ตรวจสอบความสามารถไฟฉาย
+      }
+    }
+
+    function startNativeCameraStream(constraints) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        handleCameraUnavailable('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้องสด (เช่น LINE in-app browser) สามารถใช้การถ่ายรูปแทนได้');
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+        activeMediaStream = stream;
         const videoElem = document.getElementById('reader-video');
-        if (videoElem && videoElem.srcObject) {
-          const tracks = videoElem.srcObject.getVideoTracks();
-          if (tracks.length > 0) {
-            currentVideoTrack = tracks[0];
-            const capabilities = currentVideoTrack.getCapabilities ? currentVideoTrack.getCapabilities() : {};
-            if (capabilities.torch) {
-              const btnTorch = document.getElementById('btn-torch');
-              if (btnTorch) btnTorch.classList.remove('hidden');
-            }
+        if (videoElem) {
+          videoElem.srcObject = stream;
+          videoElem.setAttribute('playsinline', 'true');
+          videoElem.play().catch(e => console.warn(e));
+          inspectVideoTrack();
+          updateCameraDevices();
+
+          // วนลูปสแกนด้วย BarcodeDetector
+          if (nativeBarcodeDetector) {
+            const scanLoop = async () => {
+              if (!activeMediaStream) return;
+              if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA) {
+                try {
+                  const barcodes = await nativeBarcodeDetector.detect(videoElem);
+                  if (barcodes.length > 0 && barcodes[0].rawValue) {
+                    handleScanSuccess(barcodes[0].rawValue);
+                    return;
+                  }
+                } catch(e) {}
+              }
+              nativeScanRafId = requestAnimationFrame(scanLoop);
+            };
+            nativeScanRafId = requestAnimationFrame(scanLoop);
           }
         }
       }).catch(err => {
-        readerContainer.classList.add('hidden');
-        Swal.fire({
-          title: 'กล้องถูกบล็อก หรือเปิดไม่สำเร็จ',
-          text: 'คุณสามารถใช้การ "ถ่ายรูป" แทนได้',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'ถ่ายรูปสแกน',
-          cancelButtonText: 'ยกเลิก'
-        }).then((res) => {
-          if (res.isConfirmed) document.getElementById('qr-fallback-input').click();
-        });
+        console.error("Camera access error:", err);
+        handleCameraUnavailable('ไม่สามารถเปิดกล้องได้ หรือถูกปฏิเสธการเข้าถึง');
       });
-    };
+    }
+
+    function handleCameraUnavailable(message) {
+      const readerContainer = document.getElementById('reader-container');
+      if (readerContainer) readerContainer.classList.add('hidden');
+      Swal.fire({
+        title: 'กล้องเปิดไม่สำเร็จ',
+        text: (message || 'กล้องถูกบล็อก') + ' คุณต้องการถ่ายรูปสแกนแทนหรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ถ่ายรูปสแกน',
+        cancelButtonText: 'พิมพ์รหัสเอง'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          const fallbackInput = document.getElementById('qr-fallback-input');
+          if (fallbackInput) fallbackInput.click();
+        }
+      });
+    }
 
     window.switchCamera = function() {
       if (videoInputDevices.length <= 1) return;
@@ -2411,6 +3111,10 @@
     };
 
     window.stopScanner = function() {
+      if (nativeScanRafId) {
+        cancelAnimationFrame(nativeScanRafId);
+        nativeScanRafId = null;
+      }
       if (currentVideoTrack) {
         try { currentVideoTrack.applyConstraints({ advanced: [{ torch: false }] }); } catch(e) {}
         currentVideoTrack = null;
@@ -2418,29 +3122,82 @@
       isTorchOn = false;
       const btnTorch = document.getElementById('btn-torch');
       if (btnTorch) btnTorch.classList.add('hidden');
-      if (codeReader) codeReader.reset();
-      document.getElementById('reader-container').classList.add('hidden');
+      
+      if (codeReader) {
+        try { codeReader.reset(); } catch(e) {}
+      }
+      
+      if (activeMediaStream) {
+        try {
+          activeMediaStream.getTracks().forEach(t => t.stop());
+        } catch(e) {}
+        activeMediaStream = null;
+      }
+
+      const videoElem = document.getElementById('reader-video');
+      if (videoElem && videoElem.srcObject) {
+        try {
+          videoElem.srcObject.getTracks().forEach(t => t.stop());
+        } catch(e) {}
+        videoElem.srcObject = null;
+      }
+
+      const readerContainer = document.getElementById('reader-container');
+      if (readerContainer) readerContainer.classList.add('hidden');
     };
 
-    window.handleFallbackScan = function(e) {
-      if (e.target.files.length === 0 || !codeReader) return;
-      showLoader('วิเคราะห์รูปภาพ...');
-      const imgUrl = URL.createObjectURL(e.target.files[0]);
-      codeReader.decodeFromImageUrl(imgUrl).then(result => {
-        hideLoader();
-        playScanBeep();
-        document.getElementById('qr-fallback-input').value = ""; 
-        if (currentScannerMode === 'inspect') {
-          document.getElementById('s_barcode').value = result.text;
-          searchAsset();
-        } else {
-          document.getElementById('b_barcode').value = result.text;
-          searchForBorrow();
+    window.handleFallbackScan = async function(e) {
+      if (!e.target.files || e.target.files.length === 0) return;
+      showLoader('กำลังวิเคราะห์รูปภาพ...');
+      const file = e.target.files[0];
+
+      // 1. ลองถอดรหัสด้วย Native BarcodeDetector ก่อน (เร็วสุด ไม่พึ่งพาไลบรารีภายนอก)
+      if (nativeBarcodeDetector) {
+        try {
+          const img = new Image();
+          const imgUrl = URL.createObjectURL(file);
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = imgUrl;
+          });
+          const barcodes = await nativeBarcodeDetector.detect(img);
+          URL.revokeObjectURL(imgUrl);
+          if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+            hideLoader();
+            document.getElementById('qr-fallback-input').value = "";
+            handleScanSuccess(barcodes[0].rawValue);
+            return;
+          }
+        } catch(err) {
+          console.warn("BarcodeDetector fallback note:", err);
         }
-      }).catch(err => {
-        hideLoader();
-        document.getElementById('qr-fallback-input').value = "";
-        Swal.fire('อ่านไม่สำเร็จ', 'ไม่พบ QR Code ในรูปภาพ', 'error');
+      }
+
+      // 2. ลองถอดรหัสด้วย ZXing
+      const reader = initCodeReader();
+      if (reader) {
+        try {
+          const imgUrl = URL.createObjectURL(file);
+          const result = await reader.decodeFromImageUrl(imgUrl);
+          URL.revokeObjectURL(imgUrl);
+          if (result && result.text) {
+            hideLoader();
+            document.getElementById('qr-fallback-input').value = "";
+            handleScanSuccess(result.text);
+            return;
+          }
+        } catch(err) {
+          console.warn("ZXing fallback note:", err);
+        }
+      }
+
+      hideLoader();
+      document.getElementById('qr-fallback-input').value = "";
+      Swal.fire({
+        title: 'อ่านไม่สำเร็จ',
+        text: 'ไม่พบ QR Code หรือ Barcode ในรูปภาพ กรุณาลองถ่ายใหม่อีกครั้ง หรือพิมพ์รหัสด้วยตนเอง',
+        icon: 'error'
       });
     };
 
@@ -2720,18 +3477,43 @@
     };
 
     window.renderAllViews = function() {
-      document.getElementById('dash-total').innerText = globalData.dash.total || 0;
-      document.getElementById('dash-normal').innerText = globalData.dash.normal || 0;
-      document.getElementById('dash-broken').innerText = (globalData.dash.broken || 0) + (globalData.dash.repairing || 0);
-      document.getElementById('dash-lost').innerText = globalData.dash.lost || 0;
-      
-      // อัปเดตตัวนับ Quick Filter Pills
       const currentRound = globalData.settings.round || '';
-      const totalCount = globalData.assets.length;
-      const doneCount = globalData.assets.filter(a => a.InspectRound === currentRound).length;
+      
+      let myAssignedLocations = [];
+      if (globalData.assignments && currentUser) {
+        myAssignedLocations = globalData.assignments
+          .filter(a => a.Round === currentRound && a.AssignedTo === currentUser.username)
+          .map(a => a.Location);
+      }
+      
+      const isRegularUser = currentUser && currentUser.role !== 'Admin';
+      const userAssets = isRegularUser
+        ? globalData.assets.filter(a => myAssignedLocations.includes(a.Location))
+        : globalData.assets;
+
+      // สรุปยอด Dashboard การ์ด 4 ใบ
+      if (isRegularUser) {
+        const uTotal = userAssets.length;
+        const uNormal = userAssets.filter(a => (a.Status || '').includes('ปกติ') || (!a.Status.includes('ชำรุด') && !a.Status.includes('ซ่อม') && !a.Status.includes('สูญหาย'))).length;
+        const uBroken = userAssets.filter(a => (a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม')).length;
+        const uLost = userAssets.filter(a => (a.Status || '').includes('สูญหาย')).length;
+        document.getElementById('dash-total').innerText = uTotal;
+        document.getElementById('dash-normal').innerText = uNormal;
+        document.getElementById('dash-broken').innerText = uBroken;
+        document.getElementById('dash-lost').innerText = uLost;
+      } else {
+        document.getElementById('dash-total').innerText = globalData.dash.total || 0;
+        document.getElementById('dash-normal').innerText = globalData.dash.normal || 0;
+        document.getElementById('dash-broken').innerText = (globalData.dash.broken || 0) + (globalData.dash.repairing || 0);
+        document.getElementById('dash-lost').innerText = globalData.dash.lost || 0;
+      }
+      
+      // อัปเดตตัวนับ Quick Filter Pills (แสดงเฉพาะที่ได้รับมอบหมายสำหรับ User ทั่วไป)
+      const totalCount = userAssets.length;
+      const doneCount = userAssets.filter(a => a.InspectRound === currentRound).length;
       const pendingCount = totalCount - doneCount;
-      const brokenCount = globalData.assets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม')).length;
-      const borrowedCount = globalData.assets.filter(a => a.BorrowStatus === 'ถูกยืม').length;
+      const brokenCount = userAssets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('ซ่อม')).length;
+      const borrowedCount = userAssets.filter(a => a.BorrowStatus === 'ถูกยืม').length;
 
       if (document.getElementById('count-all')) document.getElementById('count-all').innerText = totalCount;
       if (document.getElementById('count-pending')) document.getElementById('count-pending').innerText = pendingCount;
@@ -2739,61 +3521,102 @@
       if (document.getElementById('count-broken')) document.getElementById('count-broken').innerText = brokenCount;
       if (document.getElementById('count-borrowed')) document.getElementById('count-borrowed').innerText = borrowedCount;
 
-      if (chartInstance) chartInstance.destroy();
+      if (chartInstance) {
+        try { chartInstance.destroy(); } catch(e) {}
+      }
       const isDark = document.documentElement.classList.contains('dark');
       const chartCtx = document.getElementById('statusChart');
       if (chartCtx) {
-        chartInstance = new Chart(chartCtx.getContext('2d'), {
-          type: 'doughnut',
-          data: {
-            labels: ['ปกติ', 'ชำรุด/ซ่อม', 'สูญหาย'],
-            datasets: [{
-              data: [globalData.dash.normal || 0, ((globalData.dash.broken || 0) + (globalData.dash.repairing || 0)), globalData.dash.lost || 0],
-              backgroundColor: ['#22c55e', '#eab308', '#ef4444'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                labels: { color: isDark ? 'white' : 'black' }
+        if (typeof Chart !== 'undefined') {
+          try {
+            const chartNormal = isRegularUser 
+              ? userAssets.filter(a => (a.Status || '').includes('ปกติ') || (!a.Status.includes('ชำรุด') && !a.Status.includes('ซ่อม') && !a.Status.includes('สูญหาย'))).length 
+              : (globalData.dash.normal || 0);
+            const chartBroken = isRegularUser 
+              ? userAssets.filter(a => (a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม')).length 
+              : ((globalData.dash.broken || 0) + (globalData.dash.repairing || 0));
+            const chartLost = isRegularUser 
+              ? userAssets.filter(a => (a.Status || '').includes('สูญหาย')).length 
+              : (globalData.dash.lost || 0);
+
+            chartInstance = new Chart(chartCtx.getContext('2d'), {
+              type: 'doughnut',
+              data: {
+                labels: ['ปกติ', 'ชำรุด/ซ่อม', 'สูญหาย'],
+                datasets: [{
+                  data: [chartNormal, chartBroken, chartLost],
+                  backgroundColor: ['#22c55e', '#eab308', '#ef4444'],
+                  borderWidth: 0
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    labels: { color: isDark ? 'white' : 'black' }
+                  }
+                }
               }
-            }
+            });
+          } catch(chartErr) {
+            console.warn("Chart creation error:", chartErr);
           }
-        });
+        }
       }
       
       filterTableAssets();
       
       let locSelect = document.getElementById('s_location');
       let locations = [];
-      globalData.assets.forEach(function(a) {
-        if (a.Location && locations.indexOf(a.Location) === -1) locations.push(a.Location);
-      });
-      locSelect.innerHTML = '';
-      locations.forEach(l => { locSelect.innerHTML += `<option value="${l}">${l}</option>`; });
+      if (isRegularUser) {
+        locations = myAssignedLocations.slice();
+      } else {
+        globalData.assets.forEach(function(a) {
+          if (a.Location && locations.indexOf(a.Location) === -1) locations.push(a.Location);
+        });
+      }
+      if (locSelect) {
+        const curVal = locSelect.value;
+        locSelect.innerHTML = '';
+        if (locations.length === 0) {
+          locSelect.innerHTML = isRegularUser 
+            ? '<option value="">-- ยังไม่ได้รับมอบหมายสถานที่ตรวจ --</option>' 
+            : '<option value="">-- ไม่มีข้อมูลสถานที่ --</option>';
+        } else {
+          locations.forEach(l => { locSelect.innerHTML += `<option value="${l}">${l}</option>`; });
+          if (locations.includes(curVal)) {
+            locSelect.value = curVal;
+          }
+        }
+      }
+      renderScanLocationAssets();
       
       // ตัวกรองสถานที่ในหน้ารายงาน
       const reportLocSelect = document.getElementById('report-location-filter');
       if (reportLocSelect) {
+        let allLocs = [];
+        globalData.assets.forEach(function(a) {
+          if (a.Location && allLocs.indexOf(a.Location) === -1) allLocs.push(a.Location);
+        });
         const curLocVal = reportLocSelect.value || 'all';
         reportLocSelect.innerHTML = '<option value="all">ทุกสถานที่ตั้ง (ทั้งหมด)</option>';
-        locations.forEach(l => { reportLocSelect.innerHTML += `<option value="${l}">${l}</option>`; });
+        allLocs.forEach(l => { reportLocSelect.innerHTML += `<option value="${l}">${l}</option>`; });
         reportLocSelect.value = curLocVal;
       }
 
       const reportFilter = document.getElementById('report-filter');
-      const currentReportFilter = reportFilter.value || 'all';
-      reportFilter.innerHTML = '<option value="all">ดูทุกสถานะ (สรุปทั้งหมด)</option>';
-      let cleanConditions = [];
-      globalData.conditions.forEach(cond => {
-        let clean = cond.replace(/^[0-9]+\.\s*/, '').trim();
-        if (!cleanConditions.includes(clean)) cleanConditions.push(clean);
-      });
-      cleanConditions.forEach(cond => { reportFilter.innerHTML += `<option value="${cond}">${cond}</option>`; });
-      reportFilter.value = currentReportFilter;
+      if (reportFilter) {
+        const currentReportFilter = reportFilter.value || 'all';
+        reportFilter.innerHTML = '<option value="all">ดูทุกสถานะ (สรุปทั้งหมด)</option>';
+        let cleanConditions = [];
+        globalData.conditions.forEach(cond => {
+          let clean = cond.replace(/^[0-9]+\.\s*/, '').trim();
+          if (!cleanConditions.includes(clean)) cleanConditions.push(clean);
+        });
+        cleanConditions.forEach(cond => { reportFilter.innerHTML += `<option value="${cond}">${cond}</option>`; });
+        reportFilter.value = currentReportFilter;
+      }
       
       if (document.getElementById('config_round')) document.getElementById('config_round').value = globalData.settings.round || '';
       if (document.getElementById('display_round')) document.getElementById('display_round').innerText = globalData.settings.round || '';

@@ -1,5 +1,5 @@
 // Service Worker for Asset Management Pro PWA
-const CACHE_NAME = 'asset-pro-pwa-v5.2';
+const CACHE_NAME = 'asset-pro-pwa-v5.3';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json'
@@ -33,19 +33,31 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests that are local / static
   if (event.request.method === 'GET') {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
-        return (
-          cachedResponse ||
-          fetch(event.request).catch(() => {
-            // If offline and requesting page, return index.html
-            if (event.request.mode === 'navigate') {
-              return caches.match('./index.html');
-            }
-          })
-        );
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && (
+            event.request.url.includes('cdn.jsdelivr.net') ||
+            event.request.url.includes('cdnjs.cloudflare.com') ||
+            event.request.url.includes('unpkg.com') ||
+            event.request.url.includes('fonts.googleapis.com') ||
+            event.request.url.includes('fonts.gstatic.com') ||
+            event.request.url.includes('cdn.tailwindcss.com')
+          )) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        }).catch(() => {
+          // If offline and requesting page, return index.html
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
       })
     );
   }
