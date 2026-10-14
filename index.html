@@ -105,16 +105,20 @@
         <button type="button" onclick="togglePasswordVisibility('password', this)" class="absolute right-3 top-3.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button>
       </div>
 
-      <div class="flex items-center justify-between mb-5 text-xs text-gray-600 dark:text-gray-400">
+      <div class="flex items-center justify-between mb-4 text-xs text-gray-600 dark:text-gray-400">
         <label class="flex items-center cursor-pointer">
           <input type="checkbox" id="remember-me" class="mr-2 rounded text-blue-600 focus:ring-0">
           จดจำชื่อผู้ใช้
         </label>
-        <span class="text-gray-400">v5.1 PWA</span>
+        <button type="button" onclick="forgotPasswordModal()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+          <i class="fas fa-key mr-1 text-[10px]"></i>ลืมรหัสผ่าน?
+        </button>
       </div>
 
       <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 shadow-lg text-lg transition mb-4">เข้าสู่ระบบ</button>
-      <p class="text-sm text-gray-500 dark:text-gray-400">ยังไม่มีบัญชี? <a href="#" onclick="showRegister()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">สมัครสมาชิกที่นี่</a></p>
+      <div class="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <span>ยังไม่มีบัญชี? <a href="#" onclick="showRegister()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">สมัครสมาชิกที่นี่</a></span>
+      </div>
     </div>
   </div>
   
@@ -1513,6 +1517,58 @@
       }
     };
 
+    window.forgotPasswordModal = function() {
+      const currentInputUser = document.getElementById('username')?.value.trim() || '';
+      Swal.fire({
+        title: '🔑 ลืมรหัสผ่าน',
+        html: `
+          <div class="text-left text-xs text-gray-600 dark:text-gray-300 mb-3 space-y-1">
+            <p>กรุณากรอก <b>Username</b> หรือ <b>อีเมล</b> ที่ท่านใช้ลงทะเบียนไว้ในระบบ</p>
+            <p class="text-gray-400">ระบบจะสร้างรหัสผ่านใหม่แบบสุ่มและจัดส่งตรงไปยังกล่องจดหมายอีเมลของคุณทันที</p>
+          </div>
+          <input type="text" id="swal_forgot_input" class="swal2-input !mt-1 !w-full text-sm" placeholder="Username หรือ อีเมล" value="${currentInputUser}">
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-paper-plane mr-1"></i> ส่งรหัสผ่านใหม่',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563eb',
+        preConfirm: () => {
+          const val = document.getElementById('swal_forgot_input')?.value.trim();
+          if (!val) {
+            Swal.showValidationMessage('กรุณากรอก Username หรือ อีเมล');
+            return false;
+          }
+          return val;
+        }
+      }).then(async (result) => {
+        if (result.isConfirmed && result.value) {
+          showLoader('กำลังตรวจสอบและส่งรหัสผ่านใหม่ไปยังอีเมล...');
+          try {
+            let res = await callAPI('apiForgotPassword', { identifier: result.value });
+            hideLoader();
+            if (res && res.success) {
+              Swal.fire({
+                icon: 'success',
+                title: 'ส่งรหัสผ่านใหม่สำเร็จ!',
+                html: `<div class="text-sm text-gray-700 dark:text-gray-200 mt-2">${res.message}</div>`,
+                confirmButtonText: 'รับทราบ / ไปเข้าสู่ระบบ',
+                confirmButtonColor: '#16a34a'
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'ไม่สามารถส่งรหัสผ่านได้',
+                text: res ? res.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ'
+              });
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message || e.toString(), 'error');
+          }
+        }
+      });
+    };
+
     window.logout = function() {
       localStorage.removeItem('assetUser');
       currentUser = null;
@@ -1866,7 +1922,7 @@
     window.assignLocation = async function() {
       const user = document.getElementById('assign_user').value;
       const selectedBoxes = Array.from(document.querySelectorAll('.assign-loc-cb:checked'));
-      const selectedLocs = selectedBoxes.map(cb => cb.value);
+      const selectedLocs = selectedBoxes.map(cb => cb.value.trim()).filter(Boolean);
 
       if (!user) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกผู้ตรวจสอบ', 'warning');
       if (selectedLocs.length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกสถานที่ตั้งอย่างน้อย 1 รายการ', 'warning');
@@ -1876,16 +1932,31 @@
         let res = await callAPI('apiAssignLocation', {
           round: globalData.settings.round,
           locations: selectedLocs,
-          location: selectedLocs[0], // fallback
+          location: selectedLocs[0], // fallback สำหรับ backend เวอร์ชันเดิม
           assignTo: user,
           user: currentUser.username
         });
+
+        // หาก backend ของ Apps Script ที่ deploy อยู่ยังเป็นเวอร์ชันเดิม (ซึ่งบันทึกแค่ location เดียว)
+        // ระบบจะส่งมอบหมายสถานที่ที่เหลือให้อัตโนมัติ เพื่อให้บันทึกครบถ้วน 100%
+        if (res && res.success && selectedLocs.length > 1 && (!res.message || !res.message.includes('สถานที่)!'))) {
+          for (let i = 1; i < selectedLocs.length; i++) {
+            await callAPI('apiAssignLocation', {
+              round: globalData.settings.round,
+              location: selectedLocs[i],
+              locations: [selectedLocs[i]],
+              assignTo: user,
+              user: currentUser.username
+            });
+          }
+        }
+
         hideLoader();
-        if (res.success) {
-          Swal.fire('สำเร็จ', res.message, 'success');
+        if (res && res.success) {
+          Swal.fire('สำเร็จ', `มอบหมายงานสำเร็จ (${selectedLocs.length} สถานที่)!`, 'success');
           fetchGlobalData();
         } else {
-          Swal.fire('ล้มเหลว', res.message, 'error');
+          Swal.fire('ล้มเหลว', res ? res.message : 'ไม่สามารถมอบหมายงานได้', 'error');
         }
       } catch(e) {
         hideLoader();
