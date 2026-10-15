@@ -1945,8 +1945,29 @@
       showLoader('กำลังซิงค์ข้อมูลล่าสุด...');
       try {
         let res = await callAPI('apiGetData', {});
-        globalData = res;
-        if (globalData && Array.isArray(globalData.assets)) {
+        if (!res || typeof res !== 'object') {
+          throw new Error("ข้อมูลตอบกลับจากเซิร์ฟเวอร์ไม่ถูกต้อง");
+        }
+        if (res.success === false) {
+          throw new Error(res.message || "เซิร์ฟเวอร์แจ้งข้อผิดพลาด");
+        }
+
+        // ตรวจสอบและกำหนดค่า Default ให้ globalData เสมอ ป้องกัน undefined
+        globalData = {
+          assets: Array.isArray(res.assets) ? res.assets : (globalData.assets || []),
+          dash: res.dash || globalData.dash || {},
+          settings: res.settings || globalData.settings || { round: 'ครั้งที่ 1 2569' },
+          conditions: Array.isArray(res.conditions) ? res.conditions : (globalData.conditions || []),
+          assignments: Array.isArray(res.assignments) ? res.assignments : (globalData.assignments || []),
+          users: Array.isArray(res.users) ? res.users : (globalData.users || [])
+        };
+
+        // สำรองข้อมูลลง LocalStorage เพื่อให้ระบบทำงานต่อได้แม้เครือข่ายกระตุก
+        try {
+          localStorage.setItem('cachedGlobalData', JSON.stringify(globalData));
+        } catch(storageErr) {}
+
+        if (Array.isArray(globalData.assets)) {
           globalData.assets.forEach(a => {
             if (a.InspectDate) {
               a.InspectDate = formatDisplayDate(a.InspectDate);
@@ -1963,6 +1984,19 @@
         }
       } catch(err) {
         hideLoader();
+        console.error("fetchGlobalData error:", err);
+        // หากดึงข้อมูลออนไลน์สะดุด แต่มีแคชเดิม ให้ใช้แคชเดิมแทนที่จะค้าง Error
+        const cached = localStorage.getItem('cachedGlobalData');
+        if (cached) {
+          try {
+            globalData = JSON.parse(cached);
+            filteredAssetsArray = globalData.assets;
+            filteredPrintArray = globalData.assets;
+            renderAllViews();
+            Swal.fire('โหลดข้อมูลจากแคช', 'การเชื่อมต่อขัดข้องชั่วคราว (' + err.message + ') ระบบจึงแสดงข้อมูลล่าสุดที่เคยโหลดไว้', 'warning');
+            return;
+          } catch(e) {}
+        }
         Swal.fire('ข้อผิดพลาด', err.message, 'error');
       }
     };
@@ -3483,14 +3517,35 @@
       }
 
       let targetList = activeScanTab === 'pending' ? pendingAssets : doneAssets;
+      let isCrossLocationSearch = false;
+
       if (searchVal) {
-        targetList = targetList.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
+        // ค้นหาในสถานที่ปัจจุบันก่อน
+        let filteredInLoc = targetList.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
+        
+        if (filteredInLoc.length > 0) {
+          targetList = filteredInLoc;
+        } else {
+          // หากไม่พบในสถานที่นี้ ให้ค้นหาจากฐานข้อมูลพัสดุทั้งหมด เพื่ออำนวยความสะดวกในการค้นหา/ย้ายห้อง
+          let allMatches = globalData.assets.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
+          if (allMatches.length > 0) {
+            targetList = (activeScanTab === 'pending')
+              ? allMatches.filter(a => a.InspectRound !== currentRound)
+              : allMatches.filter(a => a.InspectRound === currentRound);
+            if (targetList.length === 0) targetList = allMatches; // ถ้าไม่มีในแท็บนั้น ให้แสดงรายการที่เจอ
+            isCrossLocationSearch = true;
+          } else {
+            targetList = [];
+          }
+        }
       }
 
       if (!listContainer) return;
 
       if (targetList.length === 0) {
-        if (activeScanTab === 'pending') {
+        if (searchVal) {
+          listContainer.innerHTML = `<div class="text-center py-4 text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-lg"><i class="fas fa-search mr-1"></i>ไม่พบรหัสหรือชื่อพัสดุ "${searchVal}" ในระบบ</div>`;
+        } else if (activeScanTab === 'pending') {
           listContainer.innerHTML = '<div class="text-center py-4 text-green-600 dark:text-green-400 font-bold bg-green-50/50 dark:bg-green-900/20 rounded-lg"><i class="fas fa-check-circle mr-1"></i>สถานที่นี้สแกนตรวจครบทั้งหมดแล้ว!</div>';
         } else {
           listContainer.innerHTML = '<div class="text-center py-4 text-gray-400 bg-gray-50 dark:bg-gray-800/40 rounded-lg">ยังไม่มีรายการที่ตรวจแล้วในรอบนี้</div>';
@@ -3499,13 +3554,23 @@
       }
 
       let html = '';
+      if (isCrossLocationSearch) {
+        html += `<div class="p-1.5 mb-1.5 text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-1"><i class="fas fa-info-circle"></i> ผลการค้นหาจากสถานที่อื่น (คลิกเพื่อตรวจและย้ายมาห้องนี้ได้)</div>`;
+      }
+
       targetList.forEach(a => {
-        if (activeScanTab === 'pending') {
+        const isFromOtherLoc = a.Location !== loc;
+        const locBadge = isFromOtherLoc 
+          ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 border border-amber-300 truncate max-w-[120px]" title="ตำแหน่งเดิม: ${a.Location}"><i class="fas fa-map-marker-alt"></i> เดิม: ${a.Location || 'ไม่ระบุ'}</span>` 
+          : '';
+
+        if (activeScanTab === 'pending' || (isCrossLocationSearch && a.InspectRound !== currentRound)) {
           html += `
-            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-red-100 dark:border-gray-700 flex items-center justify-between gap-2 shadow-2xs hover:border-blue-400 transition">
+            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border ${isFromOtherLoc ? 'border-amber-300 dark:border-amber-700' : 'border-red-100 dark:border-gray-700'} flex items-center justify-between gap-2 shadow-2xs hover:border-blue-400 transition">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">${a.AssetID}</span>
+                  ${locBadge}
                   ${a.Brand ? `<span class="text-[10px] text-gray-400 truncate">(${a.Brand})</span>` : ''}
                 </div>
                 <p class="text-gray-700 dark:text-gray-300 truncate text-[11px] font-medium">${a.Name}</p>
@@ -3519,10 +3584,11 @@
           const isBroken = (a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม');
           const statusBadge = isBroken ? '<span class="text-red-500 font-bold text-[10px]"><i class="fas fa-tools"></i> ชำรุด</span>' : '<span class="text-green-600 font-bold text-[10px]"><i class="fas fa-check"></i> ปกติ</span>';
           html += `
-            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-green-100 dark:border-gray-700 flex items-center justify-between gap-2 shadow-2xs">
+            <div class="p-2 rounded-lg bg-white dark:bg-gray-800 border ${isFromOtherLoc ? 'border-amber-300 dark:border-amber-700' : 'border-green-100 dark:border-gray-700'} flex items-center justify-between gap-2 shadow-2xs">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="font-mono font-bold text-gray-700 dark:text-gray-300 text-xs">${a.AssetID}</span>
+                  ${locBadge}
                   ${statusBadge}
                 </div>
                 <p class="text-gray-600 dark:text-gray-400 truncate text-[11px]">${a.Name}</p>
@@ -4507,13 +4573,13 @@
         reportFilter.value = currentReportFilter;
       }
       
-      if (document.getElementById('config_round')) document.getElementById('config_round').value = globalData.settings.round || '';
-      if (document.getElementById('display_round')) document.getElementById('display_round').innerText = globalData.settings.round || '';
-      if (document.getElementById('config_telegram_token')) document.getElementById('config_telegram_token').value = globalData.settings.telegramToken || '';
-      if (document.getElementById('config_telegram_chat_id')) document.getElementById('config_telegram_chat_id').value = globalData.settings.telegramChatId || '';
-      if (document.getElementById('config_tg_inspect')) document.getElementById('config_tg_inspect').checked = !!globalData.settings.telegramNotifyInspect;
-      if (document.getElementById('config_tg_maint')) document.getElementById('config_tg_maint').checked = !!globalData.settings.telegramNotifyMaint;
-      if (document.getElementById('config_tg_borrow')) document.getElementById('config_tg_borrow').checked = !!globalData.settings.telegramNotifyBorrow;
+      if (document.getElementById('config_round')) document.getElementById('config_round').value = (globalData.settings && globalData.settings.round) || '';
+      if (document.getElementById('display_round')) document.getElementById('display_round').innerText = (globalData.settings && globalData.settings.round) || '';
+      if (document.getElementById('config_telegram_token')) document.getElementById('config_telegram_token').value = (globalData.settings && globalData.settings.telegramToken) || '';
+      if (document.getElementById('config_telegram_chat_id')) document.getElementById('config_telegram_chat_id').value = (globalData.settings && globalData.settings.telegramChatId) || '';
+      if (document.getElementById('config_tg_inspect')) document.getElementById('config_tg_inspect').checked = !!(globalData.settings && globalData.settings.telegramNotifyInspect);
+      if (document.getElementById('config_tg_maint')) document.getElementById('config_tg_maint').checked = !!(globalData.settings && globalData.settings.telegramNotifyMaint);
+      if (document.getElementById('config_tg_borrow')) document.getElementById('config_tg_borrow').checked = !!(globalData.settings && globalData.settings.telegramNotifyBorrow);
 
       renderLocationTracker();
       
