@@ -698,30 +698,168 @@
           </div>
         </div>
 
-        <!-- REPORT (ออกรายงานราชการ) -->
+        <!-- REPORT (ออกรายงานราชการและสรุปผลตรวจนับ) -->
         <div id="view-report" class="view hidden">
           <div class="glass p-4 md:p-6 rounded-xl shadow mb-6">
-            <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div class="w-full md:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Header & Action Buttons -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h2 class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+                  <i class="fas fa-chart-pie text-blue-600"></i> สรุปผลการตรวจสอบครุภัณฑ์
+                  <span id="report-round-badge" class="text-xs px-2.5 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full font-bold"></span>
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  ตรวจสอบความคืบหน้ารายบุคคล รายการที่ตรวจแล้ว และรายการที่ยังคงค้างตรวจ
+                </p>
+              </div>
+              <div class="flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                <button onclick="exportReportExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-emerald-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-excel"></i> ส่งออก Excel</button>
+                <button onclick="exportReportCSV()" class="bg-gray-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-csv"></i> CSV (UTF-8)</button>
+                <button onclick="printOfficialReport()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-pdf"></i> พิมพ์เอกสารราชการ (PDF)</button>
+              </div>
+            </div>
+
+            <!-- Filter Controls Panel -->
+            <div class="bg-blue-50/70 dark:bg-gray-800/80 p-4 rounded-xl border border-blue-100 dark:border-gray-700 mb-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <!-- 1. ผู้ตรวจสอบ -->
                 <div>
-                  <label class="block text-xs font-bold mb-1 text-blue-700 dark:text-blue-300"><i class="fas fa-filter mr-1"></i> กรองตามสภาพ</label>
+                  <label class="block text-xs font-bold mb-1 text-blue-800 dark:text-blue-300"><i class="fas fa-user-check mr-1"></i> ผู้ตรวจสอบ / เจ้าหน้าที่</label>
+                  <select id="report-user-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-xs"></select>
+                </div>
+                <!-- 2. สถานะการตรวจในรอบ -->
+                <div>
+                  <label class="block text-xs font-bold mb-1 text-blue-800 dark:text-blue-300"><i class="fas fa-tasks mr-1"></i> สถานะการตรวจในรอบ</label>
+                  <select id="report-audit-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-xs">
+                    <option value="all">📋 ทั้งหมด (ทั้งตรวจแล้วและยังไม่ตรวจ)</option>
+                    <option value="done">✅ ตรวจสอบแล้วในรอบนี้ (Inspected)</option>
+                    <option value="pending">⏳ ยังไม่ได้รับการตรวจสอบ (Pending)</option>
+                  </select>
+                </div>
+                <!-- 3. สภาพพัสดุ -->
+                <div>
+                  <label class="block text-xs font-bold mb-1 text-blue-800 dark:text-blue-300"><i class="fas fa-filter mr-1"></i> สภาพพัสดุ</label>
                   <select id="report-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-xs"></select>
                 </div>
+                <!-- 4. สถานที่ตั้ง -->
                 <div>
-                  <label class="block text-xs font-bold mb-1 text-blue-700 dark:text-blue-300"><i class="fas fa-map-marker-alt mr-1"></i> กรองตามสถานที่</label>
+                  <label class="block text-xs font-bold mb-1 text-blue-800 dark:text-blue-300"><i class="fas fa-map-marker-alt mr-1"></i> สถานที่ตั้ง</label>
                   <select id="report-location-filter" onchange="renderReportView()" class="w-full p-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none font-bold text-xs"></select>
                 </div>
               </div>
-              <div class="w-full md:w-1/2 flex flex-wrap sm:flex-nowrap gap-2 justify-end mt-2 md:mt-0">
-                  <button onclick="exportReportExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-emerald-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-excel"></i> ส่งออก Excel</button>
-                  <button onclick="exportReportCSV()" class="bg-gray-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-gray-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-csv"></i> CSV (UTF-8)</button>
-                  <button onclick="printOfficialReport()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition text-xs flex items-center gap-1.5 whitespace-nowrap"><i class="fas fa-file-pdf"></i> พิมพ์เอกสารราชการ (PDF)</button>
+            </div>
+
+            <!-- KPI Cards: Total, Inspected, Pending -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <!-- Total -->
+              <div onclick="setReportAuditFilter('all')" class="cursor-pointer bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-medium text-blue-100">พัสดุตามเงื่อนไขที่เลือก</p>
+                    <h3 class="text-2xl font-black mt-1" id="rep-kpi-total">0</h3>
+                  </div>
+                  <div class="p-3 bg-white/20 rounded-xl"><i class="fas fa-boxes text-xl"></i></div>
+                </div>
+                <p class="text-[11px] text-blue-100 mt-2 flex items-center gap-1"><i class="fas fa-info-circle"></i> คลิกเพื่อดูทั้งหมด</p>
+              </div>
+
+              <!-- Inspected (Done) -->
+              <div onclick="setReportAuditFilter('done')" class="cursor-pointer bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-medium text-emerald-100">ตรวจสอบแล้วในรอบนี้</p>
+                    <div class="flex items-baseline gap-2 mt-1">
+                      <h3 class="text-2xl font-black" id="rep-kpi-done">0</h3>
+                      <span class="text-xs font-bold bg-white/25 px-1.5 py-0.5 rounded-full" id="rep-kpi-done-pct">0%</span>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-white/20 rounded-xl"><i class="fas fa-check-circle text-xl"></i></div>
+                </div>
+                <p class="text-[11px] text-emerald-100 mt-2 flex items-center gap-1"><i class="fas fa-eye"></i> คลิกเพื่อดูเฉพาะที่ตรวจแล้ว</p>
+              </div>
+
+              <!-- Pending -->
+              <div onclick="setReportAuditFilter('pending')" class="cursor-pointer bg-gradient-to-br from-amber-500 to-amber-600 text-white p-4 rounded-xl shadow hover:shadow-lg transition transform hover:-translate-y-0.5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-medium text-amber-100">ยังไม่ได้รับการตรวจสอบ (คงเหลือ)</p>
+                    <div class="flex items-baseline gap-2 mt-1">
+                      <h3 class="text-2xl font-black" id="rep-kpi-pending">0</h3>
+                      <span class="text-xs font-bold bg-white/25 px-1.5 py-0.5 rounded-full" id="rep-kpi-pending-pct">0%</span>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-white/20 rounded-xl"><i class="fas fa-clock text-xl"></i></div>
+                </div>
+                <p class="text-[11px] text-amber-100 mt-2 flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i> คลิกเพื่อดูรายการที่ยังค้างตรวจ</p>
               </div>
             </div>
-            <h3 class="font-bold text-gray-800 dark:text-white mb-2"><i class="fas fa-chart-pie mr-1 text-blue-500"></i> ข้อมูลสรุป</h3>
-            <div class="overflow-x-auto rounded-lg mb-6"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/60 dark:bg-gray-800/60"><thead><tr class="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-sm"><th class="p-3 border-b border-blue-200 dark:border-gray-700">สภาพพัสดุ (Status)</th><th class="p-3 border-b border-blue-200 dark:border-gray-700 text-center">จำนวน (ชิ้น)</th><th class="p-3 border-b border-blue-200 dark:border-gray-700 text-center">ร้อยละ (%)</th></tr></thead><tbody id="report-summary-body"></tbody></table></div>
-            <h3 class="font-bold text-gray-800 dark:text-white mb-2 border-b pb-2 border-gray-200 dark:border-gray-700" id="report-detail-title"><i class="fas fa-list mr-1 text-blue-500"></i> รายการพัสดุ</h3>
-            <div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm"><thead><tr class="bg-gray-200/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300"><th class="p-2 border-b dark:border-gray-700 text-center">รูป</th><th class="p-2 border-b dark:border-gray-700">รหัสพัสดุ</th><th class="p-2 border-b dark:border-gray-700">ลักษณะ</th><th class="p-2 border-b dark:border-gray-700">สถานที่</th><th class="p-2 border-b dark:border-gray-700">สภาพ</th><th class="p-2 border-b dark:border-gray-700">วันที่ตรวจ</th><th class="p-2 border-b dark:border-gray-700">ผู้ตรวจสอบ</th></tr></thead><tbody id="report-problem-body"></tbody></table></div>
+
+            <!-- Section 1: สรุปสภาพพัสดุ (Summary by Condition) -->
+            <div class="mb-6">
+              <h3 class="font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-1.5"><i class="fas fa-chart-bar text-blue-500"></i> สรุปตามสภาพพัสดุ</h3>
+              <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table class="w-full text-left border-collapse whitespace-nowrap bg-white/60 dark:bg-gray-800/60">
+                  <thead>
+                    <tr class="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs">
+                      <th class="p-2.5 border-b border-blue-200 dark:border-gray-700">สภาพพัสดุ (Status)</th>
+                      <th class="p-2.5 border-b border-blue-200 dark:border-gray-700 text-center">จำนวน (ชิ้น)</th>
+                      <th class="p-2.5 border-b border-blue-200 dark:border-gray-700 text-center">ร้อยละ (%)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-summary-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Section 2: รายการพัสดุอย่างละเอียด (Detail List) -->
+            <div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b pb-2 border-gray-200 dark:border-gray-700">
+                <h3 class="font-bold text-gray-800 dark:text-white flex items-center" id="report-detail-title">
+                  <i class="fas fa-list mr-1 text-blue-500"></i> รายการพัสดุ
+                </h3>
+                <div class="flex items-center gap-2">
+                  <div class="relative">
+                    <input type="text" id="report-search-input" oninput="renderReportView()" placeholder="ค้นหารหัส, รายการ, ผู้ตรวจ..." class="pl-7 pr-3 py-1.5 rounded-lg border dark:bg-gray-700 bg-white dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-48 sm:w-60">
+                    <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Status Tabs -->
+              <div class="flex flex-wrap gap-2 mb-3">
+                <button type="button" onclick="setReportAuditFilter('all')" id="rep-tab-all" class="px-3 py-1 rounded-lg text-xs font-bold transition border border-gray-200 dark:border-gray-700 bg-blue-600 text-white shadow-sm">ทั้งหมด (<span id="rep-tab-all-count">0</span>)</button>
+                <button type="button" onclick="setReportAuditFilter('done')" id="rep-tab-done" class="px-3 py-1 rounded-lg text-xs font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-emerald-50"><i class="fas fa-check-circle text-emerald-500 mr-1"></i>ตรวจแล้ว (<span id="rep-tab-done-count">0</span>)</button>
+                <button type="button" onclick="setReportAuditFilter('pending')" id="rep-tab-pending" class="px-3 py-1 rounded-lg text-xs font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-amber-50"><i class="fas fa-clock text-amber-500 mr-1"></i>ยังไม่ตรวจ (<span id="rep-tab-pending-count">0</span>)</button>
+              </div>
+
+              <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-xs">
+                  <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-900/80 text-gray-700 dark:text-gray-300">
+                      <th class="p-2.5 border-b dark:border-gray-700 text-center w-10">รูป</th>
+                      <th class="p-2.5 border-b dark:border-gray-700">รหัสพัสดุ</th>
+                      <th class="p-2.5 border-b dark:border-gray-700">ลักษณะ/คุณสมบัติ</th>
+                      <th class="p-2.5 border-b dark:border-gray-700">สถานที่ตั้ง</th>
+                      <th class="p-2.5 border-b dark:border-gray-700 text-center">สภาพพัสดุ</th>
+                      <th class="p-2.5 border-b dark:border-gray-700 text-center">สถานะการตรวจ</th>
+                      <th class="p-2.5 border-b dark:border-gray-700">วันที่ตรวจ</th>
+                      <th class="p-2.5 border-b dark:border-gray-700">ผู้ตรวจสอบ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-problem-body"></tbody>
+                </table>
+              </div>
+
+              <!-- Pagination info & buttons -->
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-2 mt-3 pt-2 text-xs text-gray-500 dark:text-gray-400">
+                <div id="report-page-info">แสดง 0 รายการ</div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="changeReportPage(-1)" class="px-2.5 py-1 rounded border dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 text-gray-700 dark:text-gray-200 transition">&lt; ก่อนหน้า</button>
+                  <span id="report-page-num" class="px-2 font-bold text-gray-700 dark:text-gray-200">1</span>
+                  <button type="button" onclick="changeReportPage(1)" class="px-2.5 py-1 rounded border dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 text-gray-700 dark:text-gray-200 transition">ถัดไป &gt;</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1782,7 +1920,7 @@
       }
       
       stopScanner();
-      if (viewId === 'report') renderReportView(); 
+      if (viewId === 'report') { populateReportFilters(); renderReportView(); } 
       if (viewId === 'admin_users') loadAdminUsers(); 
       if (viewId === 'print') renderPrintTablePaginated(currentPrintPage); 
       if (viewId === 'admin_logs') loadAdminLogs(); 
@@ -2990,61 +3128,359 @@
     };
 
     // ==========================================
-    // 📊 รายงานผล: รองรับทั้งกรองสภาพ และกรองสถานที่
+    // 📊 ระบบรายงานผลการตรวจสอบครุภัณฑ์ (สรุปตรวจแล้ว/ยังไม่ตรวจ & ผู้ตรวจสอบ)
     // ==========================================
-    window.renderReportView = function() {
-      const reportBody = document.getElementById('report-summary-body');
-      const problemBody = document.getElementById('report-problem-body');
-      const filterVal = document.getElementById('report-filter').value;
-      const locFilterVal = document.getElementById('report-location-filter').value || 'all';
+    let currentReportPage = 1;
+    const itemsPerReportPage = 50;
+    let cachedReportData = null;
 
-      let filteredAssets = globalData.assets;
-      if (locFilterVal !== 'all') {
-        filteredAssets = filteredAssets.filter(a => a.Location === locFilterVal);
-      }
-      if (filterVal !== 'all') {
-        filteredAssets = filteredAssets.filter(a => a.Status === filterVal);
-      }
+    window.populateReportFilters = function() {
+      // 1. ตัวกรองผู้ตรวจสอบ / เจ้าหน้าที่
+      const userSelect = document.getElementById('report-user-filter');
+      if (userSelect) {
+        const curUserVal = userSelect.value || '';
+        userSelect.innerHTML = '<option value="all">👥 ผู้ตรวจสอบทั้งหมด (ภาพรวม)</option>';
+        
+        const registeredUsers = {};
+        if (globalData.users && Array.isArray(globalData.users)) {
+          globalData.users.forEach(u => {
+            registeredUsers[u.username] = u.name;
+            userSelect.innerHTML += `<option value="${u.username}">👤 ${u.name} (${u.username})</option>`;
+          });
+        }
 
-      let summaryData = {};
-      let totalItemsForPct = filteredAssets.length;
-      filteredAssets.forEach(a => {
-        let s = a.Status;
-        if (!summaryData[s]) summaryData[s] = 0;
-        summaryData[s]++;
-      });
+        // ค้นหาชื่อผู้ตรวจอื่นๆ ที่มีในประวัติพัสดุ (กรณีผู้ตรวจไม่ได้อยู่ในตาราง users โดยตรง)
+        if (globalData.assets && Array.isArray(globalData.assets)) {
+          const otherInspectors = [];
+          globalData.assets.forEach(a => {
+            const insp = (a.Inspector || '').trim();
+            if (insp && !registeredUsers[insp] && !Object.values(registeredUsers).includes(insp) && !otherInspectors.includes(insp)) {
+              otherInspectors.push(insp);
+            }
+          });
+          otherInspectors.sort((a, b) => a.localeCompare(b, 'th')).forEach(insp => {
+            userSelect.innerHTML += `<option value="${insp}">👤 ${insp} (ผู้ตรวจในระบบ)</option>`;
+          });
+        }
 
-      let htmlSummary = '';
-      if (Object.keys(summaryData).length === 0) {
-        htmlSummary = '<tr><td colspan="3" class="p-3 text-center text-gray-500">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
-      } else {
-        for (const [status, count] of Object.entries(summaryData)) {
-          let pct = totalItemsForPct > 0 ? ((count / totalItemsForPct) * 100).toFixed(2) : 0;
-          let c = (status.includes('ชำรุด') || status.includes('ซ่อม')) ? 'text-yellow-600' : (status.includes('สูญหาย')) ? 'text-red-600' : 'text-green-600';
-          htmlSummary += `<tr class="border-b border-gray-200 dark:border-gray-700"><td class="p-3 font-bold ${c}">${status}</td><td class="p-3 text-center font-medium dark:text-white">${count}</td><td class="p-3 text-center text-gray-500">${pct}%</td></tr>`;
+        if (curUserVal) {
+          userSelect.value = curUserVal;
+        } else if (currentUser && currentUser.role !== 'Admin') {
+          userSelect.value = currentUser.username;
+        } else {
+          userSelect.value = 'all';
         }
       }
-      reportBody.innerHTML = htmlSummary;
 
-      let detailItems = filteredAssets;
-      if (filterVal === 'all') {
-        detailItems = filteredAssets.filter(a => a.Status.includes('ชำรุด') || a.Status.includes('สูญหาย') || a.Status.includes('ซ่อม'));
+      // 2. ตัวกรองสถานที่ตั้ง
+      const reportLocSelect = document.getElementById('report-location-filter');
+      if (reportLocSelect) {
+        let allLocs = [];
+        (globalData.assets || []).forEach(a => {
+          if (a.Location && !allLocs.includes(a.Location)) allLocs.push(a.Location);
+        });
+        allLocs.sort((a, b) => a.localeCompare(b, 'th'));
+        const curLocVal = reportLocSelect.value || 'all';
+        reportLocSelect.innerHTML = '<option value="all">ทุกสถานที่ตั้ง (ทั้งหมด)</option>';
+        allLocs.forEach(l => { reportLocSelect.innerHTML += `<option value="${l}">${l}</option>`; });
+        reportLocSelect.value = curLocVal;
       }
-      
-      const locText = locFilterVal === 'all' ? '' : ` [สถานที่: ${locFilterVal}]`;
-      document.getElementById('report-detail-title').innerHTML = filterVal === 'all' ? `<i class="fas fa-exclamation-circle mr-1 text-red-500"></i> รายการพัสดุที่มีปัญหา/แจ้งซ่อม${locText}` : `<i class="fas fa-list mr-1 text-blue-500"></i> รายการพัสดุ (สถานะ: ${filterVal})${locText}`;
-      
-      let htmlProblems = '';
-      if (detailItems.length === 0) {
-        htmlProblems = '<tr><td colspan="7" class="p-4 text-center text-gray-500">ไม่พบรายการพัสดุตามเงื่อนไข</td></tr>';
-      } else {
-        detailItems.forEach(a => {
-          let c = (a.Status.includes('กำลังซ่อม')) ? 'text-blue-600 bg-blue-100' : (a.Status.includes('ชำรุด')) ? 'text-yellow-600 bg-yellow-100' : (a.Status.includes('สูญหาย')) ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100';
-          let imgBtn = a.ImageURL ? `<button onclick="viewImage('${a.ImageURL}')" class="text-blue-500 hover:text-blue-700 bg-white p-1 rounded-full"><i class="fas fa-image"></i></button>` : `<span class="text-gray-300">-</span>`;
-          htmlProblems += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-200 text-xs"><td class="p-2 text-center w-10">${imgBtn}</td><td class="p-2 font-mono font-bold text-blue-600">${a.AssetID}</td><td class="p-2">${a.Name}</td><td class="p-2">${a.Location}</td><td class="p-2"><span class="px-2 py-1 rounded text-xs font-bold ${c}">${a.Status}</span></td><td class="p-2 text-gray-500">${a.InspectDate}</td><td class="p-2 text-gray-500 truncate max-w-[100px]">${a.Inspector}</td></tr>`;
+
+      // 3. ตัวกรองสภาพพัสดุ
+      const reportFilter = document.getElementById('report-filter');
+      if (reportFilter) {
+        const currentReportFilter = reportFilter.value || 'all';
+        reportFilter.innerHTML = '<option value="all">ดูทุกสภาพพัสดุ (สรุปทั้งหมด)</option>';
+        let cleanConditions = [];
+        (globalData.conditions || []).forEach(cond => {
+          let clean = cond.replace(/^[0-9]+\.\s*/, '').trim();
+          if (!cleanConditions.includes(clean)) cleanConditions.push(clean);
+        });
+        cleanConditions.forEach(cond => { reportFilter.innerHTML += `<option value="${cond}">${cond}</option>`; });
+        reportFilter.value = currentReportFilter;
+      }
+    };
+
+    window.getReportFilteredData = function() {
+      const currentRound = (globalData.settings && globalData.settings.round) || '';
+      const userSelect = document.getElementById('report-user-filter');
+      const auditSelect = document.getElementById('report-audit-filter');
+      const statusSelect = document.getElementById('report-filter');
+      const locSelect = document.getElementById('report-location-filter');
+      const searchInput = document.getElementById('report-search-input');
+
+      const userFilterVal = (userSelect ? userSelect.value : 'all') || 'all';
+      const auditFilterVal = (auditSelect ? auditSelect.value : 'all') || 'all';
+      const statusFilterVal = (statusSelect ? statusSelect.value : 'all') || 'all';
+      const locFilterVal = (locSelect ? locSelect.value : 'all') || 'all';
+      const searchQuery = (searchInput ? searchInput.value.trim().toLowerCase() : '');
+
+      let scopedAssets = (globalData.assets || []).slice();
+
+      let targetUserObj = null;
+      let targetDisplayName = 'ทุกคน (ภาพรวม)';
+      let assignedLocations = [];
+
+      if (userFilterVal !== 'all') {
+        targetUserObj = (globalData.users || []).find(u => u.username === userFilterVal || u.name === userFilterVal);
+        const targetUsername = targetUserObj ? targetUserObj.username : userFilterVal;
+        const targetName = targetUserObj ? targetUserObj.name : userFilterVal;
+        targetDisplayName = targetUserObj ? `${targetUserObj.name} (${targetUserObj.username})` : userFilterVal;
+
+        // หาสถานที่ที่ได้รับมอบหมายในรอบปัจจุบัน
+        assignedLocations = (globalData.assignments || [])
+          .filter(a => a.Round === currentRound && (a.AssignedTo === targetUsername || a.AssignedTo === targetName))
+          .map(a => a.Location);
+
+        // รายการของ user คนนี้:
+        // 1) รายการที่ user คนนี้เป็นคนตรวจในรอบปัจจุบัน (ชื่อตรงกับ inspectorName หรือ username)
+        // 2) รายการในสถานที่ที่ได้รับมอบหมาย (ทั้งที่ตรวจแล้ว และยังไม่ได้ตรวจ)
+        scopedAssets = scopedAssets.filter(a => {
+          const isInspectedInRound = (a.InspectRound === currentRound);
+          const isMyInspection = isInspectedInRound && (
+            a.Inspector === targetName ||
+            a.Inspector === targetUsername ||
+            (targetName && a.Inspector && a.Inspector.includes(targetName)) ||
+            (targetUsername && a.Inspector && a.Inspector.toLowerCase() === targetUsername.toLowerCase())
+          );
+          const isInAssignedRoom = assignedLocations.includes(a.Location);
+
+          return isMyInspection || isInAssignedRoom;
         });
       }
-      problemBody.innerHTML = htmlProblems;
+
+      // กรองตามสถานที่ตั้ง
+      if (locFilterVal !== 'all') {
+        scopedAssets = scopedAssets.filter(a => a.Location === locFilterVal);
+      }
+
+      // กรองตามสภาพพัสดุ
+      if (statusFilterVal !== 'all') {
+        scopedAssets = scopedAssets.filter(a => a.Status === statusFilterVal);
+      }
+
+      // กรองตามคำค้นหา (Search)
+      if (searchQuery) {
+        scopedAssets = scopedAssets.filter(a => {
+          return (a.AssetID && a.AssetID.toLowerCase().includes(searchQuery)) ||
+                 (a.Name && a.Name.toLowerCase().includes(searchQuery)) ||
+                 (a.Location && a.Location.toLowerCase().includes(searchQuery)) ||
+                 (a.Inspector && a.Inspector.toLowerCase().includes(searchQuery)) ||
+                 (a.Status && a.Status.toLowerCase().includes(searchQuery));
+        });
+      }
+
+      // แบ่งกลุ่ม: ตรวจแล้วในรอบนี้ vs ยังไม่ตรวจ
+      const doneAssets = scopedAssets.filter(a => a.InspectRound === currentRound);
+      const pendingAssets = scopedAssets.filter(a => a.InspectRound !== currentRound);
+      const totalCount = scopedAssets.length;
+      const doneCount = doneAssets.length;
+      const pendingCount = pendingAssets.length;
+
+      // กรองตามสถานะการตรวจในรอบ
+      let finalAssets = scopedAssets;
+      if (auditFilterVal === 'done') {
+        finalAssets = doneAssets;
+      } else if (auditFilterVal === 'pending') {
+        finalAssets = pendingAssets;
+      }
+
+      return {
+        scopedAssets,
+        finalAssets,
+        doneAssets,
+        pendingAssets,
+        totalCount,
+        doneCount,
+        pendingCount,
+        currentRound,
+        userFilterVal,
+        targetUserObj,
+        targetDisplayName,
+        assignedLocations,
+        auditFilterVal,
+        statusFilterVal,
+        locFilterVal,
+        searchQuery
+      };
+    };
+
+    window.setReportAuditFilter = function(status) {
+      const select = document.getElementById('report-audit-filter');
+      if (select) select.value = status;
+      currentReportPage = 1;
+      renderReportView();
+    };
+
+    window.changeReportPage = function(step) {
+      if (!cachedReportData || !cachedReportData.finalAssets) return;
+      const maxPage = Math.max(1, Math.ceil(cachedReportData.finalAssets.length / itemsPerReportPage));
+      const newPage = currentReportPage + step;
+      if (newPage >= 1 && newPage <= maxPage) {
+        currentReportPage = newPage;
+        renderReportTableOnly();
+      }
+    };
+
+    window.renderReportView = function() {
+      const data = getReportFilteredData();
+      cachedReportData = data;
+
+      // 1. อัปเดตการ์ด KPI & ตัวเลขสรุป
+      const total = data.totalCount;
+      const done = data.doneCount;
+      const pending = data.pendingCount;
+      const donePct = total > 0 ? ((done / total) * 100).toFixed(1) : '0';
+      const pendingPct = total > 0 ? ((pending / total) * 100).toFixed(1) : '0';
+
+      if (document.getElementById('rep-kpi-total')) document.getElementById('rep-kpi-total').innerText = total.toLocaleString();
+      if (document.getElementById('rep-kpi-done')) document.getElementById('rep-kpi-done').innerText = done.toLocaleString();
+      if (document.getElementById('rep-kpi-done-pct')) document.getElementById('rep-kpi-done-pct').innerText = `${donePct}%`;
+      if (document.getElementById('rep-kpi-pending')) document.getElementById('rep-kpi-pending').innerText = pending.toLocaleString();
+      if (document.getElementById('rep-kpi-pending-pct')) document.getElementById('rep-kpi-pending-pct').innerText = `${pendingPct}%`;
+
+      if (document.getElementById('rep-tab-all-count')) document.getElementById('rep-tab-all-count').innerText = total.toLocaleString();
+      if (document.getElementById('rep-tab-done-count')) document.getElementById('rep-tab-done-count').innerText = done.toLocaleString();
+      if (document.getElementById('rep-tab-pending-count')) document.getElementById('rep-tab-pending-count').innerText = pending.toLocaleString();
+
+      if (document.getElementById('report-round-badge')) {
+        document.getElementById('report-round-badge').innerText = data.currentRound ? `รอบ: ${data.currentRound}` : '';
+      }
+
+      // 2. ปรับสไตล์แท็บ Quick Filter
+      const tabAll = document.getElementById('rep-tab-all');
+      const tabDone = document.getElementById('rep-tab-done');
+      const tabPending = document.getElementById('rep-tab-pending');
+      const inactiveClass = "px-3 py-1 rounded-lg text-xs font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200";
+
+      if (tabAll) {
+        tabAll.className = data.auditFilterVal === 'all' 
+          ? "px-3 py-1 rounded-lg text-xs font-bold transition border border-blue-600 bg-blue-600 text-white shadow-sm"
+          : `${inactiveClass} hover:bg-gray-50`;
+      }
+      if (tabDone) {
+        tabDone.className = data.auditFilterVal === 'done'
+          ? "px-3 py-1 rounded-lg text-xs font-bold transition border border-emerald-600 bg-emerald-600 text-white shadow-sm"
+          : `${inactiveClass} hover:bg-emerald-50`;
+      }
+      if (tabPending) {
+        tabPending.className = data.auditFilterVal === 'pending'
+          ? "px-3 py-1 rounded-lg text-xs font-bold transition border border-amber-600 bg-amber-600 text-white shadow-sm"
+          : `${inactiveClass} hover:bg-amber-50`;
+      }
+
+      // 3. ตารางสรุปตามสภาพพัสดุ
+      const reportBody = document.getElementById('report-summary-body');
+      if (reportBody) {
+        let summaryData = {};
+        data.finalAssets.forEach(a => {
+          let s = a.Status || 'ปกติ';
+          if (!summaryData[s]) summaryData[s] = 0;
+          summaryData[s]++;
+        });
+
+        let htmlSummary = '';
+        const summaryTotal = data.finalAssets.length;
+        if (summaryTotal === 0) {
+          htmlSummary = '<tr><td colspan="3" class="p-3 text-center text-gray-500">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
+        } else {
+          for (const [status, count] of Object.entries(summaryData)) {
+            let pct = summaryTotal > 0 ? ((count / summaryTotal) * 100).toFixed(2) : 0;
+            let c = (status.includes('ชำรุด') || status.includes('ซ่อม')) ? 'text-yellow-600 dark:text-yellow-400 font-bold' : (status.includes('สูญหาย')) ? 'text-red-600 dark:text-red-400 font-bold' : 'text-green-600 dark:text-green-400 font-bold';
+            htmlSummary += `<tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-xs"><td class="p-2.5 ${c}"><i class="fas fa-tag mr-1 opacity-70"></i>${status}</td><td class="p-2.5 text-center font-bold dark:text-white">${count.toLocaleString()}</td><td class="p-2.5 text-center text-gray-500 dark:text-gray-400">${pct}%</td></tr>`;
+          }
+        }
+        reportBody.innerHTML = htmlSummary;
+      }
+
+      // 4. หัวตารางรายการพัสดุ
+      const titleEl = document.getElementById('report-detail-title');
+      if (titleEl) {
+        let t = '';
+        if (data.auditFilterVal === 'done') {
+          t = `<i class="fas fa-check-circle mr-1.5 text-emerald-500"></i> รายการพัสดุที่ตรวจสอบแล้ว (${data.finalAssets.length.toLocaleString()} รายการ)`;
+        } else if (data.auditFilterVal === 'pending') {
+          t = `<i class="fas fa-clock mr-1.5 text-amber-500"></i> รายการพัสดุที่ยังไม่ได้รับการตรวจสอบ (คงเหลือ ${data.finalAssets.length.toLocaleString()} รายการ)`;
+        } else {
+          t = `<i class="fas fa-list mr-1.5 text-blue-500"></i> รายการพัสดุทั้งหมด (${data.finalAssets.length.toLocaleString()} รายการ)`;
+        }
+        if (data.userFilterVal !== 'all') {
+          t += ` <span class="text-xs font-normal text-blue-600 dark:text-blue-400 ml-1.5">[ผู้ตรวจ: ${data.targetDisplayName}]</span>`;
+        }
+        if (data.locFilterVal !== 'all') {
+          t += ` <span class="text-xs font-normal text-gray-500 ml-1">[สถานที่: ${data.locFilterVal}]</span>`;
+        }
+        titleEl.innerHTML = t;
+      }
+
+      // 5. เรนเดอร์ตารางรายการแบบแบ่งหน้า (Pagination)
+      renderReportTableOnly();
+    };
+
+    window.renderReportTableOnly = function() {
+      const problemBody = document.getElementById('report-problem-body');
+      if (!problemBody) return;
+      if (!cachedReportData) cachedReportData = getReportFilteredData();
+
+      const items = cachedReportData.finalAssets;
+      const currentRound = cachedReportData.currentRound;
+      const totalItems = items.length;
+
+      const maxPage = Math.max(1, Math.ceil(totalItems / itemsPerReportPage));
+      if (currentReportPage > maxPage) currentReportPage = maxPage;
+      if (currentReportPage < 1) currentReportPage = 1;
+
+      const start = (currentReportPage - 1) * itemsPerReportPage;
+      const end = Math.min(start + itemsPerReportPage, totalItems);
+      const pageItems = items.slice(start, end);
+
+      if (pageItems.length === 0) {
+        problemBody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-400 dark:text-gray-500"><i class="fas fa-inbox text-3xl mb-2 block opacity-40"></i>ไม่พบรายการพัสดุตามเงื่อนไขที่เลือก</td></tr>';
+      } else {
+        let htmlRows = '';
+        pageItems.forEach(a => {
+          const isDone = (a.InspectRound === currentRound);
+          const auditBadge = isDone 
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 inline-flex items-center gap-1"><i class="fas fa-check-circle"></i> ตรวจแล้ว</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 inline-flex items-center gap-1"><i class="fas fa-clock"></i> ยังไม่ตรวจ</span>';
+          
+          let c = (a.Status.includes('กำลังซ่อม')) ? 'text-blue-700 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300' 
+                : (a.Status.includes('ชำรุด')) ? 'text-yellow-700 bg-yellow-100 dark:bg-yellow-900/40 dark:text-yellow-300' 
+                : (a.Status.includes('สูญหาย')) ? 'text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300' 
+                : 'text-green-700 bg-green-100 dark:bg-green-900/40 dark:text-green-300';
+          
+          let imgBtn = a.ImageURL 
+            ? `<button onclick="viewImage('${a.ImageURL}')" title="คลิกเพื่อดูรูป" class="text-blue-500 hover:text-blue-700 bg-white dark:bg-gray-700 p-1 rounded-full shadow-sm"><i class="fas fa-image"></i></button>` 
+            : `<span class="text-gray-300 dark:text-gray-600">-</span>`;
+
+          const dateDisplay = isDone ? (a.InspectDate || '-') : '<span class="text-gray-400 italic">(รอตรวจ)</span>';
+          const inspectorDisplay = isDone ? (a.Inspector || '-') : '<span class="text-gray-400 italic">-</span>';
+
+          htmlRows += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 dark:text-gray-200 text-xs">
+            <td class="p-2 text-center w-10">${imgBtn}</td>
+            <td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">${a.AssetID}</td>
+            <td class="p-2 font-medium max-w-xs truncate" title="${a.Name || ''}">${a.Name || '-'}</td>
+            <td class="p-2 text-gray-600 dark:text-gray-300">${a.Location || '-'}</td>
+            <td class="p-2 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${c}">${a.Status || 'ปกติ'}</span></td>
+            <td class="p-2 text-center">${auditBadge}</td>
+            <td class="p-2 text-gray-500 dark:text-gray-400 whitespace-nowrap">${dateDisplay}</td>
+            <td class="p-2 text-gray-600 dark:text-gray-300 font-medium truncate max-w-[120px]" title="${a.Inspector || ''}">${inspectorDisplay}</td>
+          </tr>`;
+        });
+        problemBody.innerHTML = htmlRows;
+      }
+
+      // ปรับปรุง Pagination Info
+      const pageInfo = document.getElementById('report-page-info');
+      const pageNum = document.getElementById('report-page-num');
+      if (pageInfo) {
+        pageInfo.innerText = totalItems > 0 
+          ? `แสดงรายการที่ ${start + 1} - ${end} จากทั้งหมด ${totalItems.toLocaleString()} รายการ (หน้า ${currentReportPage}/${maxPage})`
+          : 'ไม่มีข้อมูล';
+      }
+      if (pageNum) {
+        pageNum.innerText = `${currentReportPage} / ${maxPage}`;
+      }
     };
 
     // ==========================================
@@ -3107,59 +3543,100 @@
       document.body.removeChild(link);
     };
 
+    // ==========================================
+    // 📊 ส่งออกข้อมูลรายงานเป็น Excel (.xlsx) และ CSV
+    // ==========================================
     window.exportReportExcel = function() {
-      const filterVal = document.getElementById('report-filter').value;
-      const locFilterVal = document.getElementById('report-location-filter').value || 'all';
-      let exportData = globalData.assets;
-      if (locFilterVal !== 'all') exportData = exportData.filter(a => a.Location === locFilterVal);
-      if (filterVal !== 'all') exportData = exportData.filter(a => a.Status === filterVal);
-
-      if (exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export', 'warning');
+      const repData = getReportFilteredData();
+      const exportData = repData.finalAssets;
+      if (!exportData || exportData.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export ตามเงื่อนไขที่เลือก', 'warning');
+      }
 
       if (typeof XLSX === 'undefined') return exportReportCSV();
 
-      const rows = exportData.map((a, idx) => ({
-        'ลำดับ': idx + 1,
-        'รหัสพัสดุ': a.AssetID || '',
-        'ลักษณะ/รายการ': a.Name || '',
-        'สถานที่ตั้ง': a.Location || '',
-        'สภาพพัสดุ': a.Status || '',
-        'ผู้ตรวจนับ': a.Inspector || '',
-        'วันที่ตรวจ': a.InspectDate || '',
-        'รอบการตรวจ': a.InspectRound || ''
-      }));
+      const currentRound = repData.currentRound;
+      const rows = exportData.map((a, idx) => {
+        const isDone = (a.InspectRound === currentRound);
+        return {
+          'ลำดับ': idx + 1,
+          'รหัสพัสดุ': a.AssetID || '',
+          'ลักษณะ/รายการ': a.Name || '',
+          'สถานที่ตั้ง': a.Location || '',
+          'สภาพพัสดุ': a.Status || '',
+          'สถานะการตรวจในรอบ': isDone ? 'ตรวจแล้ว' : 'ยังไม่ตรวจ',
+          'ผู้ตรวจนับ': isDone ? (a.Inspector || '') : '',
+          'วันที่ตรวจ': isDone ? (a.InspectDate || '') : '',
+          'รอบการตรวจ': a.InspectRound || ''
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(rows);
       ws['!cols'] = [
-        { wch: 6 }, { wch: 22 }, { wch: 32 }, { wch: 22 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 14 }
+        { wch: 6 }, { wch: 22 }, { wch: 32 }, { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 14 }
       ];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'รายงานตรวจนับ');
-      const filename = `รายงานพัสดุ_${filterVal}_${locFilterVal !== 'all' ? locFilterVal : 'ทุกสถานที่'}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
+      XLSX.utils.book_append_sheet(wb, ws, 'รายงานผลตรวจนับ');
+      
+      const auditName = repData.auditFilterVal === 'done' ? 'ตรวจแล้ว' : (repData.auditFilterVal === 'pending' ? 'ยังไม่ตรวจ' : 'ทั้งหมด');
+      const userSafeName = (repData.userFilterVal !== 'all' ? (repData.targetUserObj ? repData.targetUserObj.username : repData.userFilterVal) : 'ทุกคน');
+      const filename = `รายงานตรวจนับ_${auditName}_${userSafeName}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
       XLSX.writeFile(wb, filename);
     };
 
     window.exportReportCSV = function() {
-      const filterVal = document.getElementById('report-filter').value;
-      const locFilterVal = document.getElementById('report-location-filter').value || 'all';
-      let exportData = globalData.assets;
-      if (locFilterVal !== 'all') exportData = exportData.filter(a => a.Location === locFilterVal);
-      if (filterVal !== 'all') exportData = exportData.filter(a => a.Status === filterVal);
+      const repData = getReportFilteredData();
+      const exportData = repData.finalAssets;
+      if (!exportData || exportData.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export ตามเงื่อนไขที่เลือก', 'warning');
+      }
 
-      if (exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ Export', 'warning');
-
+      const currentRound = repData.currentRound;
       let csv = "\uFEFF"; // UTF-8 BOM
-      csv += "ลำดับ,รหัสพัสดุ,ลักษณะ,สถานที่ตั้ง,สภาพพัสดุ,ผู้รับผิดชอบ/ตรวจสอบ,วันที่ตรวจสอบ\n";
+      csv += "ลำดับ,รหัสพัสดุ,ลักษณะ,สถานที่ตั้ง,สภาพพัสดุ,สถานะการตรวจในรอบ,ผู้รับผิดชอบ/ตรวจสอบ,วันที่ตรวจสอบ,รอบการตรวจ\n";
       exportData.forEach(function(a, idx) {
-        csv += `"${idx + 1}","${a.AssetID || ''}","${(a.Name || '').replace(/"/g, '""')}","${(a.Location || '').replace(/"/g, '""')}","${a.Status || ''}","${a.Inspector || ''}","${a.InspectDate || ''}"\n`;
+        const isDone = (a.InspectRound === currentRound);
+        csv += `"${idx + 1}","${a.AssetID || ''}","${(a.Name || '').replace(/"/g, '""')}","${(a.Location || '').replace(/"/g, '""')}","${a.Status || ''}","${isDone ? 'ตรวจแล้ว' : 'ยังไม่ตรวจ'}","${isDone ? (a.Inspector || '') : ''}","${isDone ? (a.InspectDate || '') : ''}","${a.InspectRound || ''}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Asset_Report_${filterVal}_${locFilterVal !== 'all' ? locFilterVal : 'all'}_${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.csv`;
+      const auditName = repData.auditFilterVal === 'done' ? 'ตรวจแล้ว' : (repData.auditFilterVal === 'pending' ? 'ยังไม่ตรวจ' : 'ทั้งหมด');
+      link.download = `Asset_Report_${auditName}_${new Date().toLocaleDateString('th-TH').replace(/\//g,'-')}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    };
+
+    // ==========================================
+    // 🖨️ พิมพ์เอกสารราชการ (PDF / Print Window)
+    // ==========================================
+    window.printOfficialReport = function() {
+      const repData = getReportFilteredData();
+      const exportData = repData.finalAssets;
+      if (!exportData || exportData.length === 0) {
+        return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้พิมพ์ตามเงื่อนไขที่เลือก', 'warning');
+      }
+
+      const currentRound = repData.currentRound;
+      let htmlRows = '';
+      exportData.forEach((a, idx) => {
+        const isDone = (a.InspectRound === currentRound);
+        const auditText = isDone 
+          ? '<span style="color:#15803d;font-weight:bold;">ตรวจแล้ว</span>' 
+          : '<span style="color:#b45309;font-weight:bold;">ยังไม่ตรวจ</span>';
+        htmlRows += `<tr><td style="text-align:center;">${idx+1}</td><td style="font-family:monospace;font-weight:bold;">${a.AssetID}</td><td>${a.Name || '-'}</td><td>${a.Location || '-'}</td><td style="text-align:center;">${a.Status || 'ปกติ'}</td><td style="text-align:center;">${auditText}</td><td>${isDone ? (a.Inspector || '-') : '-'}</td><td style="text-align:center;">${isDone ? (a.InspectDate || '-') : '-'}</td></tr>`;
+      });
+
+      const auditStatusText = repData.auditFilterVal === 'done' 
+        ? 'ตรวจสอบแล้วในรอบนี้' 
+        : (repData.auditFilterVal === 'pending' ? 'ยังไม่ได้รับการตรวจสอบ (คงเหลือ)' : 'ทั้งหมด (ทั้งตรวจแล้วและยังไม่ตรวจ)');
+      const inspectorText = repData.targetDisplayName;
+
+      let printWindow = window.open('', '_blank');
+      let docHtml = `<html><head><title>รายงานผลการตรวจสอบครุภัณฑ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet"><style>body { font-family: 'Sarabun', sans-serif; padding: 20px 40px; color: #000; line-height: 1.4; } .header { text-align: center; margin-bottom: 20px; } h2, h3 { margin: 4px 0; } .doc-info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; } th { background-color: #f0f0f0; text-align: center; font-weight: bold; } .sign-area { display: flex; justify-content: space-around; margin-top: 40px; text-align: center; font-size: 13px; } .sign-box { width: 30%; } .sign-line { border-bottom: 1px dotted #000; margin: 30px 15px 5px 15px; } @media print { @page { size: A4 landscape; margin: 10mm; } }</style></head><body><div class="header"><h2>รายงานผลการตรวจสอบพัสดุประจำปี</h2><h3>ศาลแขวงอุบลราชธานี</h3><p>รอบการตรวจสอบ: ${currentRound || '-'}</p></div><div class="doc-info"><div><div><strong>ผู้ตรวจสอบ / เจ้าหน้าที่:</strong> ${inspectorText}</div><div><strong>สถานะการตรวจ:</strong> ${auditStatusText} | <strong>สถานที่:</strong> ${repData.locFilterVal !== 'all' ? repData.locFilterVal : 'ทุกสถานที่'} | <strong>สภาพ:</strong> ${repData.statusFilterVal !== 'all' ? repData.statusFilterVal : 'ทุกสภาพ'}</div></div><div style="text-align:right;"><div><strong>จำนวนรายการ:</strong> ${exportData.length.toLocaleString()} ชิ้น</div><div><strong>วันที่พิมพ์:</strong> ${new Date().toLocaleDateString('th-TH')}</div></div></div><table><thead><tr><th style="width:40px;">ลำดับ</th><th style="width:130px;">รหัสพัสดุ</th><th>รายการ/ลักษณะ</th><th style="width:140px;">สถานที่ตั้ง</th><th style="width:90px;">สภาพ</th><th style="width:90px;">สถานะตรวจ</th><th style="width:140px;">ผู้ตรวจสอบ</th><th style="width:90px;">วันที่ตรวจ</th></tr></thead><tbody>${htmlRows}</tbody></table><div class="sign-area"><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้ตรวจสอบ / ผู้รายงาน</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>เจ้าหน้าที่พัสดุ</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้อำนวยการฯ / ผู้รับรอง</p></div></div><script>setTimeout(function(){ window.print(); window.close(); }, 1200);<\/script></body></html>`;
+      printWindow.document.write(docHtml);
+      printWindow.document.close();
     };
 
     // ==========================================
@@ -4413,24 +4890,6 @@
       executeGasSubmit('apiReturnAsset', { assetId: document.getElementById('b_id').innerText });
     };
 
-    window.printOfficialReport = function() {
-      const filterVal = document.getElementById('report-filter').value;
-      const locFilterVal = document.getElementById('report-location-filter').value || 'all';
-      let exportData = globalData.assets;
-      if (locFilterVal !== 'all') exportData = exportData.filter(a => a.Location === locFilterVal);
-      if (filterVal !== 'all') exportData = exportData.filter(a => a.Status === filterVal);
-
-      if (exportData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้พิมพ์', 'warning');
-      let htmlRows = '';
-      exportData.forEach((a, idx) => {
-        htmlRows += `<tr><td style="text-align:center;">${idx+1}</td><td>${a.AssetID}</td><td>${a.Name}</td><td>${a.Location}</td><td>${a.Status}</td><td>${a.Inspector}</td></tr>`;
-      });
-      let printWindow = window.open('', '_blank');
-      let docHtml = `<html><head><title>รายงานผลการตรวจสอบครุภัณฑ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet"><style>body { font-family: 'Sarabun', sans-serif; padding: 20px 40px; color: #000; line-height: 1.5; } .header { text-align: center; margin-bottom: 30px; } h2, h3 { margin: 5px 0; } .doc-info { display: flex; justify-content: space-between; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; } th, td { border: 1px solid #000; padding: 8px; text-align: left; } th { background-color: #f0f0f0; text-align: center; } .sign-area { display: flex; justify-content: space-around; margin-top: 50px; text-align: center; } .sign-box { width: 40%; } .sign-line { border-bottom: 1px dotted #000; margin: 30px 20px 5px 20px; } @media print { @page { size: A4; margin: 15mm; } }</style></head><body><div class="header"><h2>รายงานผลการตรวจสอบพัสดุประจำปี</h2><h3>ศาลแขวงอุบลราชธานี</h3><p>รอบการตรวจสอบ: ${globalData.settings.round}</p></div><div class="doc-info"><div>เงื่อนไขการรายงาน: ${filterVal === 'all' ? 'พัสดุทั้งหมด' : 'เฉพาะสถานะ ' + filterVal} ${locFilterVal !== 'all' ? '(' + locFilterVal + ')' : ''}</div><div>วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</div></div><table><thead><tr><th style="width:50px;">ลำดับ</th><th>รหัสพัสดุ</th><th>รายการ/ลักษณะ</th><th>สถานที่ตั้ง</th><th>สภาพ</th><th>ผู้ตรวจสอบ</th></tr></thead><tbody>${htmlRows}</tbody></table><div class="sign-area"><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>เจ้าหน้าที่พัสดุ</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้อำนวยการฯ / ผู้รับรอง</p></div></div><script>setTimeout(function(){ window.print(); window.close(); }, 1500);<\/script></body></html>`;
-      printWindow.document.write(docHtml);
-      printWindow.document.close();
-    };
-
     window.renderAllViews = function() {
       const currentRound = globalData.settings.round || '';
       
@@ -4547,31 +5006,8 @@
       }
       renderScanLocationAssets();
       
-      // ตัวกรองสถานที่ในหน้ารายงาน
-      const reportLocSelect = document.getElementById('report-location-filter');
-      if (reportLocSelect) {
-        let allLocs = [];
-        globalData.assets.forEach(function(a) {
-          if (a.Location && allLocs.indexOf(a.Location) === -1) allLocs.push(a.Location);
-        });
-        const curLocVal = reportLocSelect.value || 'all';
-        reportLocSelect.innerHTML = '<option value="all">ทุกสถานที่ตั้ง (ทั้งหมด)</option>';
-        allLocs.forEach(l => { reportLocSelect.innerHTML += `<option value="${l}">${l}</option>`; });
-        reportLocSelect.value = curLocVal;
-      }
-
-      const reportFilter = document.getElementById('report-filter');
-      if (reportFilter) {
-        const currentReportFilter = reportFilter.value || 'all';
-        reportFilter.innerHTML = '<option value="all">ดูทุกสถานะ (สรุปทั้งหมด)</option>';
-        let cleanConditions = [];
-        globalData.conditions.forEach(cond => {
-          let clean = cond.replace(/^[0-9]+\.\s*/, '').trim();
-          if (!cleanConditions.includes(clean)) cleanConditions.push(clean);
-        });
-        cleanConditions.forEach(cond => { reportFilter.innerHTML += `<option value="${cond}">${cond}</option>`; });
-        reportFilter.value = currentReportFilter;
-      }
+      // กำหนดค่าตัวกรองในหน้ารายงาน
+      populateReportFilters();
       
       if (document.getElementById('config_round')) document.getElementById('config_round').value = (globalData.settings && globalData.settings.round) || '';
       if (document.getElementById('display_round')) document.getElementById('display_round').innerText = (globalData.settings && globalData.settings.round) || '';
