@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#2563eb">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath fill='%23ffffff' d='M256 96L80 184l176 88 176-88-176-88zm0 184l-160-80v120l160 80 160-80V200l-160 80z'/%3E%3C/svg%3E">
   
-  <title>Asset Management Pro (ERP) - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v5.5 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -278,7 +278,16 @@
       </nav>
       <div class="p-4 border-t border-gray-200 dark:border-gray-700">
         <button onclick="toggleDarkMode()" class="w-full mb-2 px-4 py-2 rounded-lg bg-gray-200/50 dark:bg-gray-700/50 text-sm font-bold dark:text-white hover:bg-gray-300 transition"><i class="fas fa-moon"></i> สลับโหมด</button>
-        <button onclick="logout()" class="w-full px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 shadow transition"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+        <button onclick="logout()" class="w-full mb-3 px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 shadow transition"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+        <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-1 border-t border-gray-200/60 dark:border-gray-700/60">
+          <span class="flex items-center gap-1.5 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            เวอร์ชัน <b class="app-version-text text-blue-600 dark:text-blue-400">v5.5</b>
+          </span>
+          <button type="button" onclick="checkAppUpdate(true)" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">
+            <i class="fas fa-sync-alt text-[10px]"></i> เช็คอัปเดต
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -995,7 +1004,19 @@
         </div>
       
       </div>
-      <footer class="mt-8 pt-4 pb-2 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full"><p class="text-[11px] font-medium text-gray-500 dark:text-gray-400"><i class="fas fa-code text-blue-500 mr-1"></i> พัฒนาโดย <strong>นายวีระยุทธ ประชุมรักษ์</strong><br>พนักงานคอมพิวเตอร์ ประจำศาลแขวงอุบลราชธานี</p></footer>
+      <footer class="mt-8 pt-4 pb-3 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full">
+        <div class="flex flex-wrap items-center justify-center gap-2 mb-1">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700">
+            <i class="fas fa-code-branch text-[10px]"></i> Version <span class="app-version-text">v5.5</span>
+          </span>
+          <button type="button" onclick="checkAppUpdate(true)" class="text-[11px] text-gray-500 hover:text-blue-600 dark:text-gray-400 underline flex items-center gap-1 cursor-pointer transition">
+            <i class="fas fa-sync-alt text-[9px]"></i> ตรวจสอบการอัปเดต
+          </button>
+        </div>
+        <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+          <i class="fas fa-code text-blue-500 mr-1"></i> พัฒนาโดย <strong>นายวีระยุทธ ประชุมรักษ์</strong><br>พนักงานคอมพิวเตอร์ ประจำศาลแขวงอุบลราชธานี
+        </p>
+      </footer>
     </main>
   </div>
 
