@@ -97,7 +97,7 @@
         <span class="font-bold text-xs sm:text-sm tracking-wide text-white"><i class="fas fa-qrcode mr-1 text-blue-400"></i> สแกนบาร์โค้ด / QR Code</span>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button id="btn-switch-cam" type="button" onclick="switchCamera()" class="hidden bg-gray-800/90 hover:bg-gray-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold border border-gray-600 flex items-center gap-1 transition" title="สลับกล้อง">
+        <button id="btn-switch-cam" type="button" onclick="switchCamera()" class="bg-gray-800/90 hover:bg-gray-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold border border-gray-600 flex items-center gap-1 transition" title="สลับกล้อง">
           <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">สลับกล้อง</span>
         </button>
         <button id="btn-torch" type="button" onclick="toggleTorch()" class="hidden bg-yellow-500 hover:bg-yellow-400 text-black px-2.5 py-1.5 rounded-lg shadow text-xs font-bold flex items-center gap-1 transition">
@@ -979,7 +979,8 @@
     let currentVideoTrack = null;
     let isTorchOn = false;
     let videoInputDevices = [];
-    let currentDeviceIndex = 0;
+    let currentDeviceIndex = -1; // -1 = ยังไม่ได้เลือก หรือใช้ facingMode กล้องหลังอัตโนมัติ
+    let currentFacingMode = 'environment'; // บังคับกล้องหลัง (environment) เป็นค่าเริ่มต้นเสมอ
 
     let currentAssetPage = 1;
     const itemsPerPage = 25;
@@ -3196,10 +3197,25 @@
           videoInputDevices = (devices || []).filter(d => d.kind === 'videoinput');
           const btnSwitch = document.getElementById('btn-switch-cam');
           if (btnSwitch) {
+            // หากมีกล้องมากกว่า 1 ตัว หรือบนอุปกรณ์มือถือ แสดงปุ่มสลับกล้องให้ผู้ใช้แตะได้ตลอด
             if (videoInputDevices.length > 1) {
               btnSwitch.classList.remove('hidden');
             } else {
-              btnSwitch.classList.add('hidden');
+              // ตรวจสอบ userAgent หากเป็นมือถือให้คงปุ่มสลับกล้องไว้ เพื่อให้สลับ facingMode ได้
+              const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+              if (isMobile) btnSwitch.classList.remove('hidden');
+              else btnSwitch.classList.add('hidden');
+            }
+          }
+
+          // ค้นหากล้องหลัง (Back / Rear / Environment) ตั้งเป็นกล้องเริ่มต้นเสมอ
+          if (videoInputDevices.length > 0 && currentDeviceIndex === 0) {
+            const backIndex = videoInputDevices.findIndex(d => {
+              const label = (d.label || '').toLowerCase();
+              return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('กล้องหลัง');
+            });
+            if (backIndex !== -1) {
+              currentDeviceIndex = backIndex;
             }
           }
         }).catch(e => console.warn(e));
@@ -3352,8 +3368,18 @@
       if (document.getElementById('s_barcode')) document.getElementById('s_barcode').value = '';
       if (document.getElementById('b_barcode')) document.getElementById('b_barcode').value = '';
 
-      const deviceId = (videoInputDevices.length > 0 && videoInputDevices[currentDeviceIndex]) ? videoInputDevices[currentDeviceIndex].deviceId : undefined;
-      const constraints = deviceId ? { video: { deviceId: deviceId } } : { video: { facingMode: { ideal: "environment" } } };
+      // สร้าง constraints สำหรับกล้อง: บังคับกล้องหลัง (environment) เป็นค่าเริ่มต้น
+      let constraints = { video: {} };
+      if (videoInputDevices.length > 0 && currentDeviceIndex >= 0 && videoInputDevices[currentDeviceIndex]) {
+        constraints.video = { deviceId: { exact: videoInputDevices[currentDeviceIndex].deviceId } };
+      } else {
+        // บังคับกล้องหลังก่อนเสมอ (facingMode: "environment")
+        constraints.video = {
+          facingMode: currentFacingMode ? { ideal: currentFacingMode } : { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
+      }
 
       const reader = initCodeReader();
       
@@ -3451,8 +3477,13 @@
     }
 
     window.switchCamera = function() {
-      if (videoInputDevices.length <= 1) return;
-      currentDeviceIndex = (currentDeviceIndex + 1) % videoInputDevices.length;
+      if (videoInputDevices.length > 1) {
+        currentDeviceIndex = (currentDeviceIndex + 1) % videoInputDevices.length;
+      } else {
+        // หากอุปกรณ์ยังไม่ได้แจกแจงรายการ deviceId ให้สลับ facingMode ระหว่าง environment กับ user
+        currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+        currentDeviceIndex = -1;
+      }
       stopScanner();
       startScanner(currentScannerMode);
     };
