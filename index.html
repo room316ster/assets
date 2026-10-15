@@ -341,12 +341,14 @@
                   </ul>
                 </div>
                 <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">2. วิธีการสแกนตรวจนับ</h4>
+                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">2. วิธีการสแกนตรวจนับ & สลับกล้อง</h4>
                   <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
                     <li>กดเมนู <b>"สแกนตรวจนับ"</b> ด้านซ้ายมือ</li>
-                    <li>เลือกสถานที่ตั้งที่คุณกำลังเดินตรวจอยู่</li>
-                    <li>กดปุ่ม <b>"เปิดกล้องสแกน"</b> นำมือถือไปส่องที่ป้าย QR Code เมื่อจับภาพได้จะมีเสียง <i>"ปี๊บ!"</i> และสั่นเตือน</li>
-                    <li>ระบบจะดึงข้อมูลมาให้ ระบุสภาพ และกด <b>"บันทึกผล"</b></li>
+                    <li>กดปุ่ม <b>"เปิดกล้องสแกน"</b> ระบบจะเปิดกล้องหลังแบบเต็มหน้าจออัตโนมัติ</li>
+                    <li>มีปุ่ม <b><i class="fas fa-camera-rotate"></i> สลับกล้อง</b> และปุ่ม <b><i class="fas fa-bolt"></i> เปิดไฟฉาย</b> ช่วยตรวจในที่มืด</li>
+                    <li>ส่องที่ป้าย QR Code เมื่อติดจะมีเสียง <i>"ปี๊บ!"</i> และสั่นเตือน</li>
+                    <li>หากครุภัณฑ์ถูกย้ายห้อง สามารถคลิกเปลี่ยน <b>"สถานที่ตั้งใหม่"</b> ได้ทันที</li>
+                    <li>ระบุสภาพ แนบรูปถ่าย (ถ้ามี) แล้วกด <b>"บันทึกผล"</b></li>
                   </ul>
                 </div>
                 <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
@@ -378,7 +380,7 @@
                   <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">ก่อนเริ่มการตรวจนับประจำปีทุกครั้ง แอดมินต้องไปตั้งค่ารอบการตรวจใหม่ เพื่อให้ระบบล้างข้อมูลการตรวจของปีเก่าออกครับ</p>
                   <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
                     <li>กดเมนู <b>"ตั้งค่าระบบ"</b> (รูปล้อเฟืองด้านล่าง)</li>
-                    <li>พิมพ์รอบปัจจุบัน เช่น <i>"ประจำปี 2567"</i></li>
+                    <li>พิมพ์รอบปัจจุบัน เช่น <i>"ประจำปี 2569"</i></li>
                     <li>กด <b>"บันทึกการตั้งค่า"</b></li>
                   </ul>
                 </div>
@@ -406,6 +408,7 @@
                     <li>กดเมนู <b>"จัดการผู้ใช้งาน"</b></li>
                     <li>หาชื่อคนที่ลืมรหัส แล้วกดปุ่มสีเหลือง <b>"รีเซ็ทรหัส"</b></li>
                     <li>ระบบจะสุ่มรหัสผ่านใหม่ตัวเลข 6 หลักขึ้นมาให้ และจะส่งเข้าอีเมลของเจ้าหน้าที่คนนั้นอัตโนมัติ</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -436,6 +439,32 @@
                     <li>เลือก <b>"ติดตั้งแอป" (Install)</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></li>
                     <li>กดยืนยัน ไอคอนแอปจะไปอยู่ที่หน้าจอหลักทันที</li>
                   </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 4: การตรวจสอบและอัปเดตเวอร์ชันโปรแกรม (Version Update) -->
+            <div class="mt-8 border-t border-purple-200 dark:border-purple-800 pt-6">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-xl text-purple-700 dark:text-purple-300"><i class="fas fa-sync-alt mr-2"></i>ส่วนที่ 4: การตรวจสอบและอัปเดตเวอร์ชัน (Update App)</h3>
+                <button onclick="checkAppUpdate(true)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow transition flex items-center gap-1">
+                  <i class="fas fa-redo-alt"></i> เช็คอัปเดตตอนนี้
+                </button>
+              </div>
+              <div class="bg-purple-50/60 dark:bg-gray-800 p-4 rounded-lg border border-purple-100 dark:border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300">
+                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
+                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-tag mr-1"></i> 1. ดูเลขเวอร์ชันปัจจุบัน</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">สังเกตป้ายสีฟ้า เช่น <b>v5.5</b> ที่หน้า Login, แถบเมนูด้านซ้าย หรือแถบด้านบนของหน้าจอ</p>
+                  </div>
+                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
+                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-bell mr-1"></i> 2. การแจ้งเตือนอัตโนมัติ</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">เมื่อระบบมีเวอร์ชันใหม่ จะมีหน้าต่างแจ้งเตือน <i>"พบเวอร์ชันใหม่!"</i> ให้กดปุ่ม <b>"อัปเดตเลย"</b> ได้ทันที</p>
+                  </div>
+                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
+                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-broom mr-1"></i> 3. บังคับล้างแคชด้วยตัวเอง</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">หากเครื่องยังไม่เห็นฟังก์ชันใหม่ สามารถแตะที่ป้ายเวอร์ชันหรือกด <b>"เช็คอัปเดต"</b> เพื่อล้างไฟล์เก่าทิ้งได้ทันที</p>
+                  </div>
                 </div>
               </div>
             </div>
