@@ -1810,10 +1810,11 @@
     };
 
     window.setupUserUI = function() {
-      document.getElementById('user-display').innerText = currentUser.name; 
-      document.getElementById('profile_role').innerText = currentUser.role; 
-      document.getElementById('prof_username').value = currentUser.username; 
-      document.getElementById('prof_name').value = currentUser.name; 
+      if (!currentUser) return;
+      document.getElementById('user-display').innerText = currentUser.name || ''; 
+      document.getElementById('profile_role').innerText = currentUser.role || 'User'; 
+      document.getElementById('prof_username').value = currentUser.username || ''; 
+      document.getElementById('prof_name').value = currentUser.name || ''; 
       document.getElementById('prof_email').value = currentUser.email || '';
       
       const roleBadge = document.getElementById('user-role-badge');
@@ -1828,6 +1829,8 @@
       }
 
       const adminElements = ['menu_admin_assign', 'menu_admin_users', 'menu_admin_logs', 'menu_settings'];
+      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+
       if (currentUser.role === 'Admin') {
         adminElements.forEach(id => {
           const el = document.getElementById(id);
@@ -1838,6 +1841,25 @@
           const el = document.getElementById(id);
           if (el) { el.classList.add('hidden'); el.classList.remove('block'); }
         });
+
+        // 🔒 ความปลอดภัยขั้นเด็ดขาด: หากผู้ใช้ไม่ใช่ Admin และมีหน้าต่าง Admin เปิดค้างอยู่
+        // ให้ปิดหน้านั้นทันที และสลับหน้าจอไปที่แดชบอร์ด (Dashboard)
+        let redirected = false;
+        adminOnlyViews.forEach(vId => {
+          const vEl = document.getElementById('view-' + vId);
+          if (vEl && !vEl.classList.contains('hidden')) {
+            vEl.classList.add('hidden');
+            redirected = true;
+          }
+        });
+
+        const visibleViews = document.querySelectorAll('.view:not(.hidden)');
+        if (redirected || visibleViews.length === 0) {
+          const dash = document.getElementById('view-dashboard');
+          if (dash) dash.classList.remove('hidden');
+          const pageTitle = document.getElementById('page-title');
+          if (pageTitle) pageTitle.innerText = 'แดชบอร์ด';
+        }
       }
     };
 
@@ -1973,9 +1995,31 @@
         if (res.success) {
           currentUser = res.user;
           localStorage.setItem('assetUser', JSON.stringify(currentUser));
+          hideLoader(); // ซ่อนตัวโหลดทันทีเมื่อยืนยันตัวตนสำเร็จ
+
+          // ⚡ เร่งความเร็วสูงสุด (Instant 0ms UI): ดึงแคชเดิมขึ้นมาแสดงผลทันที ไม่ต้องรอดึงข้อมูลใหม่
+          const cached = localStorage.getItem('cachedGlobalData');
+          if (cached) {
+            try {
+              globalData = JSON.parse(cached);
+              if (Array.isArray(globalData.assets)) {
+                globalData.assets.forEach(a => {
+                  if (a.InspectDate) a.InspectDate = formatDisplayDate(a.InspectDate);
+                  if (a.ImageURL) a.ImageURL = getDirectImageUrl(a.ImageURL);
+                });
+              }
+              renderAllViews();
+            } catch(e) {}
+          }
+
           setupUserUI();
           showPage('app');
-          fetchGlobalData();
+          
+          // 🔒 บังคับรีเซ็ตหน้าจอมาที่แดชบอร์ดเสมอ ป้องกันหน้าต่าง Admin หรือสิทธิ์เดิมค้าง
+          nav('dashboard');
+
+          // ดึงข้อมูลจริงล่าสุดในเบื้องหลัง (Background Sync) โดยไม่บล็อกหน้าจอผู้ใช้
+          fetchGlobalData(false, true);
         } else {
           hideLoader();
           Swal.fire('ล้มเหลว', res.message, 'error');
@@ -2067,6 +2111,36 @@
       localStorage.removeItem('assetUser');
       currentUser = null;
       stopScanner();
+
+      // 1. ซ่อนทุก view ใน #page-app ทันที ป้องกันหน้าจอค้างข้ามสิทธิ์
+      document.querySelectorAll('.view').forEach(function(v) {
+        v.classList.add('hidden');
+      });
+
+      // 2. รีเซ็ตกลับมาที่ view-dashboard เป็นค่าเริ่มต้น
+      const dash = document.getElementById('view-dashboard');
+      if (dash) dash.classList.remove('hidden');
+      const title = document.getElementById('page-title');
+      if (title) title.innerText = 'แดชบอร์ด';
+
+      // 3. ปิด SweetAlert หรือ Modal ที่เปิดค้างไว้
+      if (window.Swal && Swal.isVisible()) Swal.close();
+
+      // 4. ล้างรหัสผ่านในฟอร์มเพื่อความปลอดภัย
+      const pInput = document.getElementById('password');
+      if (pInput) pInput.value = '';
+      const remCb = document.getElementById('remember-me');
+      if (!remCb || !remCb.checked) {
+        const uInput = document.getElementById('username');
+        if (uInput) uInput.value = '';
+      }
+
+      // 5. ปิดแถบเมนูด้านข้างบนหน้าจอมือถือ
+      const sb = document.getElementById('sidebar');
+      if (sb && !sb.classList.contains('hidden') && window.innerWidth < 768) {
+        sb.classList.add('hidden');
+      }
+
       showPage('login');
     };
 
@@ -2099,7 +2173,7 @@
       }
     };
 
-    window.fetchGlobalData = async function(manual = false) {
+    window.fetchGlobalData = async function(manual = false, isBackground = false) {
       if (!navigator.onLine) {
         Swal.fire('ออฟไลน์', 'กำลังใช้งานโหมดออฟไลน์ (ดูข้อมูลล่าสุดที่โหลดไว้)', 'info');
         return;
@@ -2110,7 +2184,11 @@
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
       if (refreshBtn) refreshBtn.disabled = true;
 
-      showLoader(manual ? 'กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...' : 'กำลังซิงค์ข้อมูลล่าสุด...');
+      // แสดง Loader เต็มจอเฉพาะกรณี: กดปุ่มรีเฟรชเอง (manual) หรือยังไม่มีข้อมูลในระบบเลย
+      const hasExistingData = globalData && Array.isArray(globalData.assets) && globalData.assets.length > 0;
+      if (manual || (!hasExistingData && !isBackground)) {
+        showLoader(manual ? 'กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...' : 'กำลังซิงค์ข้อมูลล่าสุด...');
+      }
       try {
         let res = await callAPI('apiGetData', {});
         if (!res || typeof res !== 'object') {
@@ -2153,6 +2231,17 @@
         hideLoader();
         if (refreshIcon) refreshIcon.classList.remove('fa-spin');
         if (refreshBtn) refreshBtn.disabled = false;
+
+        // 🔒 ตรวจสอบสิทธิ์ผู้ใช้: หากไม่ใช่ Admin และเผลอเปิดหน้า Admin ค้างไว้ ให้ส่งกลับไปแดชบอร์ดทันที
+        const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+        if (currentUser && currentUser.role !== 'Admin') {
+          adminOnlyViews.forEach(vId => {
+            const vEl = document.getElementById('view-' + vId);
+            if (vEl && !vEl.classList.contains('hidden')) {
+              nav('dashboard');
+            }
+          });
+        }
 
         if (document.querySelectorAll('.view:not(.hidden)').length === 0) {
           nav('dashboard');
@@ -2733,6 +2822,9 @@
     };
 
     window.editSingleAssignment = function(locName, currentAssignedTo) {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถแก้ไขผู้รับผิดชอบได้', 'warning');
+      }
       if (!globalData.users || globalData.users.length === 0) {
         return Swal.fire('แจ้งเตือน', 'ไม่พบรายชื่อผู้ใช้ในระบบ', 'warning');
       }
@@ -2777,7 +2869,7 @@
               location: locName,
               locations: [locName],
               assignTo: newAssignee,
-              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
+              user: currentUser.username
             });
             hideLoader();
             if (res && res.success) {
@@ -2795,6 +2887,9 @@
     };
 
     window.deleteSingleAssignment = function(locName) {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบการมอบหมายได้', 'warning');
+      }
       Swal.fire({
         title: 'ยืนยันการลบ?',
         html: `คุณต้องการยกเลิกการมอบหมายสถานที่ <b class="text-pink-600">"${locName}"</b> ใช่หรือไม่?<br><span class="text-xs text-gray-400">ผู้ตรวจสอบจะไม่เห็นสถานที่นี้ในรายการตรวจอีกต่อไป</span>`,
@@ -2811,7 +2906,7 @@
             let res = await callAPI('apiDeleteAssignment', {
               round: globalData.settings.round,
               location: locName,
-              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
+              user: currentUser.username
             });
             hideLoader();
             if (res && res.success) {
@@ -2829,6 +2924,9 @@
     };
 
     window.deleteAllAssignments = function() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถล้างข้อมูลการมอบหมายได้', 'warning');
+      }
       Swal.fire({
         title: '⚠️ ลบการมอบหมายทั้งหมด?',
         html: `คุณต้องการยกเลิกการมอบหมายงาน<b>ทั้งหมด</b>ในรอบ <b>${globalData.settings.round}</b> ใช่หรือไม่?<br><span class="text-xs text-red-500">การดำเนินการนี้จะล้างข้อมูลการมอบหมายทั้งหมดในรอบนี้</span>`,
@@ -2845,7 +2943,7 @@
             let res = await callAPI('apiDeleteAssignment', {
               round: globalData.settings.round,
               location: '__ALL__',
-              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
+              user: currentUser.username
             });
             hideLoader();
             if (res && res.success) {
@@ -2920,6 +3018,9 @@
     };
 
     window.assignLocation = async function() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถมอบหมายงานได้', 'warning');
+      }
       const user = document.getElementById('assign_user').value;
       const selectedBoxes = Array.from(document.querySelectorAll('.assign-loc-cb:checked'));
       const selectedLocs = selectedBoxes.map(cb => cb.value.trim()).filter(Boolean);
@@ -2968,6 +3069,7 @@
     // 🛡️ ฟังก์ชันสำหรับแอดมิน: จัดการผู้ใช้ & ดู Log
     // ==========================================
     window.loadAdminUsers = async function() {
+      if (!currentUser || currentUser.role !== 'Admin') return;
       const tbody = document.getElementById('admin-users-body');
       tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>กำลังโหลดรายชื่อผู้ใช้...</td></tr>';
       try {
@@ -3075,6 +3177,7 @@
     };
 
     window.loadAdminLogs = async function() {
+      if (!currentUser || currentUser.role !== 'Admin') return;
       const tbody = document.getElementById('admin-logs-body');
       tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>กำลังโหลดประวัติระบบ...</td></tr>';
       try {
@@ -4042,6 +4145,9 @@
     // ⚙️ บันทึกการตั้งค่าระบบ & ทดสอบ Telegram
     // ==========================================
     window.saveSettings = async function() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถตั้งค่าระบบได้', 'warning');
+      }
       const roundText = document.getElementById('config_round').value.trim();
       const tgToken = (document.getElementById('config_telegram_token') ? document.getElementById('config_telegram_token').value.trim() : '');
       const tgChatId = (document.getElementById('config_telegram_chat_id') ? document.getElementById('config_telegram_chat_id').value.trim() : '');
@@ -4059,7 +4165,7 @@
           telegramNotifyInspect: tgInspect,
           telegramNotifyMaint: tgMaint,
           telegramNotifyBorrow: tgBorrow,
-          user: currentUser ? currentUser.username : 'Admin' 
+          user: currentUser.username 
         });
         hideLoader();
         if (res.success) {
