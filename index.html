@@ -1745,18 +1745,13 @@
     async function callAPI(action, payload = {}) {
       if (!navigator.onLine && action !== 'apiLogin') throw new Error("คุณกำลังออฟไลน์ ไม่สามารถดึงข้อมูลได้");
       try {
-        // Cache-Busting Parameter ป้องกันเบราว์เซอร์หรือเครือข่ายแคชคำขอ POST / 302 Redirect
+        // Cache-Busting Query Parameter บน URL ป้องกันแคชโดยไม่ทำให้เกิด CORS Preflight (OPTIONS)
         const buster = `_t=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         const apiUrl = GAS_API_URL + (GAS_API_URL.includes('?') ? '&' : '?') + buster;
 
         let response = await fetch(apiUrl, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'text/plain;charset=utf-8',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          },
-          cache: 'no-store',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: action, payload: payload, _t: Date.now() })
         });
         let data = await response.json();
@@ -2571,7 +2566,7 @@
               location: locName,
               locations: [locName],
               assignTo: newAssignee,
-              user: currentUser.username
+              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
             });
             hideLoader();
             if (res && res.success) {
@@ -2605,7 +2600,7 @@
             let res = await callAPI('apiDeleteAssignment', {
               round: globalData.settings.round,
               location: locName,
-              user: currentUser.username
+              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
             });
             hideLoader();
             if (res && res.success) {
@@ -2639,7 +2634,7 @@
             let res = await callAPI('apiDeleteAssignment', {
               round: globalData.settings.round,
               location: '__ALL__',
-              user: currentUser.username
+              user: (currentUser && currentUser.username) ? currentUser.username : 'admin'
             });
             hideLoader();
             if (res && res.success) {
