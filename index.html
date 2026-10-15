@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#2563eb">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath fill='%23ffffff' d='M256 96L80 184l176 88 176-88-176-88zm0 184l-160-80v120l160 80 160-80V200l-160 80z'/%3E%3C/svg%3E">
   
-  <title>Asset Management Pro (ERP) v5.5 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v5.6 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -166,7 +166,7 @@
       <h3 class="text-lg text-blue-600 dark:text-blue-400 mb-0.5 font-bold">Asset Management Pro</h3>
       <div class="flex items-center justify-center gap-2 mb-4">
         <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
-          <i class="fas fa-tag text-[9px]"></i> <span class="app-version-text">v5.5</span>
+          <i class="fas fa-tag text-[9px]"></i> <span class="app-version-text">v5.6</span>
         </span>
         <button type="button" onclick="checkAppUpdate(true)" class="text-[10px] text-gray-500 hover:text-blue-600 dark:text-gray-400 flex items-center gap-1 underline transition" title="กดเพื่อตรวจสอบและอัปเดตเวอร์ชัน">
           <i class="fas fa-sync-alt text-[9px]"></i> เช็คอัปเดต
@@ -240,7 +240,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400"><i class="fas fa-cubes mr-1"></i>AssetPro</h1>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 app-version-text cursor-pointer hover:bg-blue-200" onclick="checkAppUpdate(true)" title="คลิกเพื่อตรวจหาอัปเดต">v5.5</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 app-version-text cursor-pointer hover:bg-blue-200" onclick="checkAppUpdate(true)" title="คลิกเพื่อตรวจหาอัปเดต">v5.6</span>
           </div>
           <p class="text-[10px] text-gray-500 dark:text-gray-400">ศาลแขวงอุบลราชธานี</p>
         </div>
@@ -282,7 +282,7 @@
         <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-1 border-t border-gray-200/60 dark:border-gray-700/60">
           <span class="flex items-center gap-1.5 font-medium">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            เวอร์ชัน <b class="app-version-text text-blue-600 dark:text-blue-400">v5.5</b>
+            เวอร์ชัน <b class="app-version-text text-blue-600 dark:text-blue-400">v5.6</b>
           </span>
           <button type="button" onclick="checkAppUpdate(true)" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">
             <i class="fas fa-sync-alt text-[10px]"></i> เช็คอัปเดต
@@ -307,11 +307,11 @@
             <!-- ป้ายแสดงเวอร์ชัน + ปุ่มเช็คอัปเดต -->
             <button type="button" onclick="checkAppUpdate(true)" id="header-version-btn" class="bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 transition" title="เวอร์ชันปัจจุบัน คลิกเพื่อเช็คอัปเดต">
               <span class="w-2 h-2 rounded-full bg-green-500" id="version-status-dot"></span>
-              <span class="app-version-text font-mono">v5.5</span>
+              <span class="app-version-text font-mono">v5.6</span>
               <i class="fas fa-sync-alt text-[10px] text-gray-400"></i>
             </button>
             <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="forceSyncOffline()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
-            <button onclick="fetchGlobalData()" class="bg-blue-100 dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm text-xs font-bold text-blue-700 dark:text-white hover:bg-blue-200 transition" title="รีเฟรชข้อมูล"><i class="fas fa-sync-alt"></i></button>
+            <button id="header-refresh-btn" onclick="fetchGlobalData(true)" class="bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="รีเฟรชดึงข้อมูลล่าสุดจาก Google Sheets (ไม่แคช)"><i class="fas fa-sync-alt" id="header-refresh-icon"></i><span class="hidden sm:inline">รีเฟรช</span></button>
             <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')">
               <span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span>
               <span id="user-role-badge" class="text-[11px] px-2 py-0.5 rounded-full font-bold"></span>
@@ -455,7 +455,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300">
                   <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
                     <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-tag mr-1"></i> 1. ดูเลขเวอร์ชันปัจจุบัน</p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">สังเกตป้ายสีฟ้า เช่น <b>v5.5</b> ที่หน้า Login, แถบเมนูด้านซ้าย หรือแถบด้านบนของหน้าจอ</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">สังเกตป้ายสีฟ้า เช่น <b>v5.6</b> ที่หน้า Login, แถบเมนูด้านซ้าย หรือแถบด้านบนของหน้าจอ</p>
                   </div>
                   <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
                     <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-bell mr-1"></i> 2. การแจ้งเตือนอัตโนมัติ</p>
@@ -1174,7 +1174,7 @@
       <footer class="mt-8 pt-4 pb-3 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full">
         <div class="flex flex-wrap items-center justify-center gap-2 mb-1">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700">
-            <i class="fas fa-code-branch text-[10px]"></i> Version <span class="app-version-text">v5.5</span>
+            <i class="fas fa-code-branch text-[10px]"></i> Version <span class="app-version-text">v5.6</span>
           </span>
           <button type="button" onclick="checkAppUpdate(true)" class="text-[11px] text-gray-500 hover:text-blue-600 dark:text-gray-400 underline flex items-center gap-1 cursor-pointer transition">
             <i class="fas fa-sync-alt text-[9px]"></i> ตรวจสอบการอัปเดต
@@ -1194,7 +1194,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v5.5';
+    const APP_VERSION = 'v5.6';
 
     let currentUser = null; 
     let globalData = { assets: [], dash: {}, settings: {}, conditions: [], assignments: [], users: [] };
@@ -1745,10 +1745,19 @@
     async function callAPI(action, payload = {}) {
       if (!navigator.onLine && action !== 'apiLogin') throw new Error("คุณกำลังออฟไลน์ ไม่สามารถดึงข้อมูลได้");
       try {
-        let response = await fetch(GAS_API_URL, {
+        // Cache-Busting Parameter ป้องกันเบราว์เซอร์หรือเครือข่ายแคชคำขอ POST / 302 Redirect
+        const buster = `_t=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const apiUrl = GAS_API_URL + (GAS_API_URL.includes('?') ? '&' : '?') + buster;
+
+        let response = await fetch(apiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, payload: payload })
+          headers: { 
+            'Content-Type': 'text/plain;charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          cache: 'no-store',
+          body: JSON.stringify({ action: action, payload: payload, _t: Date.now() })
         });
         let data = await response.json();
         if (!data) throw new Error("ไม่ได้รับข้อมูลจากเซิร์ฟเวอร์");
@@ -1779,7 +1788,24 @@
         currentUser = JSON.parse(savedUser);
         setupUserUI();
         showPage('app');
-        fetchGlobalData();
+        
+        // โหลดแคชเดิมขึ้นมาแสดงผลก่อนทันที เพื่อให้หน้าจอไม่ว่างเปล่าระหว่างรอเซิร์ฟเวอร์
+        const cached = localStorage.getItem('cachedGlobalData');
+        if (cached) {
+          try {
+            globalData = JSON.parse(cached);
+            if (Array.isArray(globalData.assets)) {
+              globalData.assets.forEach(a => {
+                if (a.InspectDate) a.InspectDate = formatDisplayDate(a.InspectDate);
+                if (a.ImageURL) a.ImageURL = getDirectImageUrl(a.ImageURL);
+              });
+            }
+            renderAllViews();
+          } catch(e) {}
+        }
+
+        // ดึงข้อมูลจริงล่าสุดจาก Google Sheets (ไม่ผ่านแคช)
+        fetchGlobalData(false);
       }
       document.getElementById('qr-fallback-input').addEventListener('change', handleFallbackScan);
       updateOnlineStatus(); 
@@ -2075,12 +2101,18 @@
       }
     };
 
-    window.fetchGlobalData = async function() {
+    window.fetchGlobalData = async function(manual = false) {
       if (!navigator.onLine) {
         Swal.fire('ออฟไลน์', 'กำลังใช้งานโหมดออฟไลน์ (ดูข้อมูลล่าสุดที่โหลดไว้)', 'info');
         return;
       }
-      showLoader('กำลังซิงค์ข้อมูลล่าสุด...');
+      
+      const refreshBtn = document.getElementById('header-refresh-btn');
+      const refreshIcon = document.getElementById('header-refresh-icon') || refreshBtn?.querySelector('i');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+      if (refreshBtn) refreshBtn.disabled = true;
+
+      showLoader(manual ? 'กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...' : 'กำลังซิงค์ข้อมูลล่าสุด...');
       try {
         let res = await callAPI('apiGetData', {});
         if (!res || typeof res !== 'object') {
@@ -2118,12 +2150,33 @@
         filteredAssetsArray = globalData.assets;
         filteredPrintArray = globalData.assets;
         selectedPrintIds.clear();
+        
         renderAllViews();
         hideLoader();
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+        if (refreshBtn) refreshBtn.disabled = false;
+
         if (document.querySelectorAll('.view:not(.hidden)').length === 0) {
           nav('dashboard');
         }
+
+        if (manual) {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+          });
+          Toast.fire({
+            icon: 'success',
+            title: 'อัปเดตข้อมูลล่าสุดเรียบร้อยแล้ว!',
+            html: `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">เวลา ${new Date().toLocaleTimeString('th-TH')} | ทั้งหมด ${globalData.assets.length.toLocaleString()} รายการ</div>`
+          });
+        }
       } catch(err) {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+        if (refreshBtn) refreshBtn.disabled = false;
         hideLoader();
         console.error("fetchGlobalData error:", err);
         // หากดึงข้อมูลออนไลน์สะดุด แต่มีแคชเดิม ให้ใช้แคชเดิมแทนที่จะค้าง Error
