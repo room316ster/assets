@@ -1,5 +1,5 @@
 // Service Worker for Asset Management Pro PWA
-const CACHE_NAME = 'asset-pro-pwa-v5.3';
+const CACHE_NAME = 'asset-pro-pwa-v5.5';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json'
@@ -34,6 +34,24 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method === 'GET') {
+    // สำหรับหน้าเว็บ HTML หลัก (Navigation / index.html): ใช้ Network-first
+    // เพื่อให้เมื่อผู้ใช้อัปเดตโค้ดบน GitHub โทรศัพท์จะดึงหน้าเว็บล่าสุดทันที ไม่ค้างหน้าจอเก่า
+    if (event.request.mode === 'navigate' || event.request.url.endsWith('index.html') || event.request.url.endsWith('/')) {
+      event.respondWith(
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        }).catch(() => {
+          return caches.match('./index.html') || caches.match(event.request);
+        })
+      );
+      return;
+    }
+
+    // สำหรับ Assets ภายนอก (CDN, Fonts): ใช้ Cache-first แล้วค่อยดึงจาก Network
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
@@ -52,11 +70,6 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
           }
           return networkResponse;
-        }).catch(() => {
-          // If offline and requesting page, return index.html
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
         });
       })
     );
