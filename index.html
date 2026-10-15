@@ -2110,6 +2110,9 @@
             if (a.InspectDate) {
               a.InspectDate = formatDisplayDate(a.InspectDate);
             }
+            if (a.ImageURL) {
+              a.ImageURL = getDirectImageUrl(a.ImageURL);
+            }
           });
         }
         filteredAssetsArray = globalData.assets;
@@ -2128,6 +2131,12 @@
         if (cached) {
           try {
             globalData = JSON.parse(cached);
+            if (Array.isArray(globalData.assets)) {
+              globalData.assets.forEach(a => {
+                if (a.InspectDate) a.InspectDate = formatDisplayDate(a.InspectDate);
+                if (a.ImageURL) a.ImageURL = getDirectImageUrl(a.ImageURL);
+              });
+            }
             filteredAssetsArray = globalData.assets;
             filteredPrintArray = globalData.assets;
             renderAllViews();
@@ -2139,13 +2148,76 @@
       }
     };
 
-    window.viewImage = function(url) {
+    window.getGoogleDriveFileId = function(url) {
+      if (!url || typeof url !== 'string') return '';
+      url = url.trim();
+      let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) return m[1];
+      m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) return m[1];
+      m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) return m[1];
+      if (/^[a-zA-Z0-9_-]{25,45}$/.test(url)) return url;
+      return '';
+    };
+
+    window.getDirectImageUrl = function(url) {
+      if (!url || typeof url !== 'string') return '';
+      url = url.trim();
+      if (url.startsWith('data:image/')) return url;
+      const fileId = getGoogleDriveFileId(url);
+      if (fileId) {
+        return `https://lh3.googleusercontent.com/d/${fileId}`;
+      }
+      return url;
+    };
+
+    window.viewImage = function(rawUrl) {
+      if (!rawUrl) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลรูปภาพ', 'info');
+      const directUrl = getDirectImageUrl(rawUrl);
+      const driveId = getGoogleDriveFileId(rawUrl);
+      const fallbackUrl = driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200` : directUrl;
+      const driveOpenUrl = driveId ? `https://drive.google.com/file/d/${driveId}/view?usp=sharing` : rawUrl;
+
       Swal.fire({
-        imageUrl: url,
-        imageAlt: 'Asset Image',
+        title: '<div class="text-sm md:text-base font-bold text-gray-800 dark:text-white flex items-center justify-center gap-2"><i class="fas fa-image text-blue-500"></i> ภาพถ่ายครุภัณฑ์</div>',
+        html: `
+          <div class="flex flex-col items-center justify-center py-1">
+            <div class="relative w-full min-h-[220px] max-h-[70vh] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div id="swal-img-loader" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-2">
+                <i class="fas fa-spinner fa-spin text-3xl text-blue-500"></i>
+                <span class="text-xs">กำลังโหลดรูปภาพ...</span>
+              </div>
+              <img id="swal-view-img" src="${directUrl}" alt="ภาพถ่ายครุภัณฑ์"
+                class="max-h-[65vh] w-auto max-w-full object-contain rounded-lg shadow-sm transition-opacity duration-300 opacity-0"
+                onload="this.classList.remove('opacity-0'); document.getElementById('swal-img-loader')?.classList.add('hidden');"
+                onerror="
+                  if (this.src !== '${fallbackUrl}') {
+                    this.src = '${fallbackUrl}';
+                  } else {
+                    document.getElementById('swal-img-loader')?.classList.add('hidden');
+                    document.getElementById('swal-img-error')?.classList.remove('hidden');
+                    this.classList.add('hidden');
+                  }
+                " />
+              <div id="swal-img-error" class="hidden flex flex-col items-center justify-center p-6 text-center text-gray-500 dark:text-gray-400 gap-2">
+                <i class="fas fa-exclamation-circle text-4xl text-amber-500 mb-1"></i>
+                <p class="text-xs font-bold text-gray-700 dark:text-gray-200">ไม่สามารถแสดงตัวอย่างภาพได้โดยตรง</p>
+                <p class="text-[11px] text-gray-400 max-w-xs">(อาจเกิดจากสิทธิ์การเข้าถึงไฟล์ใน Google Drive ถูกจำกัด)</p>
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2 justify-center w-full">
+              <a href="${driveOpenUrl}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm border border-blue-200 dark:border-blue-800">
+                <i class="fas fa-external-link-alt"></i> เปิดดูภาพต้นฉบับใน Google Drive
+              </a>
+            </div>
+          </div>
+        `,
+        showCloseButton: true,
         confirmButtonText: 'ปิดหน้าต่าง',
         confirmButtonColor: '#3b82f6',
-        customClass: { image: 'rounded-lg shadow-md max-h-96 object-contain' }
+        width: '600px',
+        padding: '1rem'
       });
     };
 
@@ -2221,7 +2293,17 @@
       if (!a) return;
       const isDone = a.InspectRound === globalData.settings.round;
       const statusBadge = isDone ? '<span class="text-green-600 bg-green-100 px-2 py-0.5 rounded text-xs font-bold">ตรวจแล้วรอบนี้</span>' : '<span class="text-red-600 bg-red-100 px-2 py-0.5 rounded text-xs font-bold">ยังไม่ตรวจ</span>';
-      const imgHtml = a.ImageURL ? `<img src="${a.ImageURL}" class="w-full max-h-48 object-contain rounded-lg border mb-3 bg-white" onclick="viewImage('${a.ImageURL}')" title="คลิกเพื่อดูภาพขยาย">` : '<div class="w-full h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 text-xs mb-3">ไม่มีภาพถ่าย</div>';
+      const directImg = getDirectImageUrl(a.ImageURL);
+      const driveId = getGoogleDriveFileId(a.ImageURL);
+      const fallbackThumb = driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w600` : directImg;
+      const imgHtml = a.ImageURL ? `
+        <div class="relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden border mb-3 flex items-center justify-center min-h-[140px] group cursor-pointer" onclick="viewImage('${a.ImageURL}')" title="คลิกเพื่อดูภาพขยาย">
+          <img src="${directImg}" class="w-full max-h-48 object-contain rounded-lg bg-white dark:bg-gray-900" onerror="this.onerror=null; this.src='${fallbackThumb}';">
+          <div class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm pointer-events-none">
+            <i class="fas fa-search-plus"></i> ดูภาพขยาย
+          </div>
+        </div>
+      ` : '<div class="w-full h-24 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 text-xs mb-3">ไม่มีภาพถ่าย</div>';
       
       Swal.fire({
         title: `<div class="text-left font-mono text-blue-600">${a.AssetID}</div>`,
