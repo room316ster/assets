@@ -66,12 +66,80 @@
     .page.active { display: flex; flex-direction: column; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+    
+    @keyframes scanner-laser {
+      0% { top: 8%; opacity: 0.8; }
+      50% { top: 90%; opacity: 1; }
+      100% { top: 8%; opacity: 0.8; }
+    }
+    .scanner-laser-line {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, #3b82f6, transparent);
+      box-shadow: 0 0 10px #60a5fa;
+      animation: scanner-laser 2s infinite ease-in-out;
+    }
   </style>
 </head>
 <body class="text-gray-800">
 
   <div id="loader"><i class="fas fa-circle-notch fa-spin text-blue-500 text-5xl mb-4"></i><p class="text-white font-bold" id="loader-text">กำลังโหลดข้อมูล...</p></div>
   <input type="file" accept="image/*" capture="environment" id="qr-fallback-input" class="hidden">
+
+  <!-- ==================== หน้าต่างสแกนเนอร์กล้องเต็มจอ (Full-screen Camera Scanner Modal) ==================== -->
+  <div id="reader-container" class="hidden fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-3 sm:p-5 backdrop-blur-md">
+    <!-- แถบควบคุมด้านบน -->
+    <div class="flex items-center justify-between text-white w-full max-w-lg mx-auto pt-1 pb-2 px-1 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+        <span class="font-bold text-xs sm:text-sm tracking-wide text-white"><i class="fas fa-qrcode mr-1 text-blue-400"></i> สแกนบาร์โค้ด / QR Code</span>
+      </div>
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btn-switch-cam" type="button" onclick="switchCamera()" class="hidden bg-gray-800/90 hover:bg-gray-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold border border-gray-600 flex items-center gap-1 transition" title="สลับกล้อง">
+          <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">สลับกล้อง</span>
+        </button>
+        <button id="btn-torch" type="button" onclick="toggleTorch()" class="hidden bg-yellow-500 hover:bg-yellow-400 text-black px-2.5 py-1.5 rounded-lg shadow text-xs font-bold flex items-center gap-1 transition">
+          <i class="fas fa-lightbulb"></i> <span class="hidden sm:inline">ไฟฉาย</span>
+        </button>
+        <button type="button" onclick="stopScanner()" class="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white px-3 py-1.5 rounded-lg shadow text-xs font-bold flex items-center gap-1 transition">
+          <i class="fas fa-times"></i> ปิดกล้อง
+        </button>
+      </div>
+    </div>
+
+    <!-- ช่องแสดงภาพจากกล้องขนาดใหญ่ พร้อมกรอบเล็งและเส้นเลเซอร์ -->
+    <div class="relative w-full max-w-lg mx-auto flex-1 flex items-center justify-center my-2 overflow-hidden rounded-2xl bg-black border border-gray-800 shadow-2xl min-h-[320px]">
+      <video id="reader-video" playsinline webkit-playsinline muted autoplay class="w-full h-full object-cover rounded-2xl"></video>
+
+      <!-- กรอบเล็งสแกน (Targeting Frame) -->
+      <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div class="w-64 h-64 sm:w-80 sm:h-80 relative border-2 border-blue-400/70 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
+          <!-- มุมกรอบเล็ง 4 มุม -->
+          <span class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></span>
+          <span class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></span>
+          <span class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></span>
+          <span class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></span>
+          <!-- เส้นเลเซอร์วิ่งสแกน -->
+          <div class="scanner-laser-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- แถบคำแนะนำและปุ่มเสริมด้านล่าง -->
+    <div class="text-center text-white w-full max-w-lg mx-auto pb-2 shrink-0 space-y-2">
+      <p class="text-xs text-gray-300 font-medium"><i class="fas fa-crosshairs text-blue-400 mr-1"></i> วางบาร์โค้ดหรือ QR Code ให้อยู่ในกรอบ ระบบจะอ่านอัตโนมัติ</p>
+      <div class="flex justify-center gap-2">
+        <button type="button" onclick="document.getElementById('qr-fallback-input').click()" class="bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg border border-gray-600 transition flex items-center gap-1.5">
+          <i class="fas fa-image text-green-400"></i> สแกนจากภาพถ่าย
+        </button>
+        <button type="button" onclick="stopScanner()" class="bg-gray-700/80 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg border border-gray-600 transition flex items-center gap-1.5">
+          <i class="fas fa-keyboard text-yellow-400"></i> พิมพ์รหัสเอง
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==================== หน้า Login / Register ==================== -->
   <div id="page-login" class="page active min-h-screen items-center justify-center w-full relative">
@@ -726,15 +794,7 @@
               </div>
             </div>
             <label class="block text-sm font-bold mb-2 text-blue-600 dark:text-blue-400"><i class="fas fa-qrcode mr-1"></i> วิธีที่ 1: สแกนผ่านกล้อง</label>
-            <button onclick="startScanner('inspect')" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-blue-700 transition text-lg flex items-center justify-center gap-2 mb-2"><i class="fas fa-camera text-2xl"></i> เปิดกล้องสแกน</button>
-            <div id="reader-container" class="hidden relative mb-4 mt-2">
-               <video id="reader-video" playsinline webkit-playsinline muted autoplay class="w-full overflow-hidden rounded-lg bg-black border-2 border-blue-500 shadow" style="object-fit: cover;"></video>
-               <div class="absolute top-2 right-2 flex gap-1 z-50">
-                 <button id="btn-switch-cam" onclick="switchCamera()" class="hidden bg-gray-700/90 text-white px-2 py-1 rounded shadow text-xs font-bold hover:bg-gray-600" title="สลับกล้อง"><i class="fas fa-sync-alt"></i></button>
-                 <button id="btn-torch" onclick="toggleTorch()" class="hidden bg-yellow-500 text-black px-2 py-1 rounded shadow text-xs font-bold hover:bg-yellow-400"><i class="fas fa-lightbulb"></i> ไฟฉาย</button>
-                 <button onclick="stopScanner()" class="bg-red-500/90 text-white px-3 py-1 rounded shadow text-xs font-bold hover:bg-red-600"><i class="fas fa-times mr-1"></i>ปิดกล้อง</button>
-               </div>
-            </div>
+            <button onclick="startScanner('inspect')" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 active:scale-[0.99] transition text-lg flex items-center justify-center gap-2 mb-2"><i class="fas fa-camera text-2xl"></i> เปิดกล้องสแกน</button>
             <div class="flex items-center my-6"><div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div><span class="px-3 text-xs text-gray-500 dark:text-gray-400">หรือ</span><div class="flex-grow border-t border-gray-300 dark:border-gray-600"></div></div>
             <label class="block text-sm font-bold mb-2 text-gray-600 dark:text-gray-300"><i class="fas fa-keyboard mr-1"></i> วิธีที่ 2: พิมพ์รหัสเอง</label>
             <div class="flex gap-2"><input type="text" id="s_barcode" placeholder="พิมพ์ตัวเลข..." class="w-full p-3 rounded-lg border dark:bg-gray-700 bg-white/90 dark:text-white font-mono font-bold text-sm focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" onkeypress="if(event.key === 'Enter') searchAsset()"><button onclick="searchAsset()" class="bg-green-500 text-white font-bold px-4 rounded-lg shadow hover:bg-green-600"><i class="fas fa-search text-lg"></i></button></div>
@@ -744,8 +804,35 @@
             <h2 class="font-bold text-lg mb-3 dark:text-white border-b pb-2">รายละเอียดข้อมูล</h2>
             <div class="flex justify-between bg-blue-50 dark:bg-gray-800 p-3 rounded-lg mb-3 border border-blue-100 dark:border-gray-700 text-xs"><div class="text-gray-600 dark:text-gray-300"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-user-check"></i> ผู้ตรวจสอบ</span><span id="f_inspector_name" class="font-medium"></span></div><div class="text-gray-600 dark:text-gray-300 text-right"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-calendar-alt"></i> วันที่ตรวจสอบ</span><span id="f_inspect_date" class="font-medium"></span></div></div>
             <div id="alert-already" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-2 mb-3 hidden text-xs rounded"><strong><i class="fas fa-info-circle"></i> ตรวจนับแล้ว</strong></div>
-            <div class="bg-blue-600 text-white p-2 rounded-t-lg text-xs font-medium">ปัจจุบัน: <span id="f_curr_loc" class="font-bold"></span></div><div id="alert-location-ok" class="bg-green-500 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden"><i class="fas fa-check-circle"></i> ที่อยู่ตรงกัน</div><div id="alert-location-bad" class="bg-red-500 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden"><i class="fas fa-times-circle"></i> ที่อยู่ไม่ตรงกัน</div>
-            <div class="text-xs space-y-1 mb-3 bg-white/70 dark:bg-gray-800/70 p-3 rounded-lg border dark:text-gray-200"><p><strong>รหัส:</strong> <span id="f_id" class="font-mono text-blue-700 font-bold text-sm md:text-base"></span></p><p><strong>รายละเอียด:</strong> <span id="f_name"></span></p><p><strong>ที่เดิม:</strong> <span id="f_old_loc" class="text-red-600 font-bold"></span></p></div>
+            <!-- ส่วนแสดงและเปลี่ยนสถานที่ตรวจพบ / ที่อยู่ใหม่ -->
+            <div class="bg-blue-600 text-white p-2.5 rounded-t-lg text-xs font-medium flex items-center justify-between gap-2 shadow-xs">
+              <div class="flex items-center gap-1.5 overflow-hidden">
+                <i class="fas fa-map-marker-alt text-yellow-300 shrink-0"></i>
+                <span class="whitespace-nowrap font-medium">ปัจจุบัน:</span>
+                <span id="f_curr_loc" class="font-bold underline cursor-pointer hover:text-yellow-200 transition truncate max-w-[150px] sm:max-w-[200px]" onclick="changeCurrentInspectionLocation()" title="คลิกเพื่อเปลี่ยนสถานที่">-</span>
+              </div>
+              <button type="button" onclick="changeCurrentInspectionLocation()" class="bg-white/20 hover:bg-white/30 active:bg-white/40 text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 transition shrink-0 border border-white/40 shadow-xs">
+                <i class="fas fa-edit"></i> คลิกเปลี่ยนที่อยู่
+              </button>
+            </div>
+            <div id="alert-location-ok" class="bg-green-500 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden flex items-center justify-between shadow-xs">
+              <span><i class="fas fa-check-circle mr-1"></i> ที่อยู่ตรงกัน</span>
+              <button type="button" onclick="changeCurrentInspectionLocation()" class="underline text-[11px] opacity-90 hover:opacity-100 font-normal">ต้องการย้ายที่อยู่?</button>
+            </div>
+            <div id="alert-location-bad" class="bg-amber-600 text-white p-2 rounded-b-lg text-xs mb-3 font-bold hidden flex items-center justify-between shadow-xs">
+              <span id="alert-location-bad-text"><i class="fas fa-exchange-alt mr-1"></i> ย้ายสถานที่ใหม่ (ที่อยู่ไม่ตรงกับที่เดิม)</span>
+              <button type="button" onclick="changeCurrentInspectionLocation()" class="underline text-[11px] opacity-90 hover:opacity-100 font-normal">เปลี่ยน</button>
+            </div>
+            <div class="text-xs space-y-1 mb-3 bg-white/70 dark:bg-gray-800/70 p-3 rounded-lg border dark:text-gray-200">
+              <p><strong>รหัส:</strong> <span id="f_id" class="font-mono text-blue-700 font-bold text-sm md:text-base"></span></p>
+              <p><strong>รายละเอียด:</strong> <span id="f_name"></span></p>
+              <p class="flex items-center justify-between">
+                <span><strong>ที่เดิม:</strong> <span id="f_old_loc" class="text-red-600 font-bold">-</span></span>
+                <button type="button" id="btn-use-old-loc" onclick="useOldLocation()" class="hidden text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-bold">
+                  <i class="fas fa-undo-alt mr-0.5"></i> ใช้ที่เดิม
+                </button>
+              </p>
+            </div>
             <select id="f_condition" class="w-full p-3 mb-3 rounded-lg border bg-white/90 dark:bg-gray-700 font-bold text-sm focus:outline-none text-blue-600"></select>
             
             <label class="block text-xs font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพยืนยัน</label>
@@ -762,7 +849,13 @@
           <div id="scan-step-notfound" class="glass p-5 md:p-6 rounded-xl shadow max-w-md mx-auto hidden">
             <h2 class="font-bold text-lg mb-2 text-red-600 border-b pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>ไม่พบข้อมูล</h2>
             <div class="flex justify-between bg-blue-50 dark:bg-gray-800 p-3 rounded-lg mb-3 border border-blue-100 dark:border-gray-700 text-xs"><div class="text-gray-600 dark:text-gray-300"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-user-check"></i> ผู้ตรวจสอบ</span><span id="n_inspector_name" class="font-medium"></span></div><div class="text-gray-600 dark:text-gray-300 text-right"><span class="block font-bold text-blue-600 dark:text-blue-400 mb-1"><i class="fas fa-calendar-alt"></i> วันที่ตรวจสอบ</span><span id="n_inspect_date" class="font-medium"></span></div></div>
-            <label class="block text-xs font-bold mb-1 mt-2">สถานที่ปัจจุบัน</label><input type="text" id="n_loc" readonly class="w-full p-2 mb-2 rounded-lg border bg-gray-200/80 text-gray-600 text-xs">
+            <label class="block text-xs font-bold mb-1 mt-2">สถานที่ปัจจุบัน</label>
+            <div class="flex gap-1.5 mb-2">
+              <input type="text" id="n_loc" class="w-full p-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white text-xs font-bold focus:outline-none focus:border-blue-500" placeholder="ระบุสถานที่...">
+              <button type="button" onclick="selectLocationForNewAsset()" class="bg-blue-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 hover:bg-blue-700 transition">
+                <i class="fas fa-list"></i> เลือก
+              </button>
+            </div>
             <label class="block text-xs font-bold mb-1">รหัส (บาร์โค้ด)</label><input type="text" id="n_id" class="w-full p-2 mb-2 rounded-lg border bg-white/90 font-mono font-bold text-blue-600 text-sm focus:outline-none" oninput="formatAssetId(event)">
             <label class="block text-xs font-bold mb-1">ลักษณะ</label><input type="text" id="n_name" class="w-full p-2 mb-2 rounded-lg border bg-white/90 text-sm focus:outline-none">
             
@@ -899,6 +992,26 @@
     let selectedPrintIds = new Set();
     let myAssignedAssets = [];
     let offlineQueue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+
+    // ==========================================
+    // 📅 ฟังก์ชันจัดการวันที่ พ.ศ. (ป้องกันและแก้ไขปี 31xx ให้เป็น 2569 เสมอ)
+    // ==========================================
+    window.getTodayThaiDate = function() {
+      const now = new Date();
+      const d = ('0' + now.getDate()).slice(-2);
+      const m = ('0' + (now.getMonth() + 1)).slice(-2);
+      const y = now.getFullYear() < 2400 ? now.getFullYear() + 543 : now.getFullYear();
+      return `${d}/${m}/${y}`;
+    };
+
+    window.formatDisplayDate = function(val) {
+      if (!val) return '-';
+      let str = val.toString().trim();
+      if (/3[0-9]{3}/.test(str)) {
+        str = str.replace(/\b(3[0-9]{3})\b/g, m => (parseInt(m, 10) >= 3000 ? parseInt(m, 10) - 543 : m).toString());
+      }
+      return str;
+    };
 
     // ==========================================
     // 📲 ระบบ PWA (Progressive Web App) ติดตั้งแอปลงหน้าจอมือถือ
@@ -1369,23 +1482,39 @@
       }
     };
 
+    window.normalizeAssetId = function(id) {
+      if (!id) return '';
+      return id.toString().trim().toLowerCase().replace(/[\s\-_/]/g, '');
+    };
+
     window.formatAssetId = function(e) {
       let input = e.target;
       let val = input.value;
       if (e.inputType === 'deleteContentBackward') return; 
-      let parts = val.split('/');
-      let prefixRaw = parts[0].replace(/[^0-9]/g, '');
-      let suffixRaw = parts.length > 1 ? parts.slice(1).join('/') : ''; 
-      if (prefixRaw.length > 11) {
-        suffixRaw = prefixRaw.substring(11) + suffixRaw;
-        prefixRaw = prefixRaw.substring(0, 11);
+      
+      // อนุญาตเฉพาะตัวเลข เครื่องหมายขีด (-) และทับ (/)
+      let cleaned = val.replace(/[^0-9\/\-]/g, '');
+      
+      // หากผู้ใช้พิมพ์เครื่องหมาย / หรือมี - อยู่แล้ว ให้คงรูปแบบที่พิมพ์ไว้ ไม่ฝืนจัดรูปแบบจนผิดเพี้ยน
+      if (cleaned.includes('/')) {
+        let parts = cleaned.split('/');
+        let prefix = parts[0];
+        let suffix = parts.slice(1).join('/'); // รองรับ suffix ที่มีขีด เช่น 68-001 หรือ 551-0001
+        input.value = prefix + '/' + suffix;
+        return;
       }
-      let formatted = '';
-      if (prefixRaw.length > 0) formatted += prefixRaw.substring(0, 4);
-      if (prefixRaw.length > 4) formatted += '-' + prefixRaw.substring(4, 7);
-      if (prefixRaw.length > 7) formatted += '-' + prefixRaw.substring(7, 11);
-      if (prefixRaw.length === 11 || parts.length > 1) formatted += '/' + suffixRaw;
-      input.value = formatted;
+      
+      // หากพิมพ์ตัวเลขล้วน โดยยังไม่มี - หรือ / ช่วยจัดรูปแบบอัตโนมัติให้สะดวก
+      if (!cleaned.includes('-')) {
+        let digits = cleaned;
+        if (digits.length <= 4) input.value = digits;
+        else if (digits.length <= 7) input.value = digits.substring(0, 4) + '-' + digits.substring(4);
+        else if (digits.length <= 11) input.value = digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7);
+        else input.value = digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7, 11) + '/' + digits.substring(11);
+        return;
+      }
+      
+      input.value = cleaned;
     };
 
     window.showLoader = function(text = 'กำลังโหลด...') {
@@ -1620,6 +1749,13 @@
       try {
         let res = await callAPI('apiGetData', {});
         globalData = res;
+        if (globalData && Array.isArray(globalData.assets)) {
+          globalData.assets.forEach(a => {
+            if (a.InspectDate) {
+              a.InspectDate = formatDisplayDate(a.InspectDate);
+            }
+          });
+        }
         filteredAssetsArray = globalData.assets;
         filteredPrintArray = globalData.assets;
         selectedPrintIds.clear();
@@ -1729,7 +1865,7 @@
               <p><strong>สถานที่ตั้ง:</strong> ${a.Location || '-'}</p>
               <p><strong>สภาพพัสดุ:</strong> <span class="font-bold text-blue-600">${a.Status}</span></p>
               <p><strong>สถานะตรวจรอบนี้:</strong> ${statusBadge}</p>
-              <p><strong>ผู้ตรวจสอบ:</strong> ${a.Inspector || '-'} (${a.InspectDate || '-'})</p>
+              <p><strong>ผู้ตรวจสอบ:</strong> ${a.Inspector || '-'} (${formatDisplayDate(a.InspectDate)})</p>
               <p><strong>สถานะยืม:</strong> ${a.BorrowStatus === 'ถูกยืม' ? `<span class="text-red-500 font-bold">ถูกยืมโดย ${a.Borrower}</span>` : '<span class="text-green-600">ว่าง</span>'}</p>
             </div>
           </div>
@@ -1742,6 +1878,10 @@
       }).then(res => {
         if (res.isConfirmed) {
           nav('scan');
+          const locSelect = document.getElementById('s_location');
+          if (locSelect && a.Location) {
+            locSelect.value = a.Location;
+          }
           document.getElementById('s_barcode').value = a.AssetID;
           searchAsset();
         }
@@ -3176,7 +3316,7 @@
                 <p class="text-gray-600 dark:text-gray-400 truncate text-[11px]">${a.Name}</p>
                 <div class="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
                   <span><i class="fas fa-user-check"></i> ${a.Inspector || '-'}</span>
-                  <span><i class="fas fa-clock"></i> ${a.InspectDate || '-'}</span>
+                  <span><i class="fas fa-clock"></i> ${formatDisplayDate(a.InspectDate)}</span>
                 </div>
               </div>
               <button type="button" onclick="showAssetDetailModal('${a.AssetID}')" class="p-1.5 text-gray-400 hover:text-blue-500 transition" title="ดูรายละเอียด">
@@ -3205,15 +3345,9 @@
       const readerContainer = document.getElementById('reader-container');
       if (!readerContainer) return;
 
-      // จัดตำแหน่ง reader-container ให้ตรงกับมุมมองที่กำลังใช้งาน (Inspect หรือ Borrow)
-      if (mode === 'borrow') {
-        const borrowBtn = document.querySelector('#borrow-step-1 button');
-        if (borrowBtn) borrowBtn.insertAdjacentElement('afterend', readerContainer);
-      } else {
-        const scanBtn = document.querySelector('#scan-step-1 button');
-        if (scanBtn) scanBtn.insertAdjacentElement('afterend', readerContainer);
-      }
+      // แสดงหน้าต่างสแกนเนอร์ขนาดใหญ่เต็มจอ และล็อกการเลื่อนหน้าจอด้านหลัง
       readerContainer.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
 
       if (document.getElementById('s_barcode')) document.getElementById('s_barcode').value = '';
       if (document.getElementById('b_barcode')) document.getElementById('b_barcode').value = '';
@@ -3300,6 +3434,7 @@
     function handleCameraUnavailable(message) {
       const readerContainer = document.getElementById('reader-container');
       if (readerContainer) readerContainer.classList.add('hidden');
+      document.body.style.overflow = '';
       Swal.fire({
         title: 'กล้องเปิดไม่สำเร็จ',
         text: (message || 'กล้องถูกบล็อก') + ' คุณต้องการถ่ายรูปสแกนแทนหรือไม่?',
@@ -3365,6 +3500,7 @@
 
       const readerContainer = document.getElementById('reader-container');
       if (readerContainer) readerContainer.classList.add('hidden');
+      document.body.style.overflow = '';
     };
 
     window.handleFallbackScan = async function(e) {
@@ -3422,38 +3558,317 @@
       });
     };
 
+    window.getAllSystemLocations = function() {
+      let locSet = new Set();
+      if (globalData && Array.isArray(globalData.assets)) {
+        globalData.assets.forEach(a => {
+          if (a.Location && a.Location.toString().trim() !== '' && a.Location.toString().trim() !== '-') {
+            locSet.add(a.Location.toString().trim());
+          }
+        });
+      }
+      if (globalData && Array.isArray(globalData.assignments)) {
+        globalData.assignments.forEach(as => {
+          if (as.Location && as.Location.toString().trim() !== '' && as.Location.toString().trim() !== '-') {
+            locSet.add(as.Location.toString().trim());
+          }
+        });
+      }
+      const sLoc = document.getElementById('s_location');
+      if (sLoc && sLoc.options) {
+        for (let i = 0; i < sLoc.options.length; i++) {
+          const val = (sLoc.options[i].value || '').trim();
+          if (val && val !== '-' && !val.includes('--')) locSet.add(val);
+        }
+      }
+      let list = Array.from(locSet);
+      list.sort((a, b) => a.localeCompare(b, 'th'));
+      return list;
+    };
+
+    window.updateLocationMatchAlert = function() {
+      const oldLoc = (document.getElementById('f_old_loc')?.innerText || '').trim();
+      const currLoc = (document.getElementById('f_curr_loc')?.innerText || '').trim();
+      const okAlert = document.getElementById('alert-location-ok');
+      const badAlert = document.getElementById('alert-location-bad');
+      const badText = document.getElementById('alert-location-bad-text');
+      const btnUseOld = document.getElementById('btn-use-old-loc');
+
+      if (!okAlert || !badAlert) return;
+
+      const hasOld = oldLoc && oldLoc !== '-';
+      const hasCurr = currLoc && currLoc !== '-';
+
+      if (hasOld && hasCurr && oldLoc === currLoc) {
+        okAlert.classList.remove('hidden');
+        badAlert.classList.add('hidden');
+        if (btnUseOld) btnUseOld.classList.add('hidden');
+      } else {
+        okAlert.classList.add('hidden');
+        badAlert.classList.remove('hidden');
+        if (badText) {
+          if (!hasCurr) {
+            badText.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> ยังไม่ระบุสถานที่ (กรุณาคลิกเลือก)';
+          } else if (!hasOld) {
+            badText.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i> ระบุสถานที่ใหม่ (ไม่มีที่เดิม)';
+          } else {
+            badText.innerHTML = '<i class="fas fa-exchange-alt mr-1"></i> ย้ายสถานที่ใหม่ (ที่อยู่ไม่ตรงกับที่เดิม)';
+          }
+        }
+        if (btnUseOld) {
+          if (hasOld && currLoc !== oldLoc) {
+            btnUseOld.classList.remove('hidden');
+          } else {
+            btnUseOld.classList.add('hidden');
+          }
+        }
+      }
+    };
+
+    window.useOldLocation = function() {
+      const oldLoc = (document.getElementById('f_old_loc')?.innerText || '').trim();
+      if (oldLoc && oldLoc !== '-') {
+        document.getElementById('f_curr_loc').innerText = oldLoc;
+        updateLocationMatchAlert();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'ใช้สถานที่เดิม: ' + oldLoc,
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }
+    };
+
+    window.changeCurrentInspectionLocation = async function() {
+      const allLocations = getAllSystemLocations();
+      const currentVal = (document.getElementById('f_curr_loc')?.innerText || '').trim();
+      const oldLoc = (document.getElementById('f_old_loc')?.innerText || '').trim();
+
+      let optionsHtml = `<option value="">-- เลือกสถานที่จากรายการ (${allLocations.length} สถานที่) --</option>`;
+      allLocations.forEach(loc => {
+        const isSel = (loc === currentVal) ? 'selected' : '';
+        optionsHtml += `<option value="${loc.replace(/"/g, '&quot;')}" ${isSel}>${loc}</option>`;
+      });
+      optionsHtml += `<option value="__custom__">➕ พิมพ์ระบุสถานที่ใหม่เอง...</option>`;
+
+      const isCurrentCustom = currentVal && currentVal !== '-' && !allLocations.includes(currentVal);
+
+      const result = await Swal.fire({
+        title: '<span class="text-base md:text-lg font-bold text-blue-600"><i class="fas fa-map-marker-alt text-yellow-500 mr-2"></i>เปลี่ยนที่อยู่ครุภัณฑ์</span>',
+        html: `
+          <div class="text-left text-xs mb-3 p-2.5 bg-blue-50 dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-gray-700 space-y-1 text-gray-700 dark:text-gray-300">
+            <div><span class="font-bold text-gray-500">สถานที่เดิม:</span> <strong class="text-red-600">${oldLoc || '-'}</strong></div>
+            <div><span class="font-bold text-gray-500">ปัจจุบันเลือก:</span> <strong class="text-blue-600" id="swal_curr_disp">${currentVal || '-'}</strong></div>
+          </div>
+          <div class="text-left mb-3">
+            <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-200">เลือกสถานที่ใหม่:</label>
+            <select id="swal_select_loc" class="w-full p-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white text-xs md:text-sm font-bold text-blue-600 focus:outline-none focus:border-blue-500">
+              ${optionsHtml}
+            </select>
+          </div>
+          <div id="swal_custom_container" class="${isCurrentCustom ? '' : 'hidden'} text-left">
+            <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-200">พิมพ์ชื่อสถานที่ใหม่:</label>
+            <input type="text" id="swal_custom_input" placeholder="เช่น อาคารศาล ชั้น 2 ห้องพิจารณา 3" value="${isCurrentCustom ? currentVal.replace(/"/g, '&quot;') : ''}" class="w-full p-2.5 rounded-lg border border-blue-400 dark:border-blue-500 bg-white dark:bg-gray-700 dark:text-white text-xs md:text-sm focus:outline-none">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-check mr-1"></i> ยืนยันเปลี่ยนที่อยู่',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280',
+        didOpen: () => {
+          const selectEl = document.getElementById('swal_select_loc');
+          const customContainer = document.getElementById('swal_custom_container');
+          const customInput = document.getElementById('swal_custom_input');
+          const currDisp = document.getElementById('swal_curr_disp');
+          
+          if (isCurrentCustom && selectEl) {
+            selectEl.value = '__custom__';
+          }
+
+          selectEl.addEventListener('change', () => {
+            if (selectEl.value === '__custom__') {
+              customContainer.classList.remove('hidden');
+              if (customInput) customInput.focus();
+              if (currDisp) currDisp.innerText = (customInput.value || '').trim() || '(รอพิมพ์ระบุ)';
+            } else {
+              customContainer.classList.add('hidden');
+              if (currDisp) currDisp.innerText = selectEl.value || '-';
+            }
+          });
+
+          if (customInput) {
+            customInput.addEventListener('input', () => {
+              if (currDisp) currDisp.innerText = customInput.value.trim() || '(รอพิมพ์ระบุ)';
+            });
+          }
+        },
+        preConfirm: () => {
+          const selectEl = document.getElementById('swal_select_loc');
+          const customInput = document.getElementById('swal_custom_input');
+          let chosen = selectEl.value;
+          if (chosen === '__custom__') {
+            chosen = (customInput.value || '').trim();
+            if (!chosen) {
+              Swal.showValidationMessage('กรุณากรอกชื่อสถานที่ใหม่');
+              return false;
+            }
+          } else if (!chosen) {
+            Swal.showValidationMessage('กรุณาเลือกสถานที่จากรายการ หรือพิมพ์ระบุใหม่');
+            return false;
+          }
+          return chosen;
+        }
+      });
+
+      if (result.isConfirmed && result.value) {
+        const newLoc = result.value.trim();
+        document.getElementById('f_curr_loc').innerText = newLoc;
+        updateLocationMatchAlert();
+
+        // Also check if s_location in scan-step-1 has this option or add it so future scans stay synced
+        const sLoc = document.getElementById('s_location');
+        if (sLoc) {
+          let hasOption = false;
+          for (let opt of sLoc.options) {
+            if (opt.value === newLoc) {
+              hasOption = true;
+              break;
+            }
+          }
+          if (!hasOption) {
+            sLoc.innerHTML += `<option value="${newLoc}">${newLoc}</option>`;
+          }
+          sLoc.value = newLoc;
+        }
+
+        // Auto select condition with "ย้าย" if location differs
+        if (oldLoc && oldLoc !== '-' && newLoc !== oldLoc) {
+          const condSelect = document.getElementById('f_condition');
+          if (condSelect) {
+            for (let opt of condSelect.options) {
+              if (opt.value.includes('ย้าย')) {
+                condSelect.value = opt.value;
+                break;
+              }
+            }
+          }
+        }
+
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'เปลี่ยนสถานที่สำเร็จ: ' + newLoc,
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
+    };
+
+    window.selectLocationForNewAsset = async function() {
+      const allLocations = getAllSystemLocations();
+      let optionsHtml = `<option value="">-- เลือกสถานที่จากรายการ (${allLocations.length} สถานที่) --</option>`;
+      allLocations.forEach(loc => {
+        optionsHtml += `<option value="${loc.replace(/"/g, '&quot;')}">${loc}</option>`;
+      });
+      optionsHtml += `<option value="__custom__">➕ พิมพ์ระบุสถานที่ใหม่เอง...</option>`;
+
+      const result = await Swal.fire({
+        title: '<span class="text-base md:text-lg font-bold text-blue-600"><i class="fas fa-map-marker-alt text-yellow-500 mr-2"></i>เลือกสถานที่สำหรับพัสดุใหม่</span>',
+        html: `
+          <div class="text-left mb-3">
+            <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-200">เลือกสถานที่:</label>
+            <select id="swal_n_select_loc" class="w-full p-2.5 rounded-lg border bg-white dark:bg-gray-700 dark:text-white text-xs md:text-sm font-bold text-blue-600 focus:outline-none">
+              ${optionsHtml}
+            </select>
+          </div>
+          <div id="swal_n_custom_container" class="hidden text-left">
+            <label class="block text-xs font-bold mb-1 text-gray-700 dark:text-gray-200">พิมพ์ชื่อสถานที่ใหม่:</label>
+            <input type="text" id="swal_n_custom_input" placeholder="พิมพ์ชื่อสถานที่..." class="w-full p-2.5 rounded-lg border border-blue-400 bg-white dark:bg-gray-700 dark:text-white text-xs md:text-sm focus:outline-none">
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'ตกลง',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280',
+        didOpen: () => {
+          const selectEl = document.getElementById('swal_n_select_loc');
+          const customContainer = document.getElementById('swal_n_custom_container');
+          const customInput = document.getElementById('swal_n_custom_input');
+          selectEl.addEventListener('change', () => {
+            if (selectEl.value === '__custom__') {
+              customContainer.classList.remove('hidden');
+              if (customInput) customInput.focus();
+            } else {
+              customContainer.classList.add('hidden');
+            }
+          });
+        },
+        preConfirm: () => {
+          const selectEl = document.getElementById('swal_n_select_loc');
+          const customInput = document.getElementById('swal_n_custom_input');
+          let chosen = selectEl.value;
+          if (chosen === '__custom__') {
+            chosen = (customInput.value || '').trim();
+            if (!chosen) {
+              Swal.showValidationMessage('กรุณากรอกชื่อสถานที่');
+              return false;
+            }
+          } else if (!chosen) {
+            Swal.showValidationMessage('กรุณาเลือกสถานที่');
+            return false;
+          }
+          return chosen;
+        }
+      });
+
+      if (result.isConfirmed && result.value) {
+        document.getElementById('n_loc').value = result.value.trim();
+      }
+    };
+
     window.searchAsset = function() {
       const barcode = document.getElementById('s_barcode').value.trim();
-      const currentLoc = document.getElementById('s_location').value;
+      let currentLoc = (document.getElementById('s_location')?.value || '').trim();
       if (!barcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสพัสดุ', 'warning');
-      let asset = globalData.assets.find(a => a.AssetID === barcode);
+      
+      const normBarcode = normalizeAssetId(barcode);
+      let asset = globalData.assets.find(a => (a.AssetID || '').trim() === barcode)
+        || globalData.assets.find(a => (a.AssetID || '').trim().toLowerCase() === barcode.toLowerCase())
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode);
+
       document.getElementById('scan-step-1').classList.add('hidden');
       if (asset) {
         document.getElementById('scan-step-found').classList.remove('hidden');
         document.getElementById('f_id').innerText = asset.AssetID;
         document.getElementById('f_name').innerText = asset.Name;
-        document.getElementById('f_old_loc').innerText = asset.Location;
-        document.getElementById('f_curr_loc').innerText = currentLoc;
+        const oldLoc = (asset.Location || '').trim();
+        document.getElementById('f_old_loc').innerText = oldLoc || '-';
+        
+        // If currentLoc is empty or '-', fallback to asset's existing location
+        if ((!currentLoc || currentLoc === '-') && oldLoc && oldLoc !== '-') {
+          currentLoc = oldLoc;
+        }
+        document.getElementById('f_curr_loc').innerText = currentLoc || '-';
         document.getElementById('f_inspector_name').innerText = currentUser.name;
-        document.getElementById('f_inspect_date').innerText = new Date().toLocaleDateString('th-TH');
+        document.getElementById('f_inspect_date').innerText = getTodayThaiDate();
         if (asset.InspectRound === globalData.settings.round) document.getElementById('alert-already').classList.remove('hidden');
         else document.getElementById('alert-already').classList.add('hidden');
         const condSelect = document.getElementById('f_condition');
         condSelect.innerHTML = '';
         globalData.conditions.forEach(cond => { condSelect.innerHTML += `<option value="${cond}">${cond}</option>`; });
-        if (asset.Location === currentLoc) {
-          document.getElementById('alert-location-ok').classList.remove('hidden');
-          document.getElementById('alert-location-bad').classList.add('hidden');
-        } else {
-          document.getElementById('alert-location-ok').classList.add('hidden');
-          document.getElementById('alert-location-bad').classList.remove('hidden');
-        }
+        
+        updateLocationMatchAlert();
       } else {
         document.getElementById('scan-step-notfound').classList.remove('hidden');
         document.getElementById('n_id').value = barcode;
-        document.getElementById('n_loc').value = currentLoc;
+        document.getElementById('n_loc').value = currentLoc || '';
         document.getElementById('n_inspector_name').innerText = currentUser.name;
-        document.getElementById('n_inspect_date').innerText = new Date().toLocaleDateString('th-TH');
+        document.getElementById('n_inspect_date').innerText = getTodayThaiDate();
       }
     };
 
@@ -3501,7 +3916,7 @@
 
     window.submitDataToGas = function(actionFunc, dataObj) {
       dataObj.inspectorName = currentUser.name;
-      dataObj.inspectDate = new Date().toLocaleDateString('th-TH');
+      dataObj.inspectDate = getTodayThaiDate();
       showLoader('📍 กำลังระบุพิกัด GPS...');
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -3523,10 +3938,31 @@
     
     window.saveInspection = async function() {
       const fileInput = document.getElementById('f_img');
+      const currLoc = (document.getElementById('f_curr_loc')?.innerText || '').trim();
+      const oldLoc = (document.getElementById('f_old_loc')?.innerText || '').trim();
+      let finalLoc = (currLoc && currLoc !== '-') ? currLoc : (oldLoc !== '-' ? oldLoc : '');
+      const condition = document.getElementById('f_condition').value;
+
+      if (!finalLoc) {
+        const ask = await Swal.fire({
+          title: 'ยังไม่ระบุสถานที่',
+          text: 'ครุภัณฑ์นี้ยังไม่มีข้อมูลสถานที่ตั้ง ต้องการคลิกเลือกสถานที่ก่อนบันทึกหรือไม่?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-map-marker-alt mr-1"></i> เลือกสถานที่เดี๋ยวนี้',
+          cancelButtonText: 'บันทึกต่อ',
+          confirmButtonColor: '#2563eb'
+        });
+        if (ask.isConfirmed) {
+          changeCurrentInspectionLocation();
+          return;
+        }
+      }
+
       const data = {
         assetId: document.getElementById('f_id').innerText,
-        condition: document.getElementById('f_condition').value,
-        newLocation: document.getElementById('f_curr_loc').innerText,
+        condition: condition,
+        newLocation: finalLoc,
         note: document.getElementById('f_note').value,
         imageBase64: null
       };
@@ -3551,7 +3987,7 @@
         name: document.getElementById('n_name').value.trim(),
         brand: '',
         location: document.getElementById('n_loc').value.trim(),
-        date: new Date().toLocaleDateString('th-TH'),
+        date: getTodayThaiDate(),
         note: 'ลงทะเบียนจากหน้าสแกน',
         imageBase64: null
       };
@@ -3636,7 +4072,12 @@
     window.searchForBorrow = function() {
       const barcode = document.getElementById('b_barcode').value.trim();
       if (!barcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสครุภัณฑ์', 'warning');
-      let asset = globalData.assets.find(a => a.AssetID === barcode);
+      
+      const normBarcode = normalizeAssetId(barcode);
+      let asset = globalData.assets.find(a => (a.AssetID || '').trim() === barcode)
+        || globalData.assets.find(a => (a.AssetID || '').trim().toLowerCase() === barcode.toLowerCase())
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode);
+
       document.getElementById('borrow-step-1').classList.add('hidden');
       if (asset) {
         document.getElementById('borrow-step-2').classList.remove('hidden');
