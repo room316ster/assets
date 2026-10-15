@@ -893,6 +893,9 @@
                     <button type="button" onclick="selectAllAssignLocations(false)" class="text-[11px] font-bold text-gray-500 hover:underline">ล้างทั้งหมด</button>
                   </div>
                 </div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1">
+                  <i class="fas fa-info-circle text-blue-500"></i> คลิกที่ปุ่ม <b>"X ชิ้น"</b> เพื่อเปิดดูรายการครุภัณฑ์ในสถานที่นั้น ๆ ได้ทันที
+                </p>
                 
                 <div class="relative mb-2">
                   <input type="text" id="assign_loc_search" placeholder="พิมพ์ค้นหาสถานที่..." onkeyup="filterAssignLocationsCheckboxList()" class="w-full text-xs p-2 pl-7 rounded-lg border dark:bg-gray-700 bg-white dark:text-white focus:outline-none">
@@ -2432,6 +2435,200 @@
       if (newPage >= 1 && newPage <= maxPage) renderAssetsTablePaginated(newPage); 
     };
 
+    // ==========================================
+    // 🏢 ป๊อปอัปดูรายการครุภัณฑ์ทั้งหมดในสถานที่นั้น ๆ (Location Assets Modal)
+    // ==========================================
+    window.showLocationAssetsModal = function(locName) {
+      if (!locName) return;
+      const currentRound = (globalData.settings && globalData.settings.round) || '';
+      const assetsInLoc = (globalData.assets || []).filter(a => (a.Location || '').trim() === locName.trim());
+      
+      if (assetsInLoc.length === 0) {
+        return Swal.fire({
+          icon: 'info',
+          title: 'ไม่พบครุภัณฑ์',
+          text: `ไม่พบรายการครุภัณฑ์ที่ระบุสถานที่ "${locName}" ในระบบ`,
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: '#2563eb'
+        });
+      }
+
+      const doneCount = assetsInLoc.filter(a => a.InspectRound === currentRound).length;
+      const pendingCount = assetsInLoc.length - doneCount;
+      const brokenCount = assetsInLoc.filter(a => (a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม')).length;
+
+      let rowsHtml = '';
+      assetsInLoc.forEach((a, idx) => {
+        const isDone = a.InspectRound === currentRound;
+        const statusBadge = isDone 
+          ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border border-green-200 dark:border-green-800 inline-flex items-center gap-1"><i class="fas fa-check-circle text-green-600"></i> ตรวจแล้ว (${a.Inspector || '-'})</span>`
+          : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800 inline-flex items-center gap-1"><i class="fas fa-clock text-red-500"></i> ยังไม่ตรวจ</span>`;
+        
+        let condBadge = '<span class="text-green-600 font-bold">ปกติ</span>';
+        if ((a.Status || '').includes('ชำรุด') || (a.Status || '').includes('ซ่อม')) {
+          condBadge = `<span class="text-yellow-600 font-bold">${a.Status}</span>`;
+        } else if ((a.Status || '').includes('สูญหาย')) {
+          condBadge = '<span class="text-red-600 font-bold">สูญหาย</span>';
+        }
+
+        const imgBtn = a.ImageURL 
+          ? `<button type="button" onclick="viewImage('${a.ImageURL}')" class="px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300 text-[11px] font-bold border border-blue-200 dark:border-blue-800 transition" title="คลิกดูภาพ"><i class="fas fa-image"></i></button>`
+          : `<span class="text-gray-300">-</span>`;
+
+        rowsHtml += `
+          <tr class="loc-asset-row border-b dark:border-gray-700 hover:bg-pink-50/40 dark:hover:bg-gray-800 text-xs transition" data-search="${(a.AssetID + ' ' + a.Name + ' ' + (a.Brand || '')).toLowerCase()}">
+            <td class="p-2 text-center text-gray-400 font-mono">${idx + 1}</td>
+            <td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+              <a href="javascript:void(0)" onclick="Swal.close(); showAssetDetailModal('${a.AssetID}');" class="hover:underline flex items-center gap-1" title="ดูประวัติและรายละเอียดครุภัณฑ์">
+                ${a.AssetID}
+              </a>
+            </td>
+            <td class="p-2 text-left">
+              <p class="font-bold text-gray-800 dark:text-gray-200">${a.Name}</p>
+              ${a.Brand ? `<p class="text-[10px] text-gray-400">${a.Brand}</p>` : ''}
+            </td>
+            <td class="p-2 text-center whitespace-nowrap">${condBadge}</td>
+            <td class="p-2 text-center whitespace-nowrap">${statusBadge}</td>
+            <td class="p-2 text-center whitespace-nowrap">${imgBtn}</td>
+          </tr>
+        `;
+      });
+
+      Swal.fire({
+        title: `<div class="flex items-center gap-2 text-base md:text-lg font-bold text-pink-600 dark:text-pink-400"><i class="fas fa-map-marker-alt"></i> ${locName} (${assetsInLoc.length} ชิ้น)</div>`,
+        html: `
+          <div class="text-left text-xs space-y-3">
+            <!-- สรุปตัวเลขของการตรวจในสถานที่นี้ -->
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2 rounded-xl bg-blue-50 dark:bg-gray-800 border border-blue-100 dark:border-gray-700">
+                <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-bold">ทั้งหมด</span>
+                <span class="text-base font-bold text-blue-600 dark:text-blue-400">${assetsInLoc.length} ชิ้น</span>
+              </div>
+              <div class="p-2 rounded-xl bg-green-50 dark:bg-gray-800 border border-green-100 dark:border-gray-700">
+                <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-bold">ตรวจแล้ว (${currentRound})</span>
+                <span class="text-base font-bold text-green-600">${doneCount} ชิ้น</span>
+              </div>
+              <div class="p-2 rounded-xl bg-red-50 dark:bg-gray-800 border border-red-100 dark:border-gray-700">
+                <span class="text-[10px] text-gray-500 dark:text-gray-400 block font-bold">ยังไม่ตรวจ</span>
+                <span class="text-base font-bold text-red-600">${pendingCount} ชิ้น</span>
+              </div>
+            </div>
+
+            <!-- กล่องค้นหาในป๊อปอัป -->
+            <div class="relative">
+              <input type="text" id="loc_assets_modal_search" oninput="filterLocationAssetsModalList(this.value)" placeholder="🔍 พิมพ์ค้นหารหัส หรือชื่อครุภัณฑ์ในสถานที่นี้..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-pink-500">
+              <i class="fas fa-search absolute left-2.5 top-2.5 text-gray-400 text-xs pointer-events-none"></i>
+            </div>
+
+            <!-- ตารางแสดงรายการครุภัณฑ์ทั้งหมด -->
+            <div class="max-h-[350px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-100 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300 text-[11px] font-bold sticky top-0 shadow-2xs z-10">
+                  <tr>
+                    <th class="p-2 text-center w-8">#</th>
+                    <th class="p-2">รหัสครุภัณฑ์</th>
+                    <th class="p-2">ชื่อครุภัณฑ์</th>
+                    <th class="p-2 text-center">สภาพ</th>
+                    <th class="p-2 text-center">การตรวจในรอบ</th>
+                    <th class="p-2 text-center w-12">รูป</th>
+                  </tr>
+                </thead>
+                <tbody id="loc_assets_modal_tbody">
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `,
+        width: '760px',
+        showCloseButton: true,
+        showCancelButton: true,
+        cancelButtonText: 'ปิดหน้าต่าง',
+        confirmButtonText: '<i class="fas fa-print mr-1"></i> พิมพ์ใบตรวจห้องนี้',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          printSpecificLocationAssets(locName);
+        }
+      });
+    };
+
+    window.filterLocationAssetsModalList = function(keyword) {
+      const q = (keyword || '').toLowerCase().trim();
+      const rows = document.querySelectorAll('.loc-asset-row');
+      rows.forEach(r => {
+        const text = r.getAttribute('data-search') || '';
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    };
+
+    window.printSpecificLocationAssets = function(locName) {
+      const currentRound = (globalData.settings && globalData.settings.round) || '';
+      const assetsInLoc = (globalData.assets || []).filter(a => (a.Location || '').trim() === locName.trim());
+      if (assetsInLoc.length === 0) return;
+
+      let rowsHtml = '';
+      assetsInLoc.forEach((a, idx) => {
+        const isDone = a.InspectRound === currentRound;
+        const st = isDone ? `ตรวจแล้ว (${a.Inspector || '-'})` : 'ยังไม่ตรวจ';
+        rowsHtml += `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td style="font-family:monospace; font-weight:bold;">${a.AssetID}</td>
+            <td>${a.Name}</td>
+            <td>${a.Brand || '-'}</td>
+            <td style="text-align:center;">${a.Status || 'ปกติ'}</td>
+            <td style="text-align:center; font-weight:bold; color:${isDone ? '#15803d' : '#b91c1c'};">${st}</td>
+          </tr>
+        `;
+      });
+
+      const printWindow = window.open('', '_blank');
+      const docHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>รายการครุภัณฑ์ - ${locName}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+          <style>
+            body { font-family: 'Prompt', sans-serif; padding: 20px; color: #111; }
+            h2 { text-align: center; margin-bottom: 4px; font-size: 18px; }
+            h4 { text-align: center; color: #555; margin-top: 0; margin-bottom: 16px; font-size: 13px; font-weight: normal; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+            th, td { border: 1px solid #444; padding: 6px 8px; text-align: left; }
+            th { background-color: #f3f4f6; text-align: center; }
+            @media print { @page { margin: 12mm; } }
+          </style>
+        </head>
+        <body>
+          <h2>รายการครุภัณฑ์ประจำสถานที่: ${locName}</h2>
+          <h4>ศาลแขวงอุบลราชธานี | รอบการตรวจ: ${currentRound} | ทั้งหมด ${assetsInLoc.length} รายการ | วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</h4>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:35px;">ลำดับ</th>
+                <th style="width:130px;">รหัสพัสดุ</th>
+                <th>ชื่อครุภัณฑ์</th>
+                <th style="width:120px;">ยี่ห้อ/รุ่น</th>
+                <th style="width:70px;">สภาพ</th>
+                <th style="width:120px;">สถานะการตรวจ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <script>
+            setTimeout(function(){ window.print(); window.close(); }, 800);
+          <\/script>
+        </body>
+        </html>
+      `;
+      printWindow.document.write(docHtml);
+      printWindow.document.close();
+    };
+
     window.renderAssignView = function() {
       const userSelect = document.getElementById('assign_user');
       if (userSelect) {
@@ -2464,11 +2661,16 @@
               const uName = (globalData.users || []).find(u => u.username === existingAssign.AssignedTo)?.name || existingAssign.AssignedTo;
               assignBadge = `<span class="text-[10px] bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 ml-auto font-medium truncate max-w-[120px]" title="มอบหมายให้ ${uName} แล้ว"><i class="fas fa-user-check mr-0.5"></i>${uName}</span>`;
             }
+            const safeLoc = loc.replace(/'/g, "\\'");
             html += `
-              <label class="assign-loc-item flex items-center gap-2 p-1.5 hover:bg-pink-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition select-none" data-location="${loc}">
-                <input type="checkbox" class="assign-loc-cb rounded text-pink-600 focus:ring-pink-500 w-4 h-4 cursor-pointer" value="${loc}" onchange="updateAssignSelectedCount()">
-                <span class="font-bold text-gray-800 dark:text-gray-200 text-xs">${loc}</span>
-                <span class="text-[10px] text-gray-400">(${count} ชิ้น)</span>
+              <label class="assign-loc-item flex items-center justify-between gap-2 p-1.5 hover:bg-pink-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition select-none" data-location="${loc}">
+                <div class="flex items-center gap-2 min-w-0">
+                  <input type="checkbox" class="assign-loc-cb rounded text-pink-600 focus:ring-pink-500 w-4 h-4 cursor-pointer" value="${loc}" onchange="updateAssignSelectedCount()">
+                  <span class="font-bold text-gray-800 dark:text-gray-200 text-xs truncate" title="${loc}">${loc}</span>
+                  <button type="button" onclick="event.stopPropagation(); event.preventDefault(); showLocationAssetsModal('${safeLoc}')" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 hover:scale-105 transition shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อดูว่า ${count} ชิ้น มีรายการอะไรบ้าง">
+                    <i class="fas fa-boxes text-[9px]"></i> ${count} ชิ้น
+                  </button>
+                </div>
                 ${assignBadge}
               </label>
             `;
@@ -2496,18 +2698,27 @@
             currentAssignments.forEach(a => {
               let uName = (globalData.users || []).find(u => u.username === a.AssignedTo)?.name || a.AssignedTo;
               let locCount = globalData.assets.filter(item => item.Location === a.Location).length;
+              const safeAssignLoc = (a.Location || '').replace(/'/g, "\\'");
               htmlRows += `
                 <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm dark:text-gray-200">
-                  <td class="p-3 font-bold text-pink-600 dark:text-pink-400"><i class="fas fa-map-marker-alt mr-1 text-xs"></i>${a.Location}</td>
-                  <td class="p-3 text-center font-bold text-gray-600 dark:text-gray-300">${locCount}</td>
+                  <td class="p-3 font-bold text-pink-600 dark:text-pink-400">
+                    <button type="button" onclick="showLocationAssetsModal('${safeAssignLoc}')" class="hover:underline flex items-center gap-1.5 text-left font-bold" title="คลิกเพื่อดูรายการครุภัณฑ์">
+                      <i class="fas fa-map-marker-alt text-xs"></i><span>${a.Location}</span>
+                    </button>
+                  </td>
+                  <td class="p-3 text-center">
+                    <button type="button" onclick="showLocationAssetsModal('${safeAssignLoc}')" class="px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-xs font-bold border border-blue-200 dark:border-blue-800 transition hover:scale-105 shadow-2xs inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อดูว่า ${locCount} ชิ้น มีรายการอะไรบ้าง">
+                      <i class="fas fa-boxes text-[10px]"></i> ${locCount} ชิ้น
+                    </button>
+                  </td>
                   <td class="p-3 font-medium"><i class="fas fa-user-check text-green-500 mr-1 text-xs"></i>${uName}</td>
                   <td class="p-3 text-xs text-gray-500">${a.AssignedBy || 'แอดมิน'}</td>
                   <td class="p-3 text-center">
                     <div class="inline-flex items-center gap-1.5">
-                      <button type="button" onclick="editSingleAssignment('${a.Location}', '${a.AssignedTo}')" class="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="เปลี่ยนผู้รับผิดชอบ">
+                      <button type="button" onclick="editSingleAssignment('${safeAssignLoc}', '${a.AssignedTo}')" class="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="เปลี่ยนผู้รับผิดชอบ">
                         <i class="fas fa-user-edit"></i> <span class="hidden sm:inline">เปลี่ยนผู้ตรวจ</span>
                       </button>
-                      <button type="button" onclick="deleteSingleAssignment('${a.Location}')" class="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="ยกเลิกการมอบหมาย">
+                      <button type="button" onclick="deleteSingleAssignment('${safeAssignLoc}')" class="px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-bold transition flex items-center gap-1 shadow-2xs" title="ยกเลิกการมอบหมาย">
                         <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">ลบ</span>
                       </button>
                     </div>
