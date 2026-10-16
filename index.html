@@ -174,7 +174,7 @@
           <i class="fas fa-sync-alt text-[9px]"></i> เช็คอัปเดต
         </button>
       </div>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">ศาลแขวงอุบลราชธานี</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 app-org-name">ศาลแขวงอุบลราชธานี</p>
 
       <!-- ปุ่มดาวน์โหลด APK สำหรับ Android -->
       <div class="mb-2.5">
@@ -228,6 +228,7 @@
   <div id="page-register" class="page min-h-screen items-center justify-center w-full relative">
     <div class="glass p-8 rounded-2xl shadow-xl w-11/12 max-w-sm text-center mb-8 mt-10">
       <h2 class="text-2xl font-bold mb-2 dark:text-white"><i class="fas fa-user-plus mr-2 text-blue-600"></i>สมัครสมาชิก</h2>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 app-org-name">ศาลแขวงอุบลราชธานี</p>
       <input type="text" id="reg_name" placeholder="ชื่อ-นามสกุล" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
       <input type="email" id="reg_email" placeholder="อีเมล (สำหรับกู้คืนรหัสผ่าน)" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
       <input type="text" id="reg_username" placeholder="ตั้งชื่อ Username" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
@@ -252,7 +253,7 @@
             <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400"><i class="fas fa-cubes mr-1"></i>AssetPro</h1>
             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 app-version-text cursor-pointer hover:bg-blue-200" onclick="checkAppUpdate(true)" title="คลิกเพื่อตรวจหาอัปเดต">v5.7</span>
           </div>
-          <p class="text-[10px] text-gray-500 dark:text-gray-400">ศาลแขวงอุบลราชธานี</p>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400 app-org-name">ศาลแขวงอุบลราชธานี</p>
         </div>
         <button class="md:hidden text-gray-500 text-xl" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
       </div>
@@ -345,7 +346,7 @@
               <h2 class="text-2xl md:text-3xl font-extrabold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-2">
                 <i class="fas fa-book-open"></i> คู่มือการใช้งานระบบตรวจนับครุภัณฑ์
               </h2>
-              <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">ศาลแขวงอุบลราชธานี — แนะนำทีละขั้นตอนอย่างละเอียด ชัดเจน เข้าใจง่าย</p>
+              <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1"><span class="app-org-name">ศาลแขวงอุบลราชธานี</span> — แนะนำทีละขั้นตอนอย่างละเอียด ชัดเจน เข้าใจง่าย</p>
             </div>
 
             <!-- กล่องสรุปด่วน 4 ขั้นตอน (สำหรับคนอยากเริ่มทันที) -->
@@ -678,7 +679,7 @@
             <!-- ท้ายคู่มือ: ช่องทางติดต่อช่วยเหลือ -->
             <div class="text-center p-4 bg-teal-50 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-200 space-y-1">
               <p class="font-bold text-sm">หากพบปัญหาการใช้งานหรือต้องการความช่วยเหลือเพิ่มเติม</p>
-              <p>สามารถติดต่อได้ที่: <strong>กลุ่มงานคอมพิวเตอร์ / พัสดุ ศาลแขวงอุบลราชธานี</strong></p>
+              <p>สามารถติดต่อได้ที่: <strong>กลุ่มงานคอมพิวเตอร์ / พัสดุ <span class="app-org-name">ศาลแขวงอุบลราชธานี</span></strong></p>
             </div>
 
           </div>
@@ -1312,10 +1313,24 @@
                 <i class="fas fa-cogs text-blue-600 dark:text-blue-400"></i>
                 <span>ตั้งค่าระบบ (System Settings)</span>
               </h2>
-              <p class="text-xs text-gray-500 dark:text-gray-400">กำหนดรอบการตรวจสอบและการแจ้งเตือนระบบ</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">กำหนดชื่อหน่วยงาน รอบการตรวจสอบ และการแจ้งเตือนระบบ</p>
             </div>
 
-            <!-- ส่วนที่ 1: รอบการตรวจสอบ -->
+            <!-- ส่วนที่ 1: ชื่อหน่วยงาน / องค์กร -->
+            <div class="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 shadow-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                  <i class="fas fa-landmark text-blue-500 mr-1"></i> ชื่อหน่วยงาน / องค์กร (Organization Name)
+                </label>
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
+                  <i class="fas fa-eye"></i> ตัวอย่าง: <b class="app-org-name">ศาลแขวงอุบลราชธานี</b>
+                </span>
+              </div>
+              <input type="text" id="config_org_name" class="w-full p-2.5 rounded-lg border bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500 text-base font-bold text-gray-800 dark:text-gray-100" placeholder="ระบุชื่อหน่วยงาน เช่น ศาลแขวงอุบลราชธานี หรือ เทศบาล..." oninput="updateOrgNameDisplay(this.value)">
+              <p class="text-[11px] text-gray-400">ชื่อหน่วยงานนี้จะแสดงที่หัวเว็บ, แถบเมนูด้านข้าง, หน้ารายงานราชการ, ป้ายพิมพ์ QR Code และประทับบนลายน้ำรูปถ่ายทันที</p>
+            </div>
+
+            <!-- ส่วนที่ 2: รอบการตรวจสอบ -->
             <div class="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border dark:border-gray-700">
               <label class="block text-sm font-bold mb-1 text-gray-700 dark:text-gray-300">
                 <i class="fas fa-calendar-check text-blue-500 mr-1"></i> รอบการตรวจสอบปัจจุบัน
@@ -1507,6 +1522,52 @@
     const APP_VERSION = 'v5.7';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
+    // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
+    function getAppOrgName() {
+      if (globalData && globalData.settings && globalData.settings.orgName) {
+        return globalData.settings.orgName;
+      }
+      return localStorage.getItem('appOrgName') || 'ศาลแขวงอุบลราชธานี';
+    }
+    function updateOrgNameDisplay(name) {
+      const org = (name || getAppOrgName()).trim() || 'ศาลแขวงอุบลราชธานี';
+      document.querySelectorAll('.app-org-name').forEach(el => {
+        el.innerText = org;
+      });
+      document.title = `Asset Management Pro (ERP) ${APP_VERSION} - ${org}`;
+    }
+
+    // ซิงค์ข้อมูลฟอร์มการตั้งค่าระบบให้ตรงกับค่าปัจจุบันเสมอ
+    function populateSettingsForm() {
+      const s = (globalData && globalData.settings) ? globalData.settings : {};
+      const org = s.orgName || localStorage.getItem('appOrgName') || 'ศาลแขวงอุบลราชธานี';
+      if (document.getElementById('config_org_name')) {
+        document.getElementById('config_org_name').value = org;
+      }
+      if (document.getElementById('config_round')) {
+        document.getElementById('config_round').value = s.round || '';
+      }
+      if (document.getElementById('display_round')) {
+        document.getElementById('display_round').innerText = s.round || '';
+      }
+      if (document.getElementById('config_telegram_token')) {
+        document.getElementById('config_telegram_token').value = s.telegramToken || '';
+      }
+      if (document.getElementById('config_telegram_chat_id')) {
+        document.getElementById('config_telegram_chat_id').value = s.telegramChatId || '';
+      }
+      if (document.getElementById('config_tg_inspect')) {
+        document.getElementById('config_tg_inspect').checked = !!s.telegramNotifyInspect;
+      }
+      if (document.getElementById('config_tg_maint')) {
+        document.getElementById('config_tg_maint').checked = !!s.telegramNotifyMaint;
+      }
+      if (document.getElementById('config_tg_borrow')) {
+        document.getElementById('config_tg_borrow').checked = !!s.telegramNotifyBorrow;
+      }
+      updateOrgNameDisplay(org);
+    }
+
     // ซิงค์ป้ายเวอร์ชันทั้งหมดในหน้าเว็บให้ตรงกับ APP_VERSION เสมอโดยอัตโนมัติ
     function syncAppVersionDisplay() {
       try {
@@ -1516,7 +1577,11 @@
       } catch(e) {}
     }
     syncAppVersionDisplay();
-    document.addEventListener('DOMContentLoaded', syncAppVersionDisplay);
+    document.addEventListener('DOMContentLoaded', () => {
+      syncAppVersionDisplay();
+      updateOrgNameDisplay();
+      populateSettingsForm();
+    });
 
     let currentUser = null; 
     let globalData = { assets: [], dash: {}, settings: {}, conditions: [], assignments: [], users: [] };
@@ -2294,6 +2359,7 @@
       if (viewId === 'maintenance') renderMaintenanceView();
       if (viewId === 'scan') renderScanLocationAssets();
       if (viewId === 'assets') filterTableAssets();
+      if (viewId === 'settings') populateSettingsForm();
     };
 
     window.login = async function() {
@@ -2526,6 +2592,12 @@
           assignments: Array.isArray(res.assignments) ? res.assignments : (globalData.assignments || []),
           users: Array.isArray(res.users) ? res.users : (globalData.users || [])
         };
+
+        // ซิงค์ชื่อหน่วยงานกับ LocalStorage และอัปเดตหน้าจอทันที
+        if (globalData.settings && globalData.settings.orgName) {
+          localStorage.setItem('appOrgName', globalData.settings.orgName);
+          updateOrgNameDisplay(globalData.settings.orgName);
+        }
 
         // สำรองข้อมูลลง LocalStorage เพื่อให้ระบบทำงานต่อได้แม้เครือข่ายกระตุก
         try {
@@ -3011,7 +3083,7 @@
         </head>
         <body>
           <h2>รายการครุภัณฑ์ประจำสถานที่: ${locName}</h2>
-          <h4>ศาลแขวงอุบลราชธานี | รอบการตรวจ: ${currentRound} | ทั้งหมด ${assetsInLoc.length} รายการ | วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</h4>
+          <h4>${escapeHTML(getAppOrgName())} | รอบการตรวจ: ${currentRound} | ทั้งหมด ${assetsInLoc.length} รายการ | วันที่พิมพ์: ${new Date().toLocaleDateString('th-TH')}</h4>
           <table>
             <thead>
               <tr>
@@ -3856,7 +3928,7 @@
             <div class="a4-label">
               <img class="a4-qr" src="${qrUrl}" />
               <div class="a4-text">
-                <div class="a4-title">ศาลแขวงอุบลราชธานี</div>
+                <div class="a4-title">${escapeHTML(getAppOrgName())}</div>
                 <div class="a4-name">${a.Name}</div>
                 <div class="a4-id">${a.AssetID}</div>
               </div>
@@ -3880,7 +3952,7 @@
         let labelsHtml = '';
         selectedAssets.forEach(a => {
           let qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(a.AssetID);
-          labelsHtml += `<div class="label"><img class="qr" src="${qrUrl}" /><div class="text-box"><div class="title">ศาลแขวงอุบลราชธานี</div><div class="name">${a.Name}</div><div class="id">${a.AssetID}</div></div></div>`;
+          labelsHtml += `<div class="label"><img class="qr" src="${qrUrl}" /><div class="text-box"><div class="title">${escapeHTML(getAppOrgName())}</div><div class="name">${a.Name}</div><div class="id">${a.AssetID}</div></div></div>`;
         });
         htmlString = `<html><head><title>Print QR</title><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap" rel="stylesheet"><style>@page { size: 50mm 20mm; margin: 0; } body { margin: 0; padding: 0; font-family: "Prompt", sans-serif; background: #fff; color: #000; } .label { width: 50mm; height: 20mm; page-break-after: always; display: flex; align-items: center; box-sizing: border-box; padding: 1.5mm; overflow: hidden; } .qr { width: 16mm; height: 16mm; flex-shrink: 0; object-fit: contain; } .text-box { margin-left: 2mm; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; overflow: hidden; } .title { font-size: 7px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;} .name { font-size: 6px; margin: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; } .id { font-size: 9px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; letter-spacing: -0.2px; }</style></head><body>${labelsHtml}<scr`+`ipt>setTimeout(function(){window.print();window.close();},1500);</scr`+`ipt></body></html>`;
       }
@@ -4281,7 +4353,8 @@
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'บัญชีครุภัณฑ์');
-      const filename = `AssetPro_ศาลแขวงอุบล_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
+      const orgSlug = (getAppOrgName() || 'AssetPro').replace(/[\/\\:*?"<>|\s]/g, '_');
+      const filename = `AssetPro_${orgSlug}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.xlsx`;
       XLSX.writeFile(wb, filename);
     };
 
@@ -4300,7 +4373,8 @@
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `AssetPro_ศาลแขวงอุบล_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.csv`;
+      const orgSlugCsv = (getAppOrgName() || 'AssetPro').replace(/[\/\\:*?"<>|\s]/g, '_');
+      link.download = `AssetPro_${orgSlugCsv}_${new Date().toLocaleDateString('th-TH').replace(/\//g, '-')}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -4397,7 +4471,7 @@
       const inspectorText = repData.targetDisplayName;
 
       let printWindow = window.open('', '_blank');
-      let docHtml = `<html><head><title>รายงานผลการตรวจสอบครุภัณฑ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet"><style>body { font-family: 'Sarabun', sans-serif; padding: 20px 40px; color: #000; line-height: 1.4; } .header { text-align: center; margin-bottom: 20px; } h2, h3 { margin: 4px 0; } .doc-info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; } th { background-color: #f0f0f0; text-align: center; font-weight: bold; } .sign-area { display: flex; justify-content: space-around; margin-top: 40px; text-align: center; font-size: 13px; } .sign-box { width: 30%; } .sign-line { border-bottom: 1px dotted #000; margin: 30px 15px 5px 15px; } @media print { @page { size: A4 landscape; margin: 10mm; } }</style></head><body><div class="header"><h2>รายงานผลการตรวจสอบพัสดุประจำปี</h2><h3>ศาลแขวงอุบลราชธานี</h3><p>รอบการตรวจสอบ: ${currentRound || '-'}</p></div><div class="doc-info"><div><div><strong>ผู้ตรวจสอบ / เจ้าหน้าที่:</strong> ${inspectorText}</div><div><strong>สถานะการตรวจ:</strong> ${auditStatusText} | <strong>สถานที่:</strong> ${repData.locFilterVal !== 'all' ? repData.locFilterVal : 'ทุกสถานที่'} | <strong>สภาพ:</strong> ${repData.statusFilterVal !== 'all' ? repData.statusFilterVal : 'ทุกสภาพ'}</div></div><div style="text-align:right;"><div><strong>จำนวนรายการ:</strong> ${exportData.length.toLocaleString()} ชิ้น</div><div><strong>วันที่พิมพ์:</strong> ${new Date().toLocaleDateString('th-TH')}</div></div></div><table><thead><tr><th style="width:40px;">ลำดับ</th><th style="width:130px;">รหัสพัสดุ</th><th>รายการ/ลักษณะ</th><th style="width:140px;">สถานที่ตั้ง</th><th style="width:90px;">สภาพ</th><th style="width:90px;">สถานะตรวจ</th><th style="width:140px;">ผู้ตรวจสอบ</th><th style="width:90px;">วันที่ตรวจ</th></tr></thead><tbody>${htmlRows}</tbody></table><div class="sign-area"><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้ตรวจสอบ / ผู้รายงาน</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>เจ้าหน้าที่พัสดุ</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้อำนวยการฯ / ผู้รับรอง</p></div></div><script>setTimeout(function(){ window.print(); window.close(); }, 1200);<\/script></body></html>`;
+      let docHtml = `<html><head><title>รายงานผลการตรวจสอบครุภัณฑ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet"><style>body { font-family: 'Sarabun', sans-serif; padding: 20px 40px; color: #000; line-height: 1.4; } .header { text-align: center; margin-bottom: 20px; } h2, h3 { margin: 4px 0; } .doc-info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; } table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; } th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; } th { background-color: #f0f0f0; text-align: center; font-weight: bold; } .sign-area { display: flex; justify-content: space-around; margin-top: 40px; text-align: center; font-size: 13px; } .sign-box { width: 30%; } .sign-line { border-bottom: 1px dotted #000; margin: 30px 15px 5px 15px; } @media print { @page { size: A4 landscape; margin: 10mm; } }</style></head><body><div class="header"><h2>รายงานผลการตรวจสอบพัสดุประจำปี</h2><h3>${escapeHTML(getAppOrgName())}</h3><p>รอบการตรวจสอบ: ${currentRound || '-'}</p></div><div class="doc-info"><div><div><strong>ผู้ตรวจสอบ / เจ้าหน้าที่:</strong> ${inspectorText}</div><div><strong>สถานะการตรวจ:</strong> ${auditStatusText} | <strong>สถานที่:</strong> ${repData.locFilterVal !== 'all' ? repData.locFilterVal : 'ทุกสถานที่'} | <strong>สภาพ:</strong> ${repData.statusFilterVal !== 'all' ? repData.statusFilterVal : 'ทุกสภาพ'}</div></div><div style="text-align:right;"><div><strong>จำนวนรายการ:</strong> ${exportData.length.toLocaleString()} ชิ้น</div><div><strong>วันที่พิมพ์:</strong> ${new Date().toLocaleDateString('th-TH')}</div></div></div><table><thead><tr><th style="width:40px;">ลำดับ</th><th style="width:130px;">รหัสพัสดุ</th><th>รายการ/ลักษณะ</th><th style="width:140px;">สถานที่ตั้ง</th><th style="width:90px;">สภาพ</th><th style="width:90px;">สถานะตรวจ</th><th style="width:140px;">ผู้ตรวจสอบ</th><th style="width:90px;">วันที่ตรวจ</th></tr></thead><tbody>${htmlRows}</tbody></table><div class="sign-area"><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้ตรวจสอบ / ผู้รายงาน</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>เจ้าหน้าที่พัสดุ</p></div><div class="sign-box"><div class="sign-line"></div><p>( ........................................................ )<br>ผู้อำนวยการฯ / ผู้รับรอง</p></div></div><script>setTimeout(function(){ window.print(); window.close(); }, 1200);<\/script></body></html>`;
       printWindow.document.write(docHtml);
       printWindow.document.close();
     };
@@ -4467,6 +4541,7 @@
       if (!currentUser || currentUser.role !== 'Admin') {
         return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถตั้งค่าระบบได้', 'warning');
       }
+      const orgName = (document.getElementById('config_org_name') ? document.getElementById('config_org_name').value.trim() : '') || 'ศาลแขวงอุบลราชธานี';
       const roundText = document.getElementById('config_round').value.trim();
       const tgToken = (document.getElementById('config_telegram_token') ? document.getElementById('config_telegram_token').value.trim() : '');
       const tgChatId = (document.getElementById('config_telegram_chat_id') ? document.getElementById('config_telegram_chat_id').value.trim() : '');
@@ -4479,6 +4554,7 @@
       try {
         let res = await callAPI('apiSaveSettings', { 
           roundText: roundText,
+          orgName: orgName,
           telegramToken: tgToken,
           telegramChatId: tgChatId,
           telegramNotifyInspect: tgInspect,
@@ -4489,6 +4565,9 @@
         hideLoader();
         if (res.success) {
           globalData.settings.round = roundText;
+          globalData.settings.orgName = orgName;
+          localStorage.setItem('appOrgName', orgName);
+          updateOrgNameDisplay(orgName);
           globalData.settings.telegramToken = tgToken;
           globalData.settings.telegramChatId = tgChatId;
           globalData.settings.telegramNotifyInspect = tgInspect;
@@ -5704,7 +5783,7 @@
       try {
         if (fileInput.files.length > 0) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
-          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} | ผู้ตรวจ: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} | ผู้ตรวจ: ${inspector} | ${getAppOrgName()}`;
           data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddInspection', data);
@@ -5730,7 +5809,7 @@
       try {
         if (fileInput.files.length > 0) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
-          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ${getAppOrgName()}`;
           data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
@@ -5756,7 +5835,7 @@
       try {
         if (fileInput && fileInput.files.length > 0) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
-          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ศาลแขวงอุบลราชธานี`;
+          const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ${getAppOrgName()}`;
           data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
@@ -5973,13 +6052,8 @@
       // กำหนดค่าตัวกรองในหน้ารายงาน
       populateReportFilters();
       
-      if (document.getElementById('config_round')) document.getElementById('config_round').value = (globalData.settings && globalData.settings.round) || '';
-      if (document.getElementById('display_round')) document.getElementById('display_round').innerText = (globalData.settings && globalData.settings.round) || '';
-      if (document.getElementById('config_telegram_token')) document.getElementById('config_telegram_token').value = (globalData.settings && globalData.settings.telegramToken) || '';
-      if (document.getElementById('config_telegram_chat_id')) document.getElementById('config_telegram_chat_id').value = (globalData.settings && globalData.settings.telegramChatId) || '';
-      if (document.getElementById('config_tg_inspect')) document.getElementById('config_tg_inspect').checked = !!(globalData.settings && globalData.settings.telegramNotifyInspect);
-      if (document.getElementById('config_tg_maint')) document.getElementById('config_tg_maint').checked = !!(globalData.settings && globalData.settings.telegramNotifyMaint);
-      if (document.getElementById('config_tg_borrow')) document.getElementById('config_tg_borrow').checked = !!(globalData.settings && globalData.settings.telegramNotifyBorrow);
+      // ซิงค์ค่าการตั้งค่าระบบ
+      populateSettingsForm();
 
       renderLocationTracker();
       
