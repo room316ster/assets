@@ -1,8 +1,10 @@
 // Service Worker for Asset Management Pro PWA
-const CACHE_NAME = 'asset-pro-pwa-v5.6';
+const CACHE_NAME = 'asset-pro-pwa-v5.7';
 const STATIC_ASSETS = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
