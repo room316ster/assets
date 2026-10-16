@@ -277,6 +277,7 @@
         <a href="#" onclick="nav('assets')" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-2"><i class="fas fa-list w-6"></i> ฐานข้อมูลพัสดุ</a>
         <a href="#" onclick="nav('print')" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-1 bg-indigo-50/50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"><i class="fas fa-print w-6 text-indigo-500"></i> พิมพ์ป้าย QR Code</a>
         <a href="#" onclick="nav('report')" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-1"><i class="fas fa-chart-bar w-6"></i> รายงานสรุป</a>
+        <a href="#" onclick="openBackupsModal()" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-1 bg-purple-50/50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"><i class="fas fa-history w-6 text-purple-600"></i> ข้อมูลสำรองย้อนหลัง</a>
         <a href="#" onclick="nav('add')" class="block px-3 py-2 rounded-xl hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 transition dark:text-gray-200 mt-1"><i class="fas fa-plus w-6"></i> เพิ่มข้อมูลใหม่</a>
         
         <div class="border-t border-gray-300 dark:border-gray-600 my-2"></div>
@@ -1131,6 +1132,24 @@
               </label>
               <input type="text" id="config_round" class="w-full p-2.5 rounded-lg border bg-white dark:bg-gray-700 dark:text-white focus:outline-none text-base font-bold text-blue-600 dark:text-blue-400" placeholder="เช่น ครั้งที่ 1 2567">
               <p class="text-[11px] text-gray-400 mt-1">รอบที่ใช้ในการแยกสถานะพัสดุ "ตรวจแล้ว" หรือ "ยังไม่ตรวจ"</p>
+              
+              <!-- แถบแจ้งเตือน Auto-Backup & ปุ่มดูประวัติย้อนหลัง -->
+              <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                <div class="flex items-start gap-2 p-2.5 bg-blue-50/80 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800 text-xs text-blue-800 dark:text-blue-300">
+                  <i class="fas fa-shield-halved text-blue-600 mt-0.5"></i>
+                  <span><b>ระบบสำรองข้อมูลอัตโนมัติ (Auto-Backup):</b> เมื่อท่านเปลี่ยนชื่อรอบใหม่ ระบบจะทำการสร้างสำเนา Google Sheets ของรอบเดิมเก็บไว้ในประวัติย้อนหลังให้อัตโนมัติทันที</span>
+                </div>
+                <div class="flex flex-wrap gap-2 pt-1">
+                  <button type="button" onclick="openBackupsModal()" class="flex-1 min-w-[180px] bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs shadow flex items-center justify-center gap-1.5 transition">
+                    <i class="fas fa-history text-yellow-300"></i>
+                    <span>ประวัติสำรองข้อมูล & ดาวน์โหลด</span>
+                  </button>
+                  <button type="button" onclick="createManualBackup()" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-2 px-3 rounded-lg text-xs shadow flex items-center justify-center gap-1.5 transition">
+                    <i class="fas fa-save"></i>
+                    <span>สำรองข้อมูลรอบนี้ทันที</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- ส่วนที่ 2: ตั้งค่า Telegram Notifications -->
@@ -1196,10 +1215,86 @@
         </div>
       
       </div>
+
+      <!-- Modal: ประวัติการสำรองข้อมูลย้อนหลัง และดาวน์โหลดไฟล์ -->
+      <div id="modal-backups" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 animate-fade-in">
+          
+          <!-- Modal Header -->
+          <div class="px-5 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-xl shadow">
+                <i class="fas fa-history text-yellow-300"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-base md:text-lg">ประวัติสำรองข้อมูลและดาวน์โหลดข้อมูลย้อนหลัง</h3>
+                <p class="text-[11px] text-blue-100">สำเนาฐานข้อมูลอัตโนมัติเมื่อสิ้นสุดแต่ละรอบ / ปีงบประมาณ</p>
+              </div>
+            </div>
+            <button type="button" onclick="closeBackupsModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+              <i class="fas fa-times text-base"></i>
+            </button>
+          </div>
+
+          <!-- Action Bar -->
+          <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border-b dark:border-gray-700 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+              <i class="fas fa-shield-alt text-emerald-500"></i>
+              <span>ดาวน์โหลดไฟล์ <b>Excel (.xlsx)</b> หรือเปิดดู Google Sheets ย้อนหลังได้ตลอดเวลา</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="createManualBackup()" class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-2.5 py-1.5 rounded-lg font-bold shadow flex items-center gap-1.5 transition">
+                <i class="fas fa-plus-circle text-lime-300"></i> สำรองข้อมูลรอบนี้ตอนนี้
+              </button>
+              <button type="button" onclick="loadBackupsList()" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition">
+                <i class="fas fa-sync-alt" id="backup-refresh-icon"></i> รีเฟรช
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body / Table -->
+          <div class="p-4 overflow-y-auto flex-1">
+            <div id="backups-loading" class="text-center py-10 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-spinner fa-spin text-3xl text-blue-600 mb-2"></i>
+              <p class="text-xs">กำลังโหลดประวัติข้อมูลสำรองย้อนหลัง...</p>
+            </div>
+            <div id="backups-empty" class="hidden text-center py-10 text-gray-400 dark:text-gray-500">
+              <i class="fas fa-folder-open text-4xl mb-2 text-gray-300 dark:text-gray-600"></i>
+              <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">ยังไม่มีประวัติการสำรองข้อมูล</p>
+              <p class="text-xs mt-1">เมื่อท่านเปลี่ยนรอบตรวจนับ หรือกดปุ่ม "สำรองข้อมูลรอบนี้ตอนนี้" ข้อมูลจะถูกบันทึกที่นี่</p>
+            </div>
+            <div id="backups-table-container" class="hidden overflow-x-auto rounded-xl border dark:border-gray-700">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 font-bold border-b dark:border-gray-600">
+                    <th class="p-2.5">รอบการตรวจสอบ</th>
+                    <th class="p-2.5">ชื่อไฟล์สำเนา</th>
+                    <th class="p-2.5">วันที่และเวลา</th>
+                    <th class="p-2.5">ผู้ทำรายการ</th>
+                    <th class="p-2.5 text-center">ดาวน์โหลด / เปิดดู</th>
+                    <th class="p-2.5 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="backups-table-body" class="divide-y divide-gray-100 dark:divide-gray-700">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-5 py-3 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700 flex justify-end">
+            <button type="button" onclick="closeBackupsModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-xs font-bold transition">
+              ปิดหน้าต่าง
+            </button>
+          </div>
+
+        </div>
+      </div>
+
       <footer class="mt-8 pt-4 pb-3 border-t border-gray-200/50 dark:border-gray-700/50 text-center w-full">
         <div class="flex flex-wrap items-center justify-center gap-2 mb-1">
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700">
-            <i class="fas fa-code-branch text-[10px]"></i> Version <span class="app-version-text">v5.6</span>
+            <i class="fas fa-code-branch text-[10px]"></i> Version <span class="app-version-text">v5.7</span>
           </span>
           <button type="button" onclick="checkAppUpdate(true)" class="text-[11px] text-gray-500 hover:text-blue-600 dark:text-gray-400 underline flex items-center gap-1 cursor-pointer transition">
             <i class="fas fa-sync-alt text-[9px]"></i> ตรวจสอบการอัปเดต
@@ -4192,15 +4287,38 @@
         });
         hideLoader();
         if (res.success) {
-          Swal.fire('สำเร็จ', res.message, 'success');
           globalData.settings.round = roundText;
           globalData.settings.telegramToken = tgToken;
           globalData.settings.telegramChatId = tgChatId;
           globalData.settings.telegramNotifyInspect = tgInspect;
           globalData.settings.telegramNotifyMaint = tgMaint;
           globalData.settings.telegramNotifyBorrow = tgBorrow;
-          document.getElementById('display_round').innerText = roundText;
+          if (document.getElementById('display_round')) {
+            document.getElementById('display_round').innerText = roundText;
+          }
           fetchGlobalData();
+
+          if (res.backupCreated && res.backup) {
+            Swal.fire({
+              title: 'บันทึกสำเร็จ & สำเนาข้อมูลอัตโนมัติ!',
+              html: `<div class="text-left text-xs space-y-2">
+                <p class="text-sm font-semibold text-gray-800 dark:text-white">${escapeHTML(res.message)}</p>
+                <div class="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+                  <div class="font-bold flex items-center gap-1 mb-1"><i class="fas fa-shield-alt text-emerald-500"></i> สำเนาไฟล์เสร็จสมบูรณ์:</div>
+                  <div class="font-mono text-[11px]">${escapeHTML(res.backup.fileName)}</div>
+                </div>
+              </div>`,
+              icon: 'success',
+              showCancelButton: true,
+              confirmButtonText: '<i class="fas fa-history mr-1"></i> ดูประวัติสำรองข้อมูล',
+              cancelButtonText: 'ตกลง',
+              confirmButtonColor: '#4f46e5'
+            }).then(r => {
+              if (r.isConfirmed) openBackupsModal();
+            });
+          } else {
+            Swal.fire('สำเร็จ', res.message, 'success');
+          }
         } else {
           Swal.fire('ผิดพลาด', res.message, 'error');
         }
@@ -4234,6 +4352,181 @@
       } catch(err) {
         hideLoader();
         Swal.fire('เกิดข้อผิดพลาด', err.toString(), 'error');
+      }
+    };
+
+    // ==========================================
+    // 📦 ระบบจัดการประวัติสำรองข้อมูล & ดาวน์โหลดไฟล์ย้อนหลัง (Backups & Archive)
+    // ==========================================
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    window.openBackupsModal = function() {
+      const modal = document.getElementById('modal-backups');
+      if (modal) modal.classList.remove('hidden');
+      loadBackupsList();
+    };
+
+    window.closeBackupsModal = function() {
+      const modal = document.getElementById('modal-backups');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.loadBackupsList = async function() {
+      const loading = document.getElementById('backups-loading');
+      const empty = document.getElementById('backups-empty');
+      const container = document.getElementById('backups-table-container');
+      const tbody = document.getElementById('backups-table-body');
+      const icon = document.getElementById('backup-refresh-icon');
+      if (icon) icon.classList.add('fa-spin');
+      
+      if (loading) loading.classList.remove('hidden');
+      if (empty) empty.classList.add('hidden');
+      if (container) container.classList.add('hidden');
+      if (tbody) tbody.innerHTML = '';
+
+      try {
+        let res = await callAPI('apiGetBackups', { user: currentUser ? currentUser.username : '' });
+        if (icon) icon.classList.remove('fa-spin');
+        if (loading) loading.classList.add('hidden');
+
+        if (res.success && res.backups && res.backups.length > 0) {
+          if (container) container.classList.remove('hidden');
+          tbody.innerHTML = res.backups.map(b => {
+            const isAdmin = currentUser && currentUser.role === 'Admin';
+            return `
+              <tr class="hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition border-b dark:border-gray-700">
+                <td class="p-2.5 font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-xs">
+                    <i class="fas fa-calendar-alt text-[10px]"></i> ${escapeHTML(b.round)}
+                  </span>
+                </td>
+                <td class="p-2.5 font-mono text-[11px] text-gray-700 dark:text-gray-300">
+                  <div class="font-bold">${escapeHTML(b.fileName)}</div>
+                  ${b.note ? `<div class="text-[10px] text-gray-400 dark:text-gray-400 mt-0.5">${escapeHTML(b.note)}</div>` : ''}
+                </td>
+                <td class="p-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap text-[11px]">
+                  ${escapeHTML(b.timestamp)}
+                </td>
+                <td class="p-2.5 text-gray-600 dark:text-gray-300 whitespace-nowrap text-[11px]">
+                  <i class="fas fa-user-circle mr-1 text-gray-400"></i>${escapeHTML(b.createdBy)}
+                </td>
+                <td class="p-2.5 text-center whitespace-nowrap">
+                  <div class="inline-flex items-center gap-1.5">
+                    <a href="${b.downloadUrl}" target="_blank" download class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded-lg text-[11px] shadow transition" title="ดาวน์โหลดเป็นไฟล์ Excel (.xlsx)">
+                      <i class="fas fa-file-excel text-lime-300"></i> ดาวน์โหลด (.xlsx)
+                    </a>
+                    <a href="${b.viewUrl}" target="_blank" class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-2.5 rounded-lg text-[11px] shadow transition" title="เปิดดูบน Google Sheets">
+                      <i class="fas fa-external-link-alt"></i> เปิดดูชีต
+                    </a>
+                  </div>
+                </td>
+                <td class="p-2.5 text-center whitespace-nowrap">
+                  ${isAdmin ? `
+                    <button type="button" onclick="deleteBackup('${b.backupId}', '${escapeHTML(b.fileName)}')" class="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="ลบสำเนานี้">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  ` : '-'}
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          if (empty) empty.classList.remove('hidden');
+        }
+      } catch(e) {
+        if (icon) icon.classList.remove('fa-spin');
+        if (loading) loading.classList.add('hidden');
+        if (empty) empty.classList.remove('hidden');
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดประวัติข้อมูลสำรองได้: ' + e.toString(), 'error');
+      }
+    };
+
+    window.createManualBackup = async function() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        return Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถสำรองข้อมูลได้', 'warning');
+      }
+      const curRound = (globalData && globalData.settings && globalData.settings.round) ? globalData.settings.round : 'รอบปัจจุบัน';
+      
+      const { value: note, isConfirmed } = await Swal.fire({
+        title: 'ยืนยันการสำรองข้อมูล?',
+        html: `<div class="text-left text-xs space-y-2">
+          <p>ระบบจะทำการสร้างสำเนาของ <b>Google Sheets</b> ทั้งไฟล์ เพื่อเป็น Snapshot ของรอบ: <b class="text-blue-600 font-bold">${escapeHTML(curRound)}</b></p>
+          <p class="text-gray-500">ไฟล์สำรองจะถูกบันทึกไว้ใน Google Drive พร้อมเปิดให้ดาวน์โหลดเป็น Excel (.xlsx) ย้อนหลังได้ตลอดเวลา</p>
+        </div>`,
+        input: 'text',
+        inputPlaceholder: 'ระบุบันทึกเพิ่มเติม (ไม่บังคับ เช่น สำรองประจำสิ้นเดือน)',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save mr-1"></i> เริ่มสำรองข้อมูล',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#059669'
+      });
+
+      if (!isConfirmed) return;
+
+      showLoader('กำลังสร้างสำเนาฐานข้อมูล Google Sheets...');
+      try {
+        let res = await callAPI('apiCreateManualBackup', {
+          note: note || 'สำรองข้อมูลด้วยตนเอง',
+          user: currentUser.username
+        });
+        hideLoader();
+        if (res.success) {
+          Swal.fire({
+            title: 'สำรองข้อมูลสำเร็จ!',
+            html: `<div class="text-left text-xs space-y-2">
+              <p>สร้างไฟล์สำเนาเรียบร้อยแล้ว: <br><b class="font-mono text-emerald-600 font-bold">${escapeHTML(res.fileName)}</b></p>
+              <div class="pt-2 flex gap-2">
+                <a href="${res.downloadUrl}" target="_blank" download class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-center text-xs shadow">
+                  <i class="fas fa-file-excel mr-1"></i> ดาวน์โหลด Excel ทันที
+                </a>
+              </div>
+            </div>`,
+            icon: 'success'
+          });
+          loadBackupsList();
+        } else {
+          Swal.fire('ผิดพลาด', res.message || 'ไม่สามารถสร้างสำเนาได้', 'error');
+        }
+      } catch(err) {
+        hideLoader();
+        Swal.fire('ข้อผิดพลาด', err.toString(), 'error');
+      }
+    };
+
+    window.deleteBackup = async function(backupId, fileName) {
+      if (!currentUser || currentUser.role !== 'Admin') return;
+      const confirm = await Swal.fire({
+        title: 'ยืนยันการลบสำเนา?',
+        text: `ต้องการลบรายการสำรอง "${fileName}" หรือไม่? (ไฟล์ใน Drive จะถูกย้ายไปถังขยะ)`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน ลบทันที',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#dc2626'
+      });
+
+      if (!confirm.isConfirmed) return;
+      showLoader('กำลังลบรายการสำรองข้อมูล...');
+      try {
+        let res = await callAPI('apiDeleteBackup', {
+          backupId: backupId,
+          user: currentUser.username
+        });
+        hideLoader();
+        if (res.success) {
+          Swal.fire('ลบสำเร็จ', res.message, 'success');
+          loadBackupsList();
+        } else {
+          Swal.fire('ผิดพลาด', res.message, 'error');
+        }
+      } catch(e) {
+        hideLoader();
+        Swal.fire('ข้อผิดพลาด', e.toString(), 'error');
       }
     };
 
