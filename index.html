@@ -335,162 +335,352 @@
 
         <!-- ==================== VIEW: คู่มือการใช้งาน (Tutorial) ==================== -->
         <div id="view-tutorial" class="view hidden">
-          <div class="glass p-4 md:p-8 rounded-xl shadow mb-6 max-w-4xl mx-auto">
-            <div class="text-center mb-8">
-              <h2 class="text-2xl md:text-3xl font-bold text-teal-600 dark:text-teal-400"><i class="fas fa-book-reader mr-2"></i>คู่มือการใช้งานระบบ Asset Management</h2>
-              <p class="text-gray-600 dark:text-gray-300 text-sm mt-2">คู่มือฉบับเข้าใจง่ายสำหรับผู้เริ่มต้นใช้งาน</p>
-            </div>
+          <div class="glass p-4 md:p-8 rounded-2xl shadow-xl mb-6 max-w-5xl mx-auto space-y-8">
             
-            <!-- ส่วนของเจ้าหน้าที่ (User) -->
-            <div class="mb-10">
-              <h3 class="font-bold text-xl text-blue-600 dark:text-blue-400 border-b-2 border-blue-200 pb-2 mb-4"><i class="fas fa-user-check mr-2"></i>ส่วนที่ 1: สำหรับเจ้าหน้าที่ผู้ตรวจสอบ (User)</h3>
+            <!-- หัวเรื่องคู่มือ -->
+            <div class="text-center pb-4 border-b border-gray-200 dark:border-gray-700">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 mb-2">
+                <i class="fas fa-heart text-red-500"></i> ฉบับอ่านง่าย ไม่ต้องมีความรู้เรื่องคอมพิวเตอร์ก็ทำตามได้
+              </span>
+              <h2 class="text-2xl md:text-3xl font-extrabold text-teal-700 dark:text-teal-300 flex items-center justify-center gap-2">
+                <i class="fas fa-book-open"></i> คู่มือการใช้งานระบบตรวจนับครุภัณฑ์
+              </h2>
+              <p class="text-gray-600 dark:text-gray-300 text-xs md:text-sm mt-1">ศาลแขวงอุบลราชธานี — แนะนำทีละขั้นตอนอย่างละเอียด ชัดเจน เข้าใจง่าย</p>
+            </div>
+
+            <!-- กล่องสรุปด่วน 4 ขั้นตอน (สำหรับคนอยากเริ่มทันที) -->
+            <div class="bg-gradient-to-r from-teal-500 via-emerald-600 to-green-600 rounded-2xl p-4 md:p-6 text-white shadow-lg">
+              <div class="flex items-center gap-2 mb-3">
+                <i class="fas fa-bolt text-yellow-300 text-xl animate-bounce"></i>
+                <h3 class="font-bold text-lg md:text-xl">สรุปวิธีตรวจนับ 4 ขั้นตอนสั้นๆ (ทำตามนี้ได้ทันที)</h3>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs md:text-sm">
+                <div class="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
+                  <div class="font-extrabold text-yellow-300 text-base mb-1">ขั้นตอนที่ 1</div>
+                  <p class="font-bold">เข้าเมนู "งานที่ต้องตรวจ"</p>
+                  <p class="text-white/80 text-[11px] mt-1">ดูว่าเราต้องไปตรวจห้องไหนบ้าง และมีของกี่ชิ้น</p>
+                </div>
+                <div class="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
+                  <div class="font-extrabold text-yellow-300 text-base mb-1">ขั้นตอนที่ 2</div>
+                  <p class="font-bold">กด "สแกนตรวจนับ"</p>
+                  <p class="text-white/80 text-[11px] mt-1">กดเปิดกล้อง ส่องไปที่ป้าย QR Code บนตัวครุภัณฑ์</p>
+                </div>
+                <div class="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
+                  <div class="font-extrabold text-yellow-300 text-base mb-1">ขั้นตอนที่ 3</div>
+                  <p class="font-bold">ฟังเสียง "ตี๊ด!" แล้วเช็คของ</p>
+                  <p class="text-white/80 text-[11px] mt-1">เลือกสภาพ (ปกติ / ชำรุด) และกดถ่ายรูปของจริง</p>
+                </div>
+                <div class="bg-white/15 backdrop-blur rounded-xl p-3 border border-white/20">
+                  <div class="font-extrabold text-yellow-300 text-base mb-1">ขั้นตอนที่ 4</div>
+                  <p class="font-bold">กด "บันทึกข้อมูล"</p>
+                  <p class="text-white/80 text-[11px] mt-1">ขึ้นเครื่องหมายถูกสีเขียว ถือว่าเสร็จเรียบร้อย 1 ชิ้น!</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 1: การติดตั้งแอปลงบนมือถือ -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 border-b-2 border-emerald-400 pb-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold">1</div>
+                <h3 class="font-bold text-lg md:text-xl text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                  <i class="fas fa-mobile-screen"></i> วิธีเอาแอปลงหน้าจอมือถือ (ทำครั้งเดียว สะดวกตลอดไป)
+                </h3>
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-300">
+                เมื่อนำแอปลงหน้าจอมือถือแล้ว ท่านจะสามารถเปิดใช้งานได้เหมือนแอปทั่วไป ไม่ต้องคอยพิมพ์ลิงก์เว็บใหม่ทุกครั้ง
+              </p>
+              
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">1. ดูรายการที่ต้องรับผิดชอบ</h4>
-                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>เข้าสู่ระบบด้วย Username ของคุณ</li>
-                    <li>กดเมนู <b>"งานที่ต้องตรวจ"</b> (สีเขียว) ด้านซ้ายมือ</li>
-                    <li>ระบบจะแสดงรายการครุภัณฑ์ที่คุณต้องไปตรวจนับทั้งหมด</li>
-                    <li>สามารถกด <b>"พิมพ์ใบเช็คของ"</b> เพื่อถือกระดาษไปเดินตรวจหน้างานได้</li>
+                <!-- Android -->
+                <div class="bg-emerald-50/70 dark:bg-gray-800/80 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm md:text-base text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                      <i class="fab fa-android text-emerald-600 text-lg"></i> สำหรับโทรศัพท์ Android (Samsung, Oppo, Vivo, Xiaomi)
+                    </h4>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200 text-emerald-800">แนะนำ</span>
+                  </div>
+                  <ol class="list-decimal list-inside text-xs md:text-sm text-gray-700 dark:text-gray-200 space-y-2 ml-1">
+                    <li>แตะปุ่มสีเขียว <b>"ดาวน์โหลดแอป Android (.APK)"</b> ที่หน้าแรกของเว็บ</li>
+                    <li>เมื่อดาวน์โหลดเสร็จ จะมีข้อความขึ้นด้านบน ให้แตะคำว่า <b>"เปิด" (Open)</b> หรือแตะที่ไฟล์ <b>AssetPro.apk</b></li>
+                    <li>หากเครื่องขึ้นเตือนความปลอดภัย:
+                      <div class="p-2 bg-white/90 dark:bg-gray-900/60 rounded-lg border border-emerald-300 dark:border-gray-700 mt-1 space-y-1 text-xs">
+                        <p>👉 แตะ <b>"การตั้งค่า" (Settings)</b></p>
+                        <p>👉 เลื่อนเปิดสวิตช์ <b>"อนุญาตจากแหล่งที่มานี้" (Allow from this source)</b></p>
+                        <p>👉 หากมีข้อความ Play Protect ขึ้นเตือน ให้แตะ <b>"รายละเอียดเพิ่มเติม" > "ติดตั้งต่อไป" (Install anyway)</b></p>
+                      </div>
+                    </li>
+                    <li>แตะปุ่ม <b>"ติดตั้ง"</b> รอสักครู่ ไอคอนรูปกล่องสีฟ้า <b>AssetPro</b> จะไปอยู่ที่หน้าจอมือถือทันที!</li>
+                  </ol>
+                </div>
+
+                <!-- iPhone / iPad -->
+                <div class="bg-blue-50/70 dark:bg-gray-800/80 p-4 rounded-xl border border-blue-200 dark:border-blue-800 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm md:text-base text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                      <i class="fab fa-apple text-gray-800 dark:text-gray-200 text-lg"></i> สำหรับ iPhone และ iPad (Apple iOS)
+                    </h4>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-200 text-blue-800">ฟรี ไม่เสียเงิน</span>
+                  </div>
+                  <ol class="list-decimal list-inside text-xs md:text-sm text-gray-700 dark:text-gray-200 space-y-2 ml-1">
+                    <li>เปิดเข้าเว็บนี้ด้วยเบราว์เซอร์ <b>Safari</b> (รูปเข็มทิศสีฟ้า)</li>
+                    <li>มองที่แถบเมนูด้านล่างสุดของจอ แตะปุ่ม <b>แชร์ (รูปสี่เหลี่ยมลูกศรชี้ขึ้น 📤)</b></li>
+                    <li>เลื่อนหน้าจอลงมา แตะเลือก <b>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen ➕)</b></li>
+                    <li>มองที่มุมขวาบน แตะคำว่า <b>"เพิ่ม" (Add)</b></li>
+                    <li>เรียบร้อย! ไอคอนแอป <b>AssetPro</b> จะปรากฏบนหน้าจอหลักของ iPhone ทันที</li>
+                  </ol>
+                  <div class="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-lg text-amber-800 dark:text-amber-200 text-xs">
+                    <i class="fas fa-exclamation-triangle mr-1 text-amber-500"></i> <b>ถ้าเปิดมาจากแอป LINE:</b> ให้แตะปุ่มจุดสามจุด <b>(⋮ หรือ ...)</b> ที่มุมขวาบนก่อน แล้วเลือก <b>"เปิดด้วยเบราว์เซอร์อื่น"</b> จึงจะบันทึกลงหน้าจอได้ครับ
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 2: ขั้นตอนการเดินตรวจนับพัสดุ (จับมือทำทีละขั้น) -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 border-b-2 border-blue-400 pb-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">2</div>
+                <h3 class="font-bold text-lg md:text-xl text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                  <i class="fas fa-clipboard-check"></i> ขั้นตอนการเดินตรวจนับพัสดุ (สำหรับเจ้าหน้าที่ผู้ตรวจ)
+                </h3>
+              </div>
+
+              <!-- การ์ดขั้นตอนย่อย 1-2-3 -->
+              <div class="space-y-3 text-xs md:text-sm">
+                
+                <!-- สเต็ป 1 -->
+                <div class="bg-white/80 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-start">
+                  <div class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-extrabold text-xs whitespace-nowrap">
+                    ขั้นตอน 2.1
+                  </div>
+                  <div class="flex-1 space-y-1">
+                    <h4 class="font-bold text-sm text-gray-800 dark:text-white">ดูรายการที่ตนเองต้องไปตรวจ (ในห้องที่ได้รับมอบหมาย)</h4>
+                    <p class="text-gray-600 dark:text-gray-300">
+                      แตะที่เมนู <b>"งานที่ต้องตรวจ"</b> (แถบสีเขียวอ่อนด้านซ้ายมือ) ระบบจะดึงรายชื่อห้องและรายการครุภัณฑ์ทั้งหมดที่คุณมีหน้าที่ต้องไปตรวจมาแสดง
+                    </p>
+                    <p class="text-blue-600 dark:text-blue-400 font-medium">
+                      💡 <b>เคล็ดลับ:</b> หากต้องการถือกระดาษไปเดินติ๊กหน้างาน สามารถแตะปุ่ม <b>"พิมพ์ใบเช็คของ"</b> เพื่อสั่งพิมพ์เป็นตารางรายชื่อออกมาได้
+                    </p>
+                  </div>
+                </div>
+
+                <!-- สเต็ป 2 -->
+                <div class="bg-white/80 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-start">
+                  <div class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-extrabold text-xs whitespace-nowrap">
+                    ขั้นตอน 2.2
+                  </div>
+                  <div class="flex-1 space-y-1.5">
+                    <h4 class="font-bold text-sm text-gray-800 dark:text-white">เปิดกล้องสแกนป้าย QR Code</h4>
+                    <p class="text-gray-600 dark:text-gray-300">
+                      เดินไปยังตำแหน่งของครุภัณฑ์ จากนั้นแตะเมนู <b>"สแกนตรวจนับ"</b> > แตะปุ่มสีน้ำเงิน <b>"เปิดกล้องสแกน"</b>
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                      <div class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
+                        <b>🎯 ระยะห่างที่เหมาะสม:</b> ถือกล้องห่างจากป้ายประมาณ 15 - 20 เซนติเมตร (ประมาณ 1 คืบ)
+                      </div>
+                      <div class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
+                        <b>⚡ ส่องในที่มืด/ใต้โต๊ะ:</b> แตะปุ่มรูปสายฟ้า <b><i class="fas fa-bolt text-yellow-500"></i> เปิดไฟฉาย</b> ช่วยส่องสว่างได้ทันที
+                      </div>
+                      <div class="p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border dark:border-gray-600">
+                        <b>🔄 หากภาพไม่ชัด:</b> แตะปุ่ม <b><i class="fas fa-camera-rotate text-blue-500"></i> สลับเลนส์กล้อง</b> เพื่อเปลี่ยนกล้องมือถือ
+                      </div>
+                    </div>
+                    <p class="text-emerald-700 dark:text-emerald-400 font-bold mt-1">
+                      ✅ เมื่อกล้องอ่านป้ายสำเร็จ จะมีเสียง <i>"ตี๊ด!"</i> และมือถือจะสั่นเตือน พร้อมพาไปยังหน้าบันทึกผลอัตโนมัติ
+                    </p>
+                  </div>
+                </div>
+
+                <!-- สเต็ป 3 -->
+                <div class="bg-white/80 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-3 items-start">
+                  <div class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-extrabold text-xs whitespace-nowrap">
+                    ขั้นตอน 2.3
+                  </div>
+                  <div class="flex-1 space-y-2">
+                    <h4 class="font-bold text-sm text-gray-800 dark:text-white">ตรวจสอบสภาพ ถ่ายรูป และบันทึกผล</h4>
+                    <p class="text-gray-600 dark:text-gray-300">
+                      ตรวจดูตัวครุภัณฑ์จริง แล้วเลือกข้อมูลในหน้าจอ:
+                    </p>
+                    <div class="space-y-1.5 pl-2">
+                      <p><b>1. สภาพพัสดุ:</b> เลือกตามสภาพจริง เช่น <i>"1. ตรวจนับ (ปกติ)"</i> หรือ <i>"2. ตรวจนับและชำรุด"</i></p>
+                      <p><b>2. ถ้าของถูกย้ายห้อง:</b> แตะที่ช่อง <b>"สถานที่ตั้ง/ห้อง"</b> แล้วเลือกชื่อห้องใหม่ที่ของตั้งอยู่จริงได้ทันที</p>
+                      <p><b>3. ถ่ายรูปของจริง:</b> แตะปุ่ม <b>"📸 ถ่ายภาพ"</b> ส่องถ่ายตัวครุภัณฑ์ (ระบบจะประทับแถบลายน้ำวันที่และเวลาราชการลงบนรูปถ่ายให้อัตโนมัติ เพื่อเป็นหลักฐานราชการ)</p>
+                      <p><b>4. บันทึก:</b> แตะปุ่มสีน้ำเงิน <b>"บันทึกข้อมูล"</b> ด้านล่างสุด</p>
+                    </div>
+                    <div class="p-2.5 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-300 font-bold">
+                      🎉 รายการนี้จะเปลี่ยนสถานะเป็น "ตรวจแล้ว" ทันที และเปอร์เซ็นต์ในแดชบอร์ดจะเพิ่มขึ้นอัตโนมัติ!
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 3: กรณีไม่มีสัญญาณเน็ต (Offline) -->
+            <div class="bg-amber-50/60 dark:bg-amber-950/30 p-4 md:p-6 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold">3</div>
+                <h3 class="font-bold text-lg md:text-xl text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                  <i class="fas fa-wifi text-amber-600"></i> กรณีเดินตรวจในจุดที่ไม่มีสัญญาณเน็ต (ไม่ต้องตกใจ!)
+                </h3>
+              </div>
+              <p class="text-xs md:text-sm text-gray-700 dark:text-gray-300">
+                หากต้องไปตรวจในห้องเก็บของ ห้องใต้ดิน หรือจุดที่สัญญาณมือถือขาดหาย <b>ระบบยังสามารถทำงานได้ตามปกติ 100%:</b>
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-white/80 dark:bg-gray-800 p-3 rounded-xl border border-amber-200 dark:border-gray-700">
+                  <b class="text-amber-800 dark:text-amber-300 block mb-1">1. สแกนและถ่ายรูปตามปกติ</b>
+                  <span>สแกนป้ายและกด "บันทึกข้อมูล" ได้ตามเดิม ข้อมูลและรูปถ่ายจะถูกเก็บไว้ในตัวเครื่องมือถืออย่างปลอดภัย ไม่สูญหาย</span>
+                </div>
+                <div class="bg-white/80 dark:bg-gray-800 p-3 rounded-xl border border-amber-200 dark:border-gray-700">
+                  <b class="text-amber-800 dark:text-amber-300 block mb-1">2. สังเกตปุ่มมุมขวาบน</b>
+                  <span>ที่มุมบนขวาจะมีปุ่มสีส้มปรากฏขึ้น เช่น <i>"ออฟไลน์ (รอซิงค์ 3 รายการ)"</i> เพื่อบอกว่ามีกี่รายการที่รอบันทึก</span>
+                </div>
+                <div class="bg-white/80 dark:bg-gray-800 p-3 rounded-xl border border-amber-200 dark:border-gray-700">
+                  <b class="text-amber-800 dark:text-amber-300 block mb-1">3. ซิงค์เมื่อมีเน็ต</b>
+                  <span>เมื่อเดินกลับมาจุดที่มีสัญญาณหรือต่อ Wi-Fi เพียงแตะที่ปุ่มสีส้มนั้น 1 ครั้ง ข้อมูลทั้งหมดจะวิ่งขึ้น Google Sheets ทันที!</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ส่วนที่ 4: การยืม-คืน และแจ้งซ่อมบำรุง -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 border-b-2 border-purple-400 pb-2">
+                <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold">4</div>
+                <h3 class="font-bold text-lg md:text-xl text-purple-800 dark:text-purple-300 flex items-center gap-2">
+                  <i class="fas fa-handshake"></i> การยืม-คืนพัสดุ และการแจ้งซ่อม
+                </h3>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm">
+                <!-- ยืม-คืน -->
+                <div class="bg-purple-50/60 dark:bg-gray-800 p-4 rounded-xl border border-purple-200 dark:border-gray-700 space-y-2">
+                  <h4 class="font-bold text-purple-800 dark:text-purple-300 text-sm flex items-center gap-1.5">
+                    <i class="fas fa-exchange-alt"></i> การทำรายการ ยืม - คืน พัสดุ
+                  </h4>
+                  <ul class="list-disc list-inside space-y-1.5 text-gray-700 dark:text-gray-300 ml-1">
+                    <li>แตะเมนู <b>"ยืม-คืน พัสดุ"</b> (สีเหลืองทองด้านซ้าย)</li>
+                    <li><b>กรณียืมของ:</b> สแกน QR Code ของพัสดุ > พิมพ์ชื่อผู้ยืมและหมายเหตุ > แตะ <b>"บันทึกการยืม"</b></li>
+                    <li><b>กรณีคืนของ:</b> สแกน QR Code พัสดุเดิม > ระบบจะแสดงชื่อคนยืมขึ้นมา > แตะปุ่มสีเขียว <b>"รับคืนพัสดุ"</b> ของจะกลับสู่สถานะว่างทันที</li>
+                    <li>ระบบจะส่งข้อความแจ้งเตือนเข้า Telegram งานพัสดุให้อัตโนมัติ</li>
                   </ul>
                 </div>
-                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">2. วิธีการสแกนตรวจนับ & สลับกล้อง</h4>
-                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"สแกนตรวจนับ"</b> ด้านซ้ายมือ</li>
-                    <li>กดปุ่ม <b>"เปิดกล้องสแกน"</b> ระบบจะเปิดกล้องหลังแบบเต็มหน้าจออัตโนมัติ</li>
-                    <li>มีปุ่ม <b><i class="fas fa-camera-rotate"></i> สลับกล้อง</b> และปุ่ม <b><i class="fas fa-bolt"></i> เปิดไฟฉาย</b> ช่วยตรวจในที่มืด</li>
-                    <li>ส่องที่ป้าย QR Code เมื่อติดจะมีเสียง <i>"ปี๊บ!"</i> และสั่นเตือน</li>
-                    <li>หากครุภัณฑ์ถูกย้ายห้อง สามารถคลิกเปลี่ยน <b>"สถานที่ตั้งใหม่"</b> ได้ทันที</li>
-                    <li>ระบุสภาพ แนบรูปถ่าย (ถ้ามี) แล้วกด <b>"บันทึกผล"</b></li>
-                  </ul>
-                </div>
-                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">3. กรณีจุดที่ตรวจไม่มีเน็ต (Offline)</h4>
-                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>ไม่ต้องกังวล! ระบบสามารถทำงานตอนไม่มีเน็ตได้</li>
-                    <li>สแกนและกดบันทึกตามปกติ ระบบจะขึ้นข้อความ <b>"โหมดออฟไลน์"</b> แจ้งเตือน</li>
-                    <li>เมื่อเดินกลับมาจุดที่มี Wi-Fi ให้กดปุ่ม <b>"ออฟไลน์ (รอซิงค์)"</b> มุมขวาบน ระบบจะส่งข้อมูลทั้งหมดเข้าเซิร์ฟเวอร์ให้อัตโนมัติ</li>
-                  </ul>
-                </div>
-                <div class="bg-blue-50/50 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">4. การทำเรื่อง ยืม-คืน พัสดุ</h4>
-                  <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"ยืม-คืน พัสดุ"</b> (สีเหลือง)</li>
-                    <li>สแกน QR Code พัสดุที่ต้องการทำรายการ</li>
-                    <li>พิมพ์ชื่อผู้ยืม แล้วกด <b>"ยืนยันการยืม"</b></li>
-                    <li>หากของถูกยืมอยู่ เมื่อสแกนระบบจะขึ้นปุ่ม <b>"รับคืนพัสดุ"</b> ให้กดรับคืนได้เลย</li>
+
+                <!-- แจ้งซ่อม -->
+                <div class="bg-red-50/60 dark:bg-gray-800 p-4 rounded-xl border border-red-200 dark:border-gray-700 space-y-2">
+                  <h4 class="font-bold text-red-800 dark:text-red-300 text-sm flex items-center gap-1.5">
+                    <i class="fas fa-tools"></i> การติดตามงานแจ้งซ่อมบำรุง
+                  </h4>
+                  <ul class="list-disc list-inside space-y-1.5 text-gray-700 dark:text-gray-300 ml-1">
+                    <li>เมื่อตรวจพบของชำรุด ให้เลือกสภาพเป็น <b>"ชำรุด"</b></li>
+                    <li>สามารถเข้ามาที่เมนู <b>"จัดการงานแจ้งซ่อม"</b> เพื่อติดตามความคืบหน้า</li>
+                    <li>ปรับเปลี่ยนสถานะได้ 3 ระดับ: <i>ส่งซ่อม / กำลังซ่อม / ซ่อมเสร็จแล้ว</i></li>
+                    <li>เมื่อซ่อมเสร็จ สามารถอัปเดตสภาพพัสดุให้กลับมาเป็น <b>"ปกติ"</b> ได้โดยไม่ต้องไปแก้ในตาราง Excel</li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            <!-- ส่วนของผู้ดูแลระบบ (Admin) -->
-            <div>
-              <h3 class="font-bold text-xl text-pink-600 dark:text-pink-400 border-b-2 border-pink-200 pb-2 mb-4"><i class="fas fa-crown mr-2"></i>ส่วนที่ 2: สำหรับผู้ดูแลระบบ (Admin)</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
-                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">1. การตั้งรอบตรวจ (สำคัญมากต้องทำก่อน)</h4>
-                  <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">ก่อนเริ่มการตรวจนับประจำปีทุกครั้ง แอดมินต้องไปตั้งค่ารอบการตรวจใหม่ เพื่อให้ระบบล้างข้อมูลการตรวจของปีเก่าออกครับ</p>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"ตั้งค่าระบบ"</b> (รูปล้อเฟืองด้านล่าง)</li>
-                    <li>พิมพ์รอบปัจจุบัน เช่น <i>"ประจำปี 2569"</i></li>
-                    <li>กด <b>"บันทึกการตั้งค่า"</b></li>
-                  </ul>
+            <!-- ส่วนที่ 5: สำหรับผู้ดูแลระบบ (Admin) & งานพัสดุหลัก -->
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 border-b-2 border-indigo-400 pb-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">5</div>
+                <h3 class="font-bold text-lg md:text-xl text-indigo-800 dark:text-indigo-300 flex items-center gap-2">
+                  <i class="fas fa-crown text-yellow-500"></i> สำหรับผู้ดูแลระบบ (Admin) & งานพัสดุหลัก
+                </h3>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm">
+                <!-- ขึ้นปีใหม่ & สำรองข้อมูล -->
+                <div class="bg-indigo-50/60 dark:bg-gray-800 p-4 rounded-xl border border-indigo-200 dark:border-gray-700 space-y-2">
+                  <h4 class="font-bold text-indigo-800 dark:text-indigo-300 text-sm flex items-center gap-1.5">
+                    <i class="fas fa-calendar-alt"></i> การขึ้นปีงบประมาณใหม่ & สำรองข้อมูลอัตโนมัติ
+                  </h4>
+                  <p class="text-gray-700 dark:text-gray-300">
+                    เมื่อขึ้นรอบปีใหม่ <b>ทำเพียงจุดเดียว:</b>
+                  </p>
+                  <ol class="list-decimal list-inside space-y-1 text-gray-700 dark:text-gray-300 ml-1">
+                    <li>เข้าเมนู <b>"ตั้งค่าระบบ"</b> (รูปล้อเฟือง)</li>
+                    <li>เปลี่ยนชื่อรอบ เช่น จาก <i>ครั้งที่ 1 2567</i> เป็น <i>ประจำปีงบประมาณ 2568</i></li>
+                    <li>แตะปุ่ม <b>"บันทึกการตั้งค่าทั้งหมด"</b></li>
+                  </ol>
+                  <div class="p-2 bg-white/90 dark:bg-gray-900/60 rounded-lg border border-indigo-300 text-indigo-900 dark:text-indigo-200 text-xs">
+                    🛡️ <b>ระบบ Auto-Backup:</b> จะทำการคัดลอกไฟล์ Google Sheets ของปีเก่าเก็บไว้ใน Google Drive ให้อัตโนมัติทันที และท่านสามารถเข้าเมนู <b>"ข้อมูลสำรองย้อนหลัง"</b> เพื่อดาวน์โหลดไฟล์ Excel (.xlsx) ย้อนหลังได้ตลอดเวลา
+                  </div>
                 </div>
-                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
-                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">2. การมอบหมายพื้นที่ให้ลูกน้อง</h4>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"มอบหมายงาน (Admin)"</b> (สีชมพู)</li>
-                    <li>เลือกสถานที่ที่ต้องการให้ตรวจ</li>
-                    <li>เลือกชื่อเจ้าหน้าที่ ที่ต้องการให้ไปตรวจ</li>
-                    <li>กดปุ่ม <b>"มอบหมายงานทันที"</b></li>
-                  </ul>
-                </div>
-                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
-                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">3. พิมพ์รายงานเสนอ ผอ. (รูปแบบ PDF)</h4>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"รายงานสรุป"</b></li>
-                    <li>เลือกตัวกรองตามสภาพ และสามารถกรองตามสถานที่ตั้งได้</li>
-                    <li>กดปุ่มสีม่วง <b>"พิมพ์เอกสารราชการ (PDF)"</b></li>
-                    <li>ระบบจะสร้างรายงานฟอร์มทางการ พร้อมที่เซ็นชื่อให้ทันที</li>
-                  </ul>
-                </div>
-                <div class="bg-pink-50/50 dark:bg-gray-800 p-4 rounded-lg border border-pink-100 dark:border-gray-700">
-                  <h4 class="font-bold text-pink-800 dark:text-pink-300 mb-2">4. วิธีช่วยเหลือคนลืมรหัสผ่าน</h4>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1 ml-2">
-                    <li>กดเมนู <b>"จัดการผู้ใช้งาน"</b></li>
-                    <li>หาชื่อคนที่ลืมรหัส แล้วกดปุ่มสีเหลือง <b>"รีเซ็ทรหัส"</b></li>
-                    <li>ระบบจะสุ่มรหัสผ่านใหม่ตัวเลข 6 หลักขึ้นมาให้ และจะส่งเข้าอีเมลของเจ้าหน้าที่คนนั้นอัตโนมัติ</li>
+
+                <!-- ออกรายงาน ผอ. -->
+                <div class="bg-indigo-50/60 dark:bg-gray-800 p-4 rounded-xl border border-indigo-200 dark:border-gray-700 space-y-2">
+                  <h4 class="font-bold text-indigo-800 dark:text-indigo-300 text-sm flex items-center gap-1.5">
+                    <i class="fas fa-file-pdf"></i> การพิมพ์รายงานราชการเสนอ ผอ. (PDF & Excel)
+                  </h4>
+                  <ul class="list-disc list-inside space-y-1.5 text-gray-700 dark:text-gray-300 ml-1">
+                    <li>เข้าเมนู <b>"รายงานสรุป"</b></li>
+                    <li>สามารถเลือกกรองตามสถานที่ตั้ง หรือกรองดูเฉพาะของที่ชำรุด/สูญหายได้</li>
+                    <li>แตะปุ่มสีม่วง <b>"พิมพ์เอกสารราชการ (PDF)"</b> ระบบจะจัดฟอร์แมตเอกสารราชการพร้อมช่องลงนามเจ้าหน้าที่และผู้อำนวยการฯ ให้อัตโนมัติ สั่งพิมพ์ออกเครื่องพิมพ์ได้ทันที</li>
+                    <li>หรือแตะปุ่มสีเขียว <b>"ส่งออก Excel (.xlsx)"</b> เพื่อนำข้อมูลไปคำนวณต่อ</li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            <!-- ส่วนที่ 3: วิธีติดตั้งแอปลงบนมือถือ (PWA) -->
-            <div class="mt-8 border-t border-teal-200 dark:border-teal-800 pt-6">
-              <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
-                <h3 class="font-bold text-xl text-teal-700 dark:text-teal-300"><i class="fas fa-mobile-screen mr-2"></i>ส่วนที่ 3: วิธีติดตั้งแอปบนมือถือ (Android & iOS)</h3>
-                <div class="flex items-center gap-2">
-                  <a href="https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk" target="_blank" download class="bg-gradient-to-r from-emerald-600 to-green-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow hover:from-emerald-700 transition flex items-center gap-1.5">
-                    <i class="fab fa-android text-lime-300"></i> โหลด APK (Android)
-                  </a>
-                  <button onclick="installPWA()" class="bg-blue-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow hover:bg-blue-700 transition flex items-center gap-1">
-                    <i class="fas fa-mobile-alt text-yellow-300"></i> บันทึกหน้าจอ (PWA)
-                  </button>
-                </div>
+            <!-- ส่วนที่ 6: ปัญหาที่พบบ่อยและวิธีแก้ (FAQ) -->
+            <div class="bg-gray-50 dark:bg-gray-800/60 p-4 md:p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gray-600 text-white flex items-center justify-center font-bold">6</div>
+                <h3 class="font-bold text-lg md:text-xl text-gray-800 dark:text-white flex items-center gap-2">
+                  <i class="fas fa-question-circle text-blue-500"></i> ปัญหาที่พบบ่อย & วิธีแก้ไขง่ายๆ (FAQ)
+                </h3>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-emerald-50/60 dark:bg-gray-800 p-4 rounded-lg border border-emerald-100 dark:border-gray-700">
-                  <div class="flex justify-between items-center mb-2">
-                    <h4 class="font-bold text-emerald-800 dark:text-emerald-300"><i class="fab fa-android mr-1"></i> สำหรับ Android (แนะนำ: ติดตั้งผ่านไฟล์ APK)</h4>
-                  </div>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1.5 ml-1">
-                    <li>แตะปุ่มสีเขียว <b>"โหลด APK (Android)"</b> หรือปุ่มหน้า Login เพื่อดาวน์โหลดไฟล์</li>
-                    <li>เมื่อดาวน์โหลดเสร็จ แตะเปิดไฟล์ <b>AssetPro.apk</b></li>
-                    <li>หากขึ้นเตือนความปลอดภัย แตะ <b>"การตั้งค่า" > เปิด "อนุญาตจากแหล่งที่มานี้"</b></li>
-                    <li>หากขึ้น Play Protect แตะ <b>"รายละเอียดเพิ่มเติม" > "ติดตั้งต่อไป"</b></li>
-                    <li>ไอคอน <b>AssetPro</b> จะปรากฏบนหน้าจอมือถือ พร้อมใช้งานทันที</li>
-                  </ul>
+
+              <div class="space-y-3 text-xs md:text-sm">
+                <!-- คำถาม 1 -->
+                <div class="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p class="font-bold text-blue-700 dark:text-blue-300 mb-1">
+                    ❓ ถาม: กดเปิดกล้องแล้วหน้าจอมืด หรือขึ้นข้อความแจ้งว่าเปิดกล้องไม่ได้?
+                  </p>
+                  <p class="text-gray-600 dark:text-gray-300 pl-4">
+                    👉 <b>วิธีแก้:</b> มือถือกำลังถามเพื่อความปลอดภัยว่า <i>"อนุญาตให้ใช้กล้องหรือไม่"</i> ให้แตะคำว่า <b>"อนุญาต" (Allow)</b> หากยังไม่ได้ ให้ปิดเบราว์เซอร์แล้วเปิดใหม่ และตรวจดูว่าไม่ได้เปิดแอปกล้องถ่ายรูปอื่นค้างไว้
+                  </p>
                 </div>
-                <div class="bg-blue-50/60 dark:bg-gray-800 p-4 rounded-lg border border-blue-100 dark:border-gray-700">
-                  <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2"><i class="fab fa-apple mr-1"></i> สำหรับ iPhone / iPad (Safari - PWA)</h4>
-                  <ul class="list-decimal list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1.5 ml-1">
-                    <li>เปิดเว็บด้วย <b>Safari</b> (หากเปิดจาก LINE ให้กด ... แล้วเลือก "เปิดด้วยเบราว์เซอร์อื่น")</li>
-                    <li>แตะปุ่ม <b>แชร์ (Share 📤)</b> ที่แถบด้านล่างของหน้าจอ</li>
-                    <li>เลื่อนลงเลือก <b>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen ➕)</b></li>
-                    <li>แตะ <b>"เพิ่ม" (Add)</b> ที่มุมบนขวา</li>
-                  </ul>
+
+                <!-- คำถาม 2 -->
+                <div class="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p class="font-bold text-blue-700 dark:text-blue-300 mb-1">
+                    ❓ ถาม: ส่องกล้องไปที่ป้ายแล้ว นิ่งสนิท ไม่ยอมอ่าน QR Code?
+                  </p>
+                  <p class="text-gray-600 dark:text-gray-300 pl-4">
+                    👉 <b>วิธีแก้:</b> ลองใช้ผ้าสะอาดเช็ดเลนส์กล้องมือถือ, ขยับมือถือเข้า-ออกช้าๆ ให้ได้ระยะประมาณ 1 คืบ (อย่าส่องชิดเกินไปกล้องจะโฟกัสไม่ติด), หรือแตะปุ่ม <b>"เปิดไฟฉาย"</b> เพื่อเพิ่มความสว่าง
+                  </p>
                 </div>
-              </div>
+
+                <!-- คำถาม 3 -->
+                <div class="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p class="font-bold text-blue-700 dark:text-blue-300 mb-1">
+                    ❓ ถาม: ป้าย QR Code ฉีกขาด หรือหาป้ายบนตัวของไม่เจอ ต้องทำอย่างไร?
+                  </p>
+                  <p class="text-gray-600 dark:text-gray-300 pl-4">
+                    👉 <b>วิธีแก้:</b> ไม่จำเป็นต้องสแกนเสมอไป! ท่านสามารถใช้ <b>"ค้นหาด้วยเสียง 🎤"</b> ในหน้าฐานข้อมูลพัสดุ แค่แตะที่รูปไมโครโฟนแล้วพูดชื่อของ เช่น <i>"โต๊ะทำงาน"</i> หรือพิมพ์รหัสพัสดุ แล้วแตะที่ชื่อเพื่อกดตรวจนับได้เหมือนกันครับ
+                  </p>
+                </div>
+
+                <!-- คำถาม 4 -->
+                <div class="p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <p class="font-bold text-blue-700 dark:text-blue-300 mb-1">
+                    ❓ ถาม: จำรหัสผ่านของตัวเองไม่ได้ เข้าสู่ระบบไม่ได้?
+                  </p>
+                  <p class="text-gray-600 dark:text-gray-300 pl-4">
+                    👉 <b>วิธีแก้:</b> ในหน้า Login สามารถแตะที่ <b>"ลืมรหัสผ่าน?"</b> เพื่อให้ระบบส่งรหัสใหม่เข้าอีเมล หรือแจ้งผู้ดูแลระบบ (Admin) ให้กดปุ่ม <b>"รีเซ็ตรหัส"</b> ในเมนูจัดการผู้ใช้ได้ทันที
+                  </p>
+                </div>
               </div>
             </div>
 
-            <!-- ส่วนที่ 4: การตรวจสอบและอัปเดตเวอร์ชันโปรแกรม (Version Update) -->
-            <div class="mt-8 border-t border-purple-200 dark:border-purple-800 pt-6">
-              <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-xl text-purple-700 dark:text-purple-300"><i class="fas fa-sync-alt mr-2"></i>ส่วนที่ 4: การตรวจสอบและอัปเดตเวอร์ชัน (Update App)</h3>
-                <button onclick="checkAppUpdate(true)" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs shadow transition flex items-center gap-1">
-                  <i class="fas fa-redo-alt"></i> เช็คอัปเดตตอนนี้
-                </button>
-              </div>
-              <div class="bg-purple-50/60 dark:bg-gray-800 p-4 rounded-lg border border-purple-100 dark:border-gray-700">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700 dark:text-gray-300">
-                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
-                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-tag mr-1"></i> 1. ดูเลขเวอร์ชันปัจจุบัน</p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">สังเกตป้ายสีฟ้า เช่น <b>v5.6</b> ที่หน้า Login, แถบเมนูด้านซ้าย หรือแถบด้านบนของหน้าจอ</p>
-                  </div>
-                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
-                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-bell mr-1"></i> 2. การแจ้งเตือนอัตโนมัติ</p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">เมื่อระบบมีเวอร์ชันใหม่ จะมีหน้าต่างแจ้งเตือน <i>"พบเวอร์ชันใหม่!"</i> ให้กดปุ่ม <b>"อัปเดตเลย"</b> ได้ทันที</p>
-                  </div>
-                  <div class="bg-white/80 dark:bg-gray-900/50 p-3 rounded-lg border dark:border-gray-700">
-                    <p class="font-bold text-purple-700 dark:text-purple-300 mb-1"><i class="fas fa-broom mr-1"></i> 3. บังคับล้างแคชด้วยตัวเอง</p>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">หากเครื่องยังไม่เห็นฟังก์ชันใหม่ สามารถแตะที่ป้ายเวอร์ชันหรือกด <b>"เช็คอัปเดต"</b> เพื่อล้างไฟล์เก่าทิ้งได้ทันที</p>
-                  </div>
-                </div>
-              </div>
+            <!-- ท้ายคู่มือ: ช่องทางติดต่อช่วยเหลือ -->
+            <div class="text-center p-4 bg-teal-50 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-200 space-y-1">
+              <p class="font-bold text-sm">หากพบปัญหาการใช้งานหรือต้องการความช่วยเหลือเพิ่มเติม</p>
+              <p>สามารถติดต่อได้ที่: <strong>กลุ่มงานคอมพิวเตอร์ / พัสดุ ศาลแขวงอุบลราชธานี</strong></p>
             </div>
+
           </div>
         </div>
 
