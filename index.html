@@ -296,7 +296,7 @@
         <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 px-1 pt-1 border-t border-gray-200/60 dark:border-gray-700/60">
           <span class="flex items-center gap-1.5 font-medium">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            เวอร์ชัน <b class="app-version-text text-blue-600 dark:text-blue-400">v5.6</b>
+            เวอร์ชัน <b class="app-version-text text-blue-600 dark:text-blue-400">v5.7</b>
           </span>
           <button type="button" onclick="checkAppUpdate(true)" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">
             <i class="fas fa-sync-alt text-[10px]"></i> เช็คอัปเดต
@@ -321,7 +321,7 @@
             <!-- ป้ายแสดงเวอร์ชัน + ปุ่มเช็คอัปเดต -->
             <button type="button" onclick="checkAppUpdate(true)" id="header-version-btn" class="bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1 transition" title="เวอร์ชันปัจจุบัน คลิกเพื่อเช็คอัปเดต">
               <span class="w-2 h-2 rounded-full bg-green-500" id="version-status-dot"></span>
-              <span class="app-version-text font-mono">v5.6</span>
+              <span class="app-version-text font-mono">v5.7</span>
               <i class="fas fa-sync-alt text-[10px] text-gray-400"></i>
             </button>
             <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="forceSyncOffline()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
@@ -1506,6 +1506,17 @@
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
     const APP_VERSION = 'v5.7';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
+
+    // ซิงค์ป้ายเวอร์ชันทั้งหมดในหน้าเว็บให้ตรงกับ APP_VERSION เสมอโดยอัตโนมัติ
+    function syncAppVersionDisplay() {
+      try {
+        document.querySelectorAll('.app-version-text').forEach(el => {
+          el.innerText = APP_VERSION;
+        });
+      } catch(e) {}
+    }
+    syncAppVersionDisplay();
+    document.addEventListener('DOMContentLoaded', syncAppVersionDisplay);
 
     let currentUser = null; 
     let globalData = { assets: [], dash: {}, settings: {}, conditions: [], assignments: [], users: [] };
