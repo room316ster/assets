@@ -1,5 +1,5 @@
 // Service Worker for Asset Management Pro PWA
-const CACHE_NAME = 'asset-pro-pwa-v5.8';
+const CACHE_NAME = 'asset-pro-pwa-v6.0';
 const STATIC_ASSETS = [
   './index.html',
   './manifest.json',
