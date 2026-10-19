@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v5.7 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v5.8 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -228,17 +228,29 @@
   <div id="page-register" class="page min-h-screen items-center justify-center w-full relative">
     <div class="glass p-8 rounded-2xl shadow-xl w-11/12 max-w-sm text-center mb-8 mt-10">
       <h2 class="text-2xl font-bold mb-2 dark:text-white"><i class="fas fa-user-plus mr-2 text-blue-600"></i>สมัครสมาชิก</h2>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 app-org-name">ศาลแขวงอุบลราชธานี</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 app-org-name">ศาลแขวงอุบลราชธานี</p>
+      
+      <!-- ข้อความแจ้งเตือนเงื่อนไขการอนุมัติ -->
+      <div class="mb-3.5 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs text-left flex items-start gap-2 shadow-2xs">
+        <i class="fas fa-user-shield text-amber-500 mt-0.5 text-sm shrink-0"></i>
+        <span><b>เงื่อนไขการใช้งาน:</b> เมื่อลงทะเบียนแล้ว จะต้องรอผู้ดูแลระบบ (Admin) อนุมัติสิทธิ์ก่อนจึงจะสามารถเข้าสู่ระบบได้</span>
+      </div>
+
       <input type="text" id="reg_name" placeholder="ชื่อ-นามสกุล" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
-      <input type="email" id="reg_email" placeholder="อีเมล (สำหรับกู้คืนรหัสผ่าน)" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <input type="email" id="reg_email" placeholder="อีเมล (สำหรับรับแจ้งผลอนุมัติ/กู้รหัสผ่าน)" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
       <input type="text" id="reg_username" placeholder="ตั้งชื่อ Username" class="w-full mb-3 px-4 py-3 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
       
-      <div class="relative mb-5">
-        <input type="password" id="reg_password" placeholder="ตั้งรหัสผ่าน Password" class="w-full px-4 py-3 pr-10 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+      <div class="relative mb-3">
+        <input type="password" id="reg_password" placeholder="ตั้งรหัสผ่าน (อย่างน้อย 4 ตัวอักษร)" class="w-full px-4 py-3 pr-10 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
         <button type="button" onclick="togglePasswordVisibility('reg_password', this)" class="absolute right-3 top-3.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button>
       </div>
 
-      <button onclick="registerUser()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow-lg text-lg transition mb-4">ลงทะเบียน</button>
+      <div class="relative mb-5">
+        <input type="password" id="reg_password_confirm" placeholder="ยืนยันรหัสผ่านอีกครั้ง" class="w-full px-4 py-3 pr-10 rounded-lg border focus:border-blue-500 outline-none dark:bg-gray-800 dark:border-gray-700 bg-white/90 dark:text-white text-sm">
+        <button type="button" onclick="togglePasswordVisibility('reg_password_confirm', this)" class="absolute right-3 top-3.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button>
+      </div>
+
+      <button onclick="registerUser()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 shadow-lg text-lg transition mb-4 flex items-center justify-center gap-2"><i class="fas fa-paper-plane text-sm"></i> ส่งคำขอลงทะเบียน</button>
       <p class="text-sm text-gray-500 dark:text-gray-400">มีบัญชีแล้ว? <a href="#" onclick="showLogin()" class="text-blue-600 dark:text-blue-400 font-bold hover:underline">กลับไปเข้าสู่ระบบ</a></p>
     </div>
   </div>
@@ -287,7 +299,10 @@
         
         <a href="#" onclick="nav('profile')" class="block px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition dark:text-gray-200 mt-1"><i class="fas fa-user-circle w-6"></i> โปรไฟล์ส่วนตัว</a>
         <a href="#" id="menu_admin_assign" onclick="nav('assign')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-pink-600 dark:text-pink-400 font-bold mt-1"><i class="fas fa-tasks w-6"></i> มอบหมายงาน (Admin)</a>
-        <a href="#" id="menu_admin_users" onclick="nav('admin_users')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-purple-600 dark:text-purple-400 font-bold mt-1"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</a>
+        <a href="#" id="menu_admin_users" onclick="nav('admin_users')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-purple-600 dark:text-purple-400 font-bold mt-1 items-center justify-between">
+          <span class="flex items-center"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</span>
+          <span id="pending-users-badge" class="hidden bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow animate-pulse">0</span>
+        </a>
         <a href="#" id="menu_admin_logs" onclick="nav('admin_logs')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-orange-600 dark:text-orange-400 font-bold mt-1"><i class="fas fa-history w-6"></i> ประวัติระบบ (Logs)</a>
         <a href="#" id="menu_settings" onclick="nav('settings')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-blue-600 dark:text-blue-400 font-bold border border-dashed border-gray-400 mt-2"><i class="fas fa-cog w-6"></i> ตั้งค่าระบบ</a>
       </nav>
@@ -1302,7 +1317,78 @@
         
         <div id="view-profile" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto text-center"><div class="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg text-white mb-4"><i class="fas fa-user-edit text-5xl"></i></div><h2 class="font-bold text-2xl mb-1 dark:text-white">ข้อมูลส่วนตัว</h2><p class="text-blue-600 dark:text-blue-400 font-bold mb-6" id="profile_role">Role</p><div class="text-left bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border dark:border-gray-700 text-sm mb-6 dark:text-gray-200 space-y-4"><div><label class="block font-bold mb-1 text-gray-600 dark:text-gray-400">Username</label><input type="text" id="prof_username" readonly class="w-full p-2 rounded border bg-gray-200 dark:bg-gray-700 text-gray-500 font-mono"></div><div><label class="block font-bold mb-1">ชื่อ-นามสกุล</label><input type="text" id="prof_name" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div><label class="block font-bold mb-1">อีเมล</label><input type="email" id="prof_email" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div class="border-t border-gray-300 dark:border-gray-600 pt-4 mt-2"><label class="block font-bold mb-1 text-red-500"><i class="fas fa-key mr-1"></i>เปลี่ยนรหัสผ่าน</label><div class="relative"><input type="password" id="prof_password" class="w-full p-2 pr-10 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500" placeholder="ปล่อยว่างไว้หากไม่เปลี่ยน"><button type="button" onclick="togglePasswordVisibility('prof_password', this)" class="absolute right-3 top-2.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button></div></div></div><button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition mb-3"><i class="fas fa-save mr-2"></i> บันทึกข้อมูลส่วนตัว</button><a href="https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk" target="_blank" download class="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow hover:from-emerald-700 transition mb-2"><i class="fab fa-android text-lime-300 text-sm"></i> ดาวน์โหลดแอป Android (.APK)</a><button onclick="installPWA()" type="button" class="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition mb-3"><i class="fas fa-mobile-alt text-blue-500"></i> บันทึกแอปลงหน้าจอมือถือ (Install PWA)</button></div></div>
         
-        <div id="view-admin_users" class="view hidden"><div class="glass p-4 md:p-6 rounded-xl shadow"><div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-users-cog mr-2 text-purple-600"></i> จัดการผู้ใช้งานในระบบ</h2><button onclick="loadAdminUsers()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button></div><div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm"><thead><tr class="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300"><th class="p-3 border-b dark:border-gray-700">Username</th><th class="p-3 border-b dark:border-gray-700">ชื่อ-นามสกุล</th><th class="p-3 border-b dark:border-gray-700">อีเมล</th><th class="p-3 border-b dark:border-gray-700">สิทธิ์</th><th class="p-3 border-b dark:border-gray-700 text-center">จัดการ</th></tr></thead><tbody id="admin-users-body"></tbody></table></div></div></div>
+        <div id="view-admin_users" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-2xl shadow-xl space-y-4">
+            <!-- Header section -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-gray-700">
+              <div>
+                <h2 class="font-bold text-xl dark:text-white flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-300">
+                    <i class="fas fa-users-cog"></i>
+                  </span>
+                  <span>จัดการผู้ใช้งานในระบบ (User Management)</span>
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">อนุมัติสมาชิกใหม่ ตรวจสอบสถานะการเข้าใช้งาน ปรับเปลี่ยนสิทธิ์ และรีเซ็ตรหัสผ่าน</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="loadAdminUsers()" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border border-gray-200 dark:border-gray-700 shadow-2xs">
+                  <i class="fas fa-sync-alt" id="admin-users-refresh-icon"></i>
+                  <span>รีเฟรชข้อมูล</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Filter tabs & Search bar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <!-- Filter Tabs -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="admin-users-tabs">
+                <button type="button" onclick="setAdminUsersFilter('all')" id="tab-users-all" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-purple-600 text-white shadow-xs">
+                  <span>ทั้งหมด</span>
+                  <span id="pill-count-all" class="bg-white/20 text-white text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+                </button>
+                <button type="button" onclick="setAdminUsersFilter('pending')" id="tab-users-pending" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-gray-200 dark:border-gray-700">
+                  <i class="fas fa-clock text-amber-500"></i>
+                  <span>รออนุมัติ</span>
+                  <span id="pill-count-pending" class="bg-amber-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+                <button type="button" onclick="setAdminUsersFilter('approved')" id="tab-users-approved" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-gray-200 dark:border-gray-700">
+                  <i class="fas fa-check-circle text-emerald-500"></i>
+                  <span>อนุมัติแล้ว</span>
+                  <span id="pill-count-approved" class="bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+                </button>
+                <button type="button" onclick="setAdminUsersFilter('rejected')" id="tab-users-rejected" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-gray-200 dark:border-gray-700">
+                  <i class="fas fa-ban text-rose-500"></i>
+                  <span>ระงับใช้งาน</span>
+                  <span id="pill-count-rejected" class="bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+                </button>
+              </div>
+
+              <!-- Live Search Box -->
+              <div class="relative w-full md:w-72">
+                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                <input type="text" id="admin-users-search" placeholder="ค้นหา Username, ชื่อ หรืออีเมล..." oninput="filterAdminUsersTable()" class="w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs dark:bg-gray-800 bg-white/90 dark:text-white dark:border-gray-700 outline-none focus:border-purple-500 transition">
+              </div>
+            </div>
+
+            <!-- Table section -->
+            <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700/80 shadow-xs">
+              <table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-sm">
+                <thead>
+                  <tr class="bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-200 text-xs">
+                    <th class="p-3 border-b dark:border-gray-700">Username</th>
+                    <th class="p-3 border-b dark:border-gray-700">ชื่อ-นามสกุล</th>
+                    <th class="p-3 border-b dark:border-gray-700">อีเมล</th>
+                    <th class="p-3 border-b dark:border-gray-700">วันที่สมัคร</th>
+                    <th class="p-3 border-b dark:border-gray-700">สิทธิ์</th>
+                    <th class="p-3 border-b dark:border-gray-700">สถานะ</th>
+                    <th class="p-3 border-b dark:border-gray-700 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-body" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
         
         <div id="view-admin_logs" class="view hidden"><div class="glass p-4 md:p-6 rounded-xl shadow"><div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-history mr-2 text-orange-500"></i> ประวัติระบบ</h2><button onclick="loadAdminLogs()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button></div><div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-xs"><thead><tr class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"><th class="p-2 border-b dark:border-gray-700">วัน/เวลา</th><th class="p-2 border-b dark:border-gray-700">ผู้ใช้งาน</th><th class="p-2 border-b dark:border-gray-700">หมวดหมู่</th><th class="p-2 border-b dark:border-gray-700">รายละเอียด</th></tr></thead><tbody id="admin-logs-body"></tbody></table></div></div></div>
         
@@ -1519,7 +1605,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v5.7';
+    const APP_VERSION = 'v5.8';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -2218,12 +2304,19 @@
       if (currentUser.role === 'Admin') {
         adminElements.forEach(id => {
           const el = document.getElementById(id);
-          if (el) { el.classList.remove('hidden'); el.classList.add('block'); }
+          if (el) { 
+            el.classList.remove('hidden'); 
+            if (id === 'menu_admin_users') {
+              el.classList.add('flex');
+            } else {
+              el.classList.add('block'); 
+            }
+          }
         });
       } else {
         adminElements.forEach(id => {
           const el = document.getElementById(id);
-          if (el) { el.classList.add('hidden'); el.classList.remove('block'); }
+          if (el) { el.classList.add('hidden'); el.classList.remove('block', 'flex'); }
         });
 
         // 🔒 ความปลอดภัยขั้นเด็ดขาด: หากผู้ใช้ไม่ใช่ Admin และมีหน้าต่าง Admin เปิดค้างอยู่
@@ -2407,7 +2500,17 @@
           fetchGlobalData(false, true);
         } else {
           hideLoader();
-          Swal.fire('ล้มเหลว', res.message, 'error');
+          if (res.message && (res.message.includes('รอ') || res.message.includes('อนุมัติ'))) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'รอการอนุมัติการใช้งาน',
+              html: `<div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-sm leading-relaxed">${res.message}</div>`,
+              confirmButtonText: 'รับทราบ',
+              confirmButtonColor: '#d97706'
+            });
+          } else {
+            Swal.fire('เข้าสู่ระบบไม่สำเร็จ', res.message, 'error');
+          }
         }
       } catch(e) {
         hideLoader();
@@ -2420,19 +2523,43 @@
       const e = document.getElementById('reg_email').value.trim();
       const u = document.getElementById('reg_username').value.trim();
       const p = document.getElementById('reg_password').value.trim();
-      if (!n || !u || !p || !e) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
-      showLoader('กำลังสมัครสมาชิก...');
+      const pConfirm = (document.getElementById('reg_password_confirm')?.value || '').trim();
+
+      if (!n || !u || !p || !e) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วนทุกช่อง', 'warning');
+      if (p.length < 4) return Swal.fire('แจ้งเตือน', 'รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร', 'warning');
+      if (document.getElementById('reg_password_confirm') && p !== pConfirm) {
+        return Swal.fire('แจ้งเตือน', 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง', 'warning');
+      }
+
+      showLoader('กำลังส่งข้อมูลลงทะเบียน...');
       try {
         let res = await callAPI('apiRegister', { name: n, username: u, password: p, email: e });
         hideLoader();
         if (res.success) {
-          Swal.fire('สำเร็จ', res.message, 'success').then(() => {
+          Swal.fire({
+            icon: 'info',
+            title: 'ส่งคำขอลงทะเบียนสำเร็จ!',
+            html: `<div class="text-left text-sm space-y-2">
+              <p>ระบบได้บันทึกข้อมูลบัญชี <b>${u}</b> เรียบร้อยแล้ว</p>
+              <div class="p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-xl text-amber-800 dark:text-amber-200 text-xs">
+                <i class="fas fa-hourglass-half mr-1 text-amber-600"></i> <b>กรุณารอการอนุมัติจากผู้ดูแลระบบ (Admin)</b> ก่อนเข้าสู่ระบบ<br>
+                เมื่อได้รับการอนุมัติแล้ว ท่านจะสามารถเข้าสู่ระบบเพื่อใช้งานได้ทันที
+              </div>
+            </div>`,
+            confirmButtonText: 'กลับไปหน้าเข้าสู่ระบบ',
+            confirmButtonColor: '#2563eb'
+          }).then(() => {
             document.getElementById('username').value = u;
-            document.getElementById('password').value = p;
+            document.getElementById('password').value = '';
+            document.getElementById('reg_name').value = '';
+            document.getElementById('reg_email').value = '';
+            document.getElementById('reg_username').value = '';
+            document.getElementById('reg_password').value = '';
+            if (document.getElementById('reg_password_confirm')) document.getElementById('reg_password_confirm').value = '';
             showLogin();
           });
         } else {
-          Swal.fire('ล้มเหลว', res.message, 'error');
+          Swal.fire('ลงทะเบียนไม่สำเร็จ', res.message, 'error');
         }
       } catch(e) {
         hideLoader();
@@ -2597,6 +2724,11 @@
         if (globalData.settings && globalData.settings.orgName) {
           localStorage.setItem('appOrgName', globalData.settings.orgName);
           updateOrgNameDisplay(globalData.settings.orgName);
+        }
+
+        // ซิงค์จำนวนผู้ใช้งานที่รออนุมัติสำหรับผู้ดูแลระบบ
+        if (typeof res.pendingUsersCount !== 'undefined') {
+          updatePendingUsersBadge(res.pendingUsersCount);
         }
 
         // สำรองข้อมูลลง LocalStorage เพื่อให้ระบบทำงานต่อได้แม้เครือข่ายกระตุก
@@ -3459,47 +3591,257 @@
     // ==========================================
     // 🛡️ ฟังก์ชันสำหรับแอดมิน: จัดการผู้ใช้ & ดู Log
     // ==========================================
+    window.currentAdminUsersList = [];
+    window.activeAdminUsersFilter = 'all';
+
+    window.updatePendingUsersBadge = function(count) {
+      const badge = document.getElementById('pending-users-badge');
+      if (badge) {
+        if (count > 0 && currentUser && currentUser.role === 'Admin') {
+          badge.textContent = count;
+          badge.classList.remove('hidden');
+          badge.classList.add('inline-flex');
+        } else {
+          badge.classList.add('hidden');
+          badge.classList.remove('inline-flex');
+        }
+      }
+    };
+
     window.loadAdminUsers = async function() {
       if (!currentUser || currentUser.role !== 'Admin') return;
       const tbody = document.getElementById('admin-users-body');
-      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>กำลังโหลดรายชื่อผู้ใช้...</td></tr>';
+      const icon = document.getElementById('admin-users-refresh-icon');
+      if (icon) icon.classList.add('fa-spin');
+      tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2 text-purple-600"></i>กำลังโหลดรายชื่อผู้ใช้...</td></tr>';
       try {
         let res = await callAPI('apiGetUsersList', { adminUsername: currentUser.username });
-        if (res.success && res.users) {
-          if (res.users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">ไม่พบผู้ใช้งาน</td></tr>';
-            return;
-          }
-          let html = '';
-          res.users.forEach(u => {
-            let isCurrent = u.username === currentUser.username;
-            let actionBtns = isCurrent ? '<span class="text-xs text-gray-400">บัญชีปัจจุบัน</span>' :
-              `<div class="flex items-center justify-center gap-1.5 flex-wrap">
-                <button onclick="changeUserRole('${u.username}', '${u.role}')" class="${u.role === 'Admin' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-purple-600 hover:bg-purple-700'} text-white px-2.5 py-1 rounded text-xs font-bold transition shadow" title="สลับสิทธิ์การใช้งาน">
-                  <i class="fas fa-user-shield mr-1"></i>${u.role === 'Admin' ? 'ปรับเป็น User' : 'ตั้งเป็น Admin'}
-                </button>
-                <button onclick="resetPasswordForUser('${u.username}')" class="bg-yellow-500 text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-yellow-600 transition shadow" title="รีเซ็ตรหัสผ่าน">
-                  <i class="fas fa-key mr-1"></i>รีเซ็ทรหัส
-                </button>
-              </div>`;
-            let roleBadge = u.role === 'Admin' 
-              ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800"><i class="fas fa-crown text-amber-500 mr-1"></i>Admin</span>' 
-              : '<span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"><i class="fas fa-user text-blue-500 mr-1"></i>User</span>';
-            html += `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-sm dark:text-gray-200">
-              <td class="p-3 font-mono font-bold text-purple-600 dark:text-purple-400">${u.username}</td>
-              <td class="p-3">${u.name}</td>
-              <td class="p-3 text-gray-500 dark:text-gray-400">${u.email}</td>
-              <td class="p-3">${roleBadge}</td>
-              <td class="p-3 text-center">${actionBtns}</td>
-            </tr>`;
-          });
-          tbody.innerHTML = html;
+        if (icon) icon.classList.remove('fa-spin');
+        if (res.success && Array.isArray(res.users)) {
+          window.currentAdminUsersList = res.users;
+          renderAdminUsersTable();
         } else {
-          tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">${res.message || 'โหลดไม่สำเร็จ'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500">${res.message || 'โหลดไม่สำเร็จ'}</td></tr>`;
         }
       } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">${e.message}</td></tr>`;
+        if (icon) icon.classList.remove('fa-spin');
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500">${e.message}</td></tr>`;
       }
+    };
+
+    window.setAdminUsersFilter = function(filterTab) {
+      window.activeAdminUsersFilter = filterTab;
+      const tabs = ['all', 'pending', 'approved', 'rejected'];
+      tabs.forEach(tab => {
+        const btn = document.getElementById(`tab-users-${tab}`);
+        if (!btn) return;
+        if (tab === filterTab) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-purple-600 text-white shadow-xs';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700';
+        }
+      });
+      renderAdminUsersTable();
+    };
+
+    window.filterAdminUsersTable = function() {
+      renderAdminUsersTable();
+    };
+
+    window.renderAdminUsersTable = function() {
+      const tbody = document.getElementById('admin-users-body');
+      if (!tbody) return;
+      const users = window.currentAdminUsersList || [];
+      
+      const allCount = users.length;
+      const pendingCount = users.filter(u => u.status === 'Pending').length;
+      const approvedCount = users.filter(u => u.status === 'Approved' || u.status === 'Active' || !u.status).length;
+      const rejectedCount = users.filter(u => u.status === 'Rejected').length;
+
+      const pAll = document.getElementById('pill-count-all');
+      const pPend = document.getElementById('pill-count-pending');
+      const pAppr = document.getElementById('pill-count-approved');
+      const pRej = document.getElementById('pill-count-rejected');
+      if (pAll) pAll.textContent = allCount;
+      if (pPend) pPend.textContent = pendingCount;
+      if (pAppr) pAppr.textContent = approvedCount;
+      if (pRej) pRej.textContent = rejectedCount;
+
+      updatePendingUsersBadge(pendingCount);
+
+      const searchInput = (document.getElementById('admin-users-search')?.value || '').trim().toLowerCase();
+      const tab = window.activeAdminUsersFilter || 'all';
+
+      let filtered = users.filter(u => {
+        let st = u.status || 'Approved';
+        if (st === 'Active') st = 'Approved';
+        if (tab === 'pending' && st !== 'Pending') return false;
+        if (tab === 'approved' && st !== 'Approved') return false;
+        if (tab === 'rejected' && st !== 'Rejected') return false;
+
+        if (searchInput) {
+          const matchUser = (u.username || '').toLowerCase().includes(searchInput);
+          const matchName = (u.name || '').toLowerCase().includes(searchInput);
+          const matchEmail = (u.email || '').toLowerCase().includes(searchInput);
+          if (!matchUser && !matchName && !matchEmail) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-500 dark:text-gray-400 text-xs">ไม่พบรายชื่อผู้ใช้ตามเงื่อนไขที่เลือก</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(u => {
+        let isCurrent = u.username === currentUser.username;
+        let st = u.status || 'Approved';
+        if (st === 'Active') st = 'Approved';
+
+        let statusBadge = '';
+        if (st === 'Pending') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse"><i class="fas fa-clock text-amber-500"></i>รออนุมัติ</span>';
+        } else if (st === 'Approved') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"><i class="fas fa-check-circle text-emerald-500"></i>อนุมัติแล้ว</span>';
+        } else if (st === 'Rejected') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700"><i class="fas fa-ban text-rose-500"></i>ระงับใช้งาน</span>';
+        }
+
+        let roleBadge = u.role === 'Admin'
+          ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800"><i class="fas fa-crown text-amber-500 mr-1"></i>Admin</span>'
+          : '<span class="px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600"><i class="fas fa-user text-blue-500 mr-1"></i>User</span>';
+
+        let regDateText = u.registeredAt ? formatDisplayDate(u.registeredAt) : '-';
+
+        let actionBtns = '';
+        if (isCurrent) {
+          actionBtns = '<span class="text-xs text-gray-400 font-medium">บัญชีปัจจุบัน</span>';
+        } else if (st === 'Pending') {
+          actionBtns = `
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <button onclick="changeUserStatus('${u.username}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-bold transition shadow flex items-center gap-1" title="อนุมัติการใช้งาน">
+                <i class="fas fa-check"></i>อนุมัติ
+              </button>
+              <button onclick="changeUserStatus('${u.username}', 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded text-xs font-bold transition shadow flex items-center gap-1" title="ไม่อนุมัติ / ปฏิเสธ">
+                <i class="fas fa-times"></i>ปฏิเสธ
+              </button>
+              <button onclick="deleteUserAccount('${u.username}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-bold transition shadow" title="ลบบัญชีนี้">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>`;
+        } else if (st === 'Approved') {
+          actionBtns = `
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <button onclick="changeUserRole('${u.username}', '${u.role}')" class="${u.role === 'Admin' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-purple-600 hover:bg-purple-700'} text-white px-2.5 py-1 rounded text-xs font-bold transition shadow" title="สลับสิทธิ์การใช้งาน">
+                <i class="fas fa-user-shield mr-1"></i>${u.role === 'Admin' ? 'ปรับเป็น User' : 'ตั้งเป็น Admin'}
+              </button>
+              <button onclick="resetPasswordForUser('${u.username}')" class="bg-yellow-500 text-white px-2.5 py-1 rounded text-xs font-bold hover:bg-yellow-600 transition shadow" title="รีเซ็ตรหัสผ่าน">
+                <i class="fas fa-key mr-1"></i>รีเซ็ทรหัส
+              </button>
+              <button onclick="changeUserStatus('${u.username}', 'Rejected')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-bold transition shadow" title="ระงับการใช้งาน">
+                <i class="fas fa-ban mr-1"></i>ระงับ
+              </button>
+              <button onclick="deleteUserAccount('${u.username}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs font-bold transition shadow" title="ลบบัญชีนี้">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>`;
+        } else if (st === 'Rejected') {
+          actionBtns = `
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <button onclick="changeUserStatus('${u.username}', 'Approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-bold transition shadow flex items-center gap-1" title="ปลดระงับและอนุมัติการใช้งาน">
+                <i class="fas fa-undo"></i>ปลดระงับ
+              </button>
+              <button onclick="deleteUserAccount('${u.username}')" class="bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded text-xs font-bold transition shadow" title="ลบบัญชีนี้">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>`;
+        }
+
+        html += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 text-xs md:text-sm dark:text-gray-200">
+          <td class="p-3 font-mono font-bold text-purple-600 dark:text-purple-400">${u.username}</td>
+          <td class="p-3 font-medium">${u.name}</td>
+          <td class="p-3 text-gray-500 dark:text-gray-400">${u.email}</td>
+          <td class="p-3 text-xs text-gray-500 dark:text-gray-400">${regDateText}</td>
+          <td class="p-3">${roleBadge}</td>
+          <td class="p-3">${statusBadge}</td>
+          <td class="p-3 text-center">${actionBtns}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+    };
+
+    window.changeUserStatus = function(targetUsername, newStatus) {
+      const actionText = newStatus === 'Approved' ? 'อนุมัติการใช้งาน' : (newStatus === 'Rejected' ? 'ระงับ/ไม่อนุมัติการใช้งาน' : 'ตั้งเป็นรออนุมัติ');
+      const icon = newStatus === 'Approved' ? 'question' : 'warning';
+      const confirmColor = newStatus === 'Approved' ? '#059669' : '#dc2626';
+
+      Swal.fire({
+        title: `${actionText}?`,
+        html: `คุณต้องการ <b>${actionText}</b> ให้กับผู้ใช้ "<b>${targetUsername}</b>" หรือไม่?` + 
+              (newStatus === 'Approved' ? '<br><span class="text-xs text-gray-500 mt-2 block">หากผู้ใช้ระบุอีเมลไว้ ระบบจะส่งอีเมลแจ้งเตือนการอนุมัติให้โดยอัตโนมัติ</span>' : ''),
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonColor: confirmColor,
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: `ยืนยัน${actionText}`,
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          showLoader('กำลังบันทึกสถานะ...');
+          try {
+            let res = await callAPI('apiChangeUserStatus', {
+              adminUsername: currentUser.username,
+              targetUsername: targetUsername,
+              newStatus: newStatus
+            });
+            hideLoader();
+            if (res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              loadAdminUsers();
+            } else {
+              Swal.fire('ล้มเหลว', res.message, 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
+    };
+
+    window.deleteUserAccount = function(targetUsername) {
+      Swal.fire({
+        title: 'ยืนยันลบบัญชีผู้ใช้?',
+        html: `คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี "<b>${targetUsername}</b>" ออกจากระบบอย่างถาวร?<br><span class="text-xs text-red-500 mt-1 block">การกระทำนี้ไม่สามารถเรียกคืนได้</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'ใช่, ลบบัญชี',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          showLoader('กำลังลบบัญชีผู้ใช้...');
+          try {
+            let res = await callAPI('apiDeleteUser', {
+              adminUsername: currentUser.username,
+              targetUsername: targetUsername
+            });
+            hideLoader();
+            if (res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              loadAdminUsers();
+            } else {
+              Swal.fire('ล้มเหลว', res.message, 'error');
+            }
+          } catch(e) {
+            hideLoader();
+            Swal.fire('ข้อผิดพลาด', e.message, 'error');
+          }
+        }
+      });
     };
 
     window.changeUserRole = function(targetUsername, currentRole) {
