@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v6.2 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v6.3 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -1963,7 +1963,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v6.2';
+    const APP_VERSION = 'v6.3';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -2929,24 +2929,66 @@
       openOfflineQueueModal();
     };
 
-    async function callAPI(action, payload = {}) {
-      if (!navigator.onLine && action !== 'apiLogin') throw new Error("คุณกำลังออฟไลน์ ไม่สามารถดึงข้อมูลได้");
-      try {
-        // Cache-Busting Query Parameter บน URL ป้องกันแคชโดยไม่ทำให้เกิด CORS Preflight (OPTIONS)
-        const buster = `_t=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const apiUrl = GAS_API_URL + (GAS_API_URL.includes('?') ? '&' : '?') + buster;
-
-        let response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, payload: payload, _t: Date.now() })
-        });
-        let data = await response.json();
-        if (!data) throw new Error("ไม่ได้รับข้อมูลจากเซิร์ฟเวอร์");
-        return data;
-      } catch(e) {
-        throw new Error(e.message);
+    async function callAPI(action, payload = {}, maxRetries = 2) {
+      if (!navigator.onLine && action !== 'apiLogin') {
+        throw new Error("คุณกำลังออฟไลน์ ไม่สามารถดึงข้อมูลได้");
       }
+
+      let attempt = 0;
+      let lastError = null;
+
+      while (attempt <= maxRetries) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s timeout ป้องกันคำขอค้าง
+
+          const response = await fetch(GAS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, payload: payload, _t: Date.now() }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          const rawText = await response.text();
+          const trimmed = (rawText || '').trim();
+
+          // 🛡️ ตรวจสอบว่าผลลัพธ์เป็น HTML หรือไม่ (เกิดจาก Google Apps Script Error, GFE 500/503/404, หรือ Redirect)
+          if (trimmed.startsWith('<') || trimmed.startsWith('<!DOCTYPE') || trimmed.toLowerCase().startsWith('<html')) {
+            let errorDetail = 'เซิร์ฟเวอร์ Google ตอบกลับเป็น HTML ชั่วคราว (ระบบอาจกำลังเริ่มทำงานหรือมีคำขอจำนวนมาก)';
+            if (trimmed.includes('Service invoked too many times')) {
+              errorDetail = 'โควตาคำขอของ Google Apps Script เกินกำหนดชั่วคราว';
+            } else if (trimmed.includes('Script Error') || trimmed.includes('Exception:')) {
+              errorDetail = 'สคริปต์ Google เกิดข้อผิดพลาดในการประมวลผลชั่วคราว';
+            }
+            throw new Error(errorDetail);
+          }
+
+          if (!response.ok && response.status >= 400) {
+            throw new Error(`เซิร์ฟเวอร์ตอบกลับรหัสสถานะ ${response.status} (${response.statusText || 'Error'})`);
+          }
+
+          let data;
+          try {
+            data = JSON.parse(trimmed);
+          } catch (jsonErr) {
+            throw new Error("ข้อมูลตอบกลับจากเซิร์ฟเวอร์ไม่ใช่รูปแบบ JSON ที่ถูกต้อง");
+          }
+
+          if (!data) throw new Error("ไม่ได้รับข้อมูลจากเซิร์ฟเวอร์");
+          return data;
+        } catch(err) {
+          lastError = err;
+          attempt++;
+          if (attempt <= maxRetries) {
+            const waitTime = attempt * 1200; // ลองใหม่ที่ 1.2s, 2.4s
+            console.warn(`[callAPI] การเชื่อมต่อครั้งที่ ${attempt} ขัดข้อง (${err.message}) กำลังลองใหม่ใน ${waitTime}ms...`);
+            await new Promise(r => setTimeout(r, waitTime));
+          }
+        }
+      }
+
+      throw lastError || new Error("การเชื่อมต่อเซิร์ฟเวอร์ขัดข้องชั่วคราว");
     }
 
     window.onload = function() {
@@ -3400,132 +3442,169 @@
       }
     };
 
+    let fetchGlobalDataPromise = null;
+
     window.fetchGlobalData = async function(manual = false, isBackground = false) {
       if (!navigator.onLine) {
-        Swal.fire('ออฟไลน์', 'กำลังใช้งานโหมดออฟไลน์ (ดูข้อมูลล่าสุดที่โหลดไว้)', 'info');
+        if (manual) {
+          Swal.fire('ออฟไลน์', 'กำลังใช้งานโหมดออฟไลน์ (ดูข้อมูลล่าสุดที่บันทึกไว้ในเครื่อง)', 'info');
+        }
         return;
       }
-      
-      const refreshBtn = document.getElementById('header-refresh-btn');
-      const refreshIcon = document.getElementById('header-refresh-icon') || refreshBtn?.querySelector('i');
-      if (refreshIcon) refreshIcon.classList.add('fa-spin');
-      if (refreshBtn) refreshBtn.disabled = true;
 
-      // แสดง Loader เต็มจอเฉพาะกรณี: กดปุ่มรีเฟรชเอง (manual) หรือยังไม่มีข้อมูลในระบบเลย
-      const hasExistingData = globalData && Array.isArray(globalData.assets) && globalData.assets.length > 0;
-      if (manual || (!hasExistingData && !isBackground)) {
-        showLoader(manual ? 'กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...' : 'กำลังซิงค์ข้อมูลล่าสุด...');
+      // ป้องกันการเรียกคำขอซ้ำซ้อนพร้อมกันหลายครั้ง (Deduplication)
+      if (fetchGlobalDataPromise && !manual) {
+        return fetchGlobalDataPromise;
       }
-      try {
-        let res = await callAPI('apiGetData', { forceRefresh: !!manual });
-        if (res && res._fromCache) {
-          console.log(`⚡ [CacheService] โหลดข้อมูลผ่านแคชเซิร์ฟเวอร์ (Cache hit: ${res._cacheAgeMs ? (res._cacheAgeMs/1000).toFixed(1) + 's' : 'active'}) เร็วกว่าเดิม 3-5 เท่า`);
-        }
-        if (!res || typeof res !== 'object') {
-          throw new Error("ข้อมูลตอบกลับจากเซิร์ฟเวอร์ไม่ถูกต้อง");
-        }
-        if (res.success === false) {
-          throw new Error(res.message || "เซิร์ฟเวอร์แจ้งข้อผิดพลาด");
+
+      const runFetch = async () => {
+        const refreshBtn = document.getElementById('header-refresh-btn');
+        const refreshIcon = document.getElementById('header-refresh-icon') || refreshBtn?.querySelector('i');
+        if (refreshIcon) refreshIcon.classList.add('fa-spin');
+        if (refreshBtn) refreshBtn.disabled = true;
+
+        // แสดง Loader เต็มจอเฉพาะกรณี: กดปุ่มรีเฟรชเอง (manual) หรือยังไม่มีข้อมูลในระบบเลย
+        const hasExistingData = globalData && Array.isArray(globalData.assets) && globalData.assets.length > 0;
+        if (manual || (!hasExistingData && !isBackground)) {
+          showLoader(manual ? 'กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...' : 'กำลังซิงค์ข้อมูลล่าสุด...');
         }
 
-        // ตรวจสอบและกำหนดค่า Default ให้ globalData เสมอ ป้องกัน undefined
-        globalData = {
-          assets: Array.isArray(res.assets) ? res.assets : (globalData.assets || []),
-          dash: res.dash || globalData.dash || {},
-          settings: res.settings || globalData.settings || { round: 'ครั้งที่ 1 2569' },
-          conditions: Array.isArray(res.conditions) ? res.conditions : (globalData.conditions || []),
-          assignments: Array.isArray(res.assignments) ? res.assignments : (globalData.assignments || []),
-          users: Array.isArray(res.users) ? res.users : (globalData.users || [])
-        };
-
-        // ซิงค์ชื่อหน่วยงานกับ LocalStorage และอัปเดตหน้าจอทันที
-        if (globalData.settings && globalData.settings.orgName) {
-          localStorage.setItem('appOrgName', globalData.settings.orgName);
-          updateOrgNameDisplay(globalData.settings.orgName);
-        }
-
-        // ซิงค์จำนวนผู้ใช้งานที่รออนุมัติสำหรับผู้ดูแลระบบ
-        if (typeof res.pendingUsersCount !== 'undefined') {
-          updatePendingUsersBadge(res.pendingUsersCount);
-        }
-
-        // สำรองข้อมูลลง LocalStorage เพื่อให้ระบบทำงานต่อได้แม้เครือข่ายกระตุก
         try {
-          localStorage.setItem('cachedGlobalData', JSON.stringify(globalData));
-        } catch(storageErr) {}
+          let res = await callAPI('apiGetData', { forceRefresh: !!manual });
+          if (res && res._fromCache) {
+            console.log(`⚡ [CacheService] โหลดข้อมูลผ่านแคชเซิร์ฟเวอร์ (Cache hit: ${res._cacheAgeMs ? (res._cacheAgeMs/1000).toFixed(1) + 's' : 'active'}) เร็วกว่าเดิม 3-5 เท่า`);
+          }
+          if (!res || typeof res !== 'object') {
+            throw new Error("ข้อมูลตอบกลับจากเซิร์ฟเวอร์ไม่ถูกต้อง");
+          }
+          if (res.success === false) {
+            throw new Error(res.message || "เซิร์ฟเวอร์แจ้งข้อผิดพลาด");
+          }
 
-        if (Array.isArray(globalData.assets)) {
-          globalData.assets.forEach(a => {
-            if (a.InspectDate) {
-              a.InspectDate = formatDisplayDate(a.InspectDate);
-            }
-            if (a.ImageURL) {
-              a.ImageURL = getDirectImageUrl(a.ImageURL);
-            }
-          });
-        }
-        filteredAssetsArray = globalData.assets;
-        filteredPrintArray = globalData.assets;
-        selectedPrintIds.clear();
-        
-        renderAllViews();
-        hideLoader();
-        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-        if (refreshBtn) refreshBtn.disabled = false;
+          // ตรวจสอบและกำหนดค่า Default ให้ globalData เสมอ ป้องกัน undefined
+          globalData = {
+            assets: Array.isArray(res.assets) ? res.assets : (globalData.assets || []),
+            dash: res.dash || globalData.dash || {},
+            settings: res.settings || globalData.settings || { round: 'ครั้งที่ 1 2569' },
+            conditions: Array.isArray(res.conditions) ? res.conditions : (globalData.conditions || []),
+            assignments: Array.isArray(res.assignments) ? res.assignments : (globalData.assignments || []),
+            users: Array.isArray(res.users) ? res.users : (globalData.users || [])
+          };
 
-        // 🔒 ตรวจสอบสิทธิ์ผู้ใช้: หากไม่ใช่ Admin และเผลอเปิดหน้า Admin ค้างไว้ ให้ส่งกลับไปแดชบอร์ดทันที
-        const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
-        if (currentUser && currentUser.role !== 'Admin') {
-          adminOnlyViews.forEach(vId => {
-            const vEl = document.getElementById('view-' + vId);
-            if (vEl && !vEl.classList.contains('hidden')) {
-              nav('dashboard');
-            }
-          });
-        }
+          // ซิงค์ชื่อหน่วยงานกับ LocalStorage และอัปเดตหน้าจอทันที
+          if (globalData.settings && globalData.settings.orgName) {
+            localStorage.setItem('appOrgName', globalData.settings.orgName);
+            updateOrgNameDisplay(globalData.settings.orgName);
+          }
 
-        if (document.querySelectorAll('.view:not(.hidden)').length === 0) {
-          nav('dashboard');
-        }
+          // ซิงค์จำนวนผู้ใช้งานที่รออนุมัติสำหรับผู้ดูแลระบบ
+          if (typeof res.pendingUsersCount !== 'undefined') {
+            updatePendingUsersBadge(res.pendingUsersCount);
+          }
 
-        if (manual) {
-          const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 2500,
-            timerProgressBar: true
-          });
-          Toast.fire({
-            icon: 'success',
-            title: 'อัปเดตข้อมูลล่าสุดเรียบร้อยแล้ว!',
-            html: `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">เวลา ${new Date().toLocaleTimeString('th-TH')} | ทั้งหมด ${globalData.assets.length.toLocaleString()} รายการ</div>`
-          });
-        }
-      } catch(err) {
-        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-        if (refreshBtn) refreshBtn.disabled = false;
-        hideLoader();
-        console.error("fetchGlobalData error:", err);
-        // หากดึงข้อมูลออนไลน์สะดุด แต่มีแคชเดิม ให้ใช้แคชเดิมแทนที่จะค้าง Error
-        const cached = localStorage.getItem('cachedGlobalData');
-        if (cached) {
+          // สำรองข้อมูลลง LocalStorage เพื่อให้ระบบทำงานต่อได้แม้เครือข่ายกระตุก
           try {
-            globalData = JSON.parse(cached);
-            if (Array.isArray(globalData.assets)) {
-              globalData.assets.forEach(a => {
-                if (a.InspectDate) a.InspectDate = formatDisplayDate(a.InspectDate);
-                if (a.ImageURL) a.ImageURL = getDirectImageUrl(a.ImageURL);
-              });
-            }
-            filteredAssetsArray = globalData.assets;
-            filteredPrintArray = globalData.assets;
-            renderAllViews();
-            Swal.fire('โหลดข้อมูลจากแคช', 'การเชื่อมต่อขัดข้องชั่วคราว (' + err.message + ') ระบบจึงแสดงข้อมูลล่าสุดที่เคยโหลดไว้', 'warning');
-            return;
-          } catch(e) {}
+            localStorage.setItem('cachedGlobalData', JSON.stringify(globalData));
+          } catch(storageErr) {}
+
+          if (Array.isArray(globalData.assets)) {
+            globalData.assets.forEach(a => {
+              if (a.InspectDate) {
+                a.InspectDate = formatDisplayDate(a.InspectDate);
+              }
+              if (a.ImageURL) {
+                a.ImageURL = getDirectImageUrl(a.ImageURL);
+              }
+            });
+          }
+          filteredAssetsArray = globalData.assets;
+          filteredPrintArray = globalData.assets;
+          selectedPrintIds.clear();
+          
+          renderAllViews();
+          hideLoader();
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+          if (refreshBtn) refreshBtn.disabled = false;
+
+          // 🔒 ตรวจสอบสิทธิ์ผู้ใช้: หากไม่ใช่ Admin และเผลอเปิดหน้า Admin ค้างไว้ ให้ส่งกลับไปแดชบอร์ดทันที
+          const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+          if (currentUser && currentUser.role !== 'Admin') {
+            adminOnlyViews.forEach(vId => {
+              const vEl = document.getElementById('view-' + vId);
+              if (vEl && !vEl.classList.contains('hidden')) {
+                nav('dashboard');
+              }
+            });
+          }
+
+          if (document.querySelectorAll('.view:not(.hidden)').length === 0) {
+            nav('dashboard');
+          }
+
+          if (manual) {
+            const Toast = Swal.mixin({
+              toast: true,
+              position: 'top-end',
+              showConfirmButton: false,
+              timer: 2500,
+              timerProgressBar: true
+            });
+            Toast.fire({
+              icon: 'success',
+              title: 'อัปเดตข้อมูลล่าสุดเรียบร้อยแล้ว!',
+              html: `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">เวลา ${new Date().toLocaleTimeString('th-TH')} | ทั้งหมด ${globalData.assets.length.toLocaleString()} รายการ</div>`
+            });
+          }
+        } catch(err) {
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+          if (refreshBtn) refreshBtn.disabled = false;
+          hideLoader();
+          console.warn("fetchGlobalData error (using local cache):", err);
+
+          // หากดึงข้อมูลออนไลน์สะดุด แต่มีแคชเดิม ให้ใช้แคชเดิมและทำงานต่อได้ทันที
+          const cached = localStorage.getItem('cachedGlobalData');
+          if (cached) {
+            try {
+              globalData = JSON.parse(cached);
+              if (Array.isArray(globalData.assets)) {
+                globalData.assets.forEach(a => {
+                  if (a.InspectDate) a.InspectDate = formatDisplayDate(a.InspectDate);
+                  if (a.ImageURL) a.ImageURL = getDirectImageUrl(a.ImageURL);
+                });
+              }
+              filteredAssetsArray = globalData.assets;
+              filteredPrintArray = globalData.assets;
+              renderAllViews();
+
+              // 🛡️ แสดง Toast สุภาพเฉพาะเมื่อผู้ใช้กดปุ่มรีเฟรชเอง (ไม่แสดง modal ขัดจังหวะการทำงานทั่วไป)
+              if (manual) {
+                const Toast = Swal.mixin({
+                  toast: true,
+                  position: 'top-end',
+                  showConfirmButton: false,
+                  timer: 3500,
+                  timerProgressBar: true
+                });
+                Toast.fire({
+                  icon: 'info',
+                  title: 'แสดงข้อมูลจากแคชล่าสุด',
+                  text: 'การเชื่อมต่อขัดข้องชั่วคราว คุณสามารถใช้งานและสแกนได้ตามปกติ'
+                });
+              }
+              return;
+            } catch(e) {}
+          }
+          if (manual) {
+            Swal.fire('ข้อผิดพลาด', err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+          }
         }
-        Swal.fire('ข้อผิดพลาด', err.message, 'error');
+      };
+
+      fetchGlobalDataPromise = runFetch();
+      try {
+        await fetchGlobalDataPromise;
+      } finally {
+        fetchGlobalDataPromise = null;
       }
     };
 
@@ -7751,8 +7830,20 @@
         let res = await callAPI(actionFunc, { data: dataObj, user: currentUser.username });
         hideLoader();
         if (res.success) {
+          // อัปเดตข้อมูลในหน่วยความจำและ LocalStorage ทันที
+          if (actionFunc === 'apiAddInspection' && assetObj) {
+            assetObj.Status = (dataObj.condition || 'ปกติ').replace(/^[0-9]+\.\s*/, '').trim();
+            assetObj.InspectRound = currentRound;
+            assetObj.Inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
+            assetObj.InspectDate = dataObj.inspectDate || getTodayThaiDate();
+            if (dataObj.newLocation && dataObj.newLocation !== '-') {
+              assetObj.Location = dataObj.newLocation;
+            }
+          }
+          try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
+          renderAllViews();
           Swal.fire('สำเร็จ', res.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
-          fetchGlobalData(true);
+          fetchGlobalData(false, true); // ซิงค์เบื้องหลัง ไม่บังคับโหลดใหม่ทั้งชีต
           backToScan();
         } else {
           Swal.fire('ล้มเหลว', res.message, 'error');
