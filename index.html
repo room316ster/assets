@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v6.1 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v6.2 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -105,7 +105,7 @@
 <body class="text-gray-800">
 
   <div id="loader"><i class="fas fa-circle-notch fa-spin text-blue-500 text-5xl mb-4"></i><p class="text-white font-bold" id="loader-text">กำลังโหลดข้อมูล...</p></div>
-  <input type="file" accept="image/*" capture="environment" id="qr-fallback-input" class="hidden">
+  <input type="file" accept="image/*" id="qr-fallback-input" class="hidden">
 
   <!-- ==================== หน้าต่างสแกนเนอร์กล้องเต็มจอ (Full-screen Camera Scanner Modal) ==================== -->
   <div id="reader-container" class="hidden fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-3 sm:p-5 backdrop-blur-md">
@@ -116,6 +116,10 @@
         <span class="font-bold text-xs sm:text-sm tracking-wide text-white"><i class="fas fa-qrcode mr-1 text-blue-400"></i> สแกนบาร์โค้ด / QR Code</span>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="scanner-offline-queue-btn" type="button" onclick="openOfflineQueueModal()" class="hidden bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black px-2.5 py-1.5 rounded-lg shadow text-xs font-bold flex items-center gap-1 transition animate-pulse border border-amber-300" title="ดูรายการพัสดุที่รอซิงค์เข้าฐานข้อมูล">
+          <i class="fas fa-cloud-upload-alt text-amber-950"></i>
+          <span>รอซิงค์ (<span id="scanner-offline-count">0</span>)</span>
+        </button>
         <button id="btn-switch-cam" type="button" onclick="switchCamera()" class="bg-gray-800/90 hover:bg-gray-700 text-white px-2.5 py-1.5 rounded-lg shadow text-xs font-bold border border-gray-600 flex items-center gap-1 transition" title="สลับกล้อง">
           <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">สลับกล้อง</span>
         </button>
@@ -136,10 +140,15 @@
           <i class="fas fa-bolt text-yellow-400"></i> สแกนต่อเนื่อง (Auto-Count)
         </span>
       </label>
-      <div id="continuous-scan-badge" class="hidden text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40 text-[11px] flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>ตรวจรอบนี้:</span>
-        <span id="continuous-scan-count" class="text-white font-mono font-bold text-xs">0</span> ชิ้น
+      <div class="flex items-center gap-1.5">
+        <div id="continuous-scan-badge" class="hidden text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40 text-[11px] flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>ตรวจรอบนี้:</span>
+          <span id="continuous-scan-count" class="text-white font-mono font-bold text-xs">0</span> ชิ้น
+        </div>
+        <div id="scanner-online-chip" class="text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 bg-green-950/80 text-green-300 border border-green-700/50">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> <span>ออนไลน์</span>
+        </div>
       </div>
     </div>
 
@@ -361,7 +370,7 @@
               <span class="app-version-text font-mono">v5.7</span>
               <i class="fas fa-sync-alt text-[10px] text-gray-400"></i>
             </button>
-            <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="forceSyncOffline()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
+            <span id="online-status" class="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer" onclick="openOfflineQueueModal()"><i class="fas fa-wifi text-green-500"></i> ออนไลน์</span>
             <button id="header-refresh-btn" onclick="fetchGlobalData(true)" class="bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="รีเฟรชดึงข้อมูลล่าสุดจาก Google Sheets (ไม่แคช)"><i class="fas fa-sync-alt" id="header-refresh-icon"></i><span class="hidden sm:inline">รีเฟรช</span></button>
             <div class="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onclick="nav('profile')">
               <span id="user-display" class="font-bold text-sm text-blue-700 dark:text-blue-300">Admin</span>
@@ -1230,6 +1239,22 @@
 
         <!-- SCAN -->
         <div id="view-scan" class="view hidden">
+          <!-- แถบแจ้งเตือนรายการพัสดุรอซิงค์ (Offline Queue Banner) -->
+          <div id="offline-queue-banner" class="hidden mb-4 p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-300 dark:border-amber-700/80 rounded-xl text-amber-900 dark:text-amber-200 shadow-sm flex items-center justify-between gap-3 animate-fade-in max-w-md mx-auto">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-200 dark:bg-amber-800/60 flex items-center justify-center text-amber-700 dark:text-amber-300 shrink-0">
+                <i class="fas fa-cloud-upload-alt text-base"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-xs">มีพัสดุรอซิงค์ <span id="offline-banner-count" class="text-red-600 dark:text-red-400 font-mono font-black text-sm">0</span> รายการ</h4>
+                <p class="text-[10px] text-amber-700 dark:text-amber-300/80">ตรวจนับไว้ขณะออฟไลน์/สัญญาณอ่อน</p>
+              </div>
+            </div>
+            <button type="button" onclick="openOfflineQueueModal()" class="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-black px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 shrink-0 transition">
+              <i class="fas fa-list-check"></i> <span>ดู/ซิงค์</span>
+            </button>
+          </div>
+
           <div id="scan-step-1" class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto">
             <div class="text-center mb-6"><h2 class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">ตรวจนับพัสดุ</h2></div>
             <label class="block text-sm font-bold mb-1 text-gray-600 dark:text-gray-300">รอบการตรวจปัจจุบัน</label><div id="display_round" class="w-full p-3 mb-4 rounded-lg border dark:bg-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-sm">โหลดข้อมูล...</div>
@@ -1335,11 +1360,35 @@
             </div>
             <select id="f_condition" class="w-full p-3 mb-3 rounded-lg border bg-white/90 dark:bg-gray-700 font-bold text-sm focus:outline-none text-blue-600"></select>
             
-            <label class="block text-xs font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพยืนยัน</label>
-            <input type="file" id="f_img" accept="image/*" capture="environment" onchange="previewThumbnail(this, 'f_img_preview')" class="w-full p-2 mb-2 rounded-lg border bg-white/90 dark:bg-gray-700 text-xs">
-            <div id="f_img_preview" class="hidden relative mb-3 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg border flex items-center justify-between">
-              <img src="" class="h-16 w-16 object-cover rounded shadow" alt="Preview">
-              <button onclick="clearImagePreview('f_img', 'f_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"><i class="fas fa-trash-alt mr-1"></i>ลบรูป/ถ่ายใหม่</button>
+            <label class="block text-xs font-bold mb-1.5 dark:text-gray-300 flex items-center justify-between">
+              <span><i class="fas fa-camera text-blue-500 mr-1"></i> ภาพถ่ายยืนยัน</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400 font-normal">เลือกถ่ายรูป หรือเลือกจากแกลเลอรี</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <button type="button" onclick="triggerPhotoChoice('f_img', 'camera')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs">
+                <i class="fas fa-camera text-blue-600 dark:text-blue-400"></i>
+                <span>ถ่ายภาพ (กล้อง)</span>
+              </button>
+              <button type="button" onclick="triggerPhotoChoice('f_img', 'gallery')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-purple-700 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs">
+                <i class="fas fa-images text-purple-600 dark:text-purple-400"></i>
+                <span>คลังภาพ (แกลเลอรี)</span>
+              </button>
+            </div>
+            <!-- Input ซ่อนสำหรับกล้อง และสำหรับแกลเลอรี -->
+            <input type="file" id="f_img_cam" accept="image/*" capture="environment" class="hidden" onchange="handleDualPhotoChange(this, 'f_img', 'f_img_preview')">
+            <input type="file" id="f_img_gal" accept="image/*" class="hidden" onchange="handleDualPhotoChange(this, 'f_img', 'f_img_preview')">
+            <input type="file" id="f_img" accept="image/*" class="hidden">
+            <div id="f_img_preview" class="hidden relative mb-3 bg-gray-50 dark:bg-gray-800/80 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <img src="" class="h-14 w-14 object-cover rounded-lg shadow-sm border border-gray-300 dark:border-gray-600 shrink-0" alt="Preview">
+                <div class="overflow-hidden">
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200 block truncate"><i class="fas fa-check-circle text-emerald-500 mr-1"></i> แนบรูปถ่ายแล้ว</span>
+                  <span id="f_img_info" class="text-[10px] text-gray-500 dark:text-gray-400 block truncate"></span>
+                </div>
+              </div>
+              <button type="button" onclick="clearDualImagePreview('f_img', 'f_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition shrink-0">
+                <i class="fas fa-trash-alt mr-1"></i>ลบรูป
+              </button>
             </div>
 
             <textarea id="f_note" placeholder="หมายเหตุ..." class="w-full p-2 mb-4 rounded-lg border bg-white/90 dark:bg-gray-700 h-16 text-xs"></textarea>
@@ -1359,11 +1408,35 @@
             <label class="block text-xs font-bold mb-1">รหัส (บาร์โค้ด)</label><input type="text" id="n_id" class="w-full p-2 mb-2 rounded-lg border bg-white/90 font-mono font-bold text-blue-600 text-sm focus:outline-none" oninput="formatAssetId(event)">
             <label class="block text-xs font-bold mb-1">ลักษณะ</label><input type="text" id="n_name" class="w-full p-2 mb-2 rounded-lg border bg-white/90 text-sm focus:outline-none">
             
-            <label class="block text-xs font-bold mb-1">📸 ถ่ายภาพ</label>
-            <input type="file" id="n_img" accept="image/*" capture="environment" onchange="previewThumbnail(this, 'n_img_preview')" class="w-full p-2 mb-2 rounded-lg border bg-white/90 text-xs">
-            <div id="n_img_preview" class="hidden relative mb-3 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg border flex items-center justify-between">
-              <img src="" class="h-16 w-16 object-cover rounded shadow" alt="Preview">
-              <button onclick="clearImagePreview('n_img', 'n_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"><i class="fas fa-trash-alt mr-1"></i>ลบรูป/ถ่ายใหม่</button>
+            <label class="block text-xs font-bold mb-1.5 dark:text-gray-300 flex items-center justify-between">
+              <span><i class="fas fa-camera text-blue-500 mr-1"></i> ภาพถ่ายพัสดุ</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400 font-normal">เลือกถ่ายรูป หรือเลือกจากแกลเลอรี</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <button type="button" onclick="triggerPhotoChoice('n_img', 'camera')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs">
+                <i class="fas fa-camera text-blue-600 dark:text-blue-400"></i>
+                <span>ถ่ายภาพ (กล้อง)</span>
+              </button>
+              <button type="button" onclick="triggerPhotoChoice('n_img', 'gallery')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-purple-700 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs">
+                <i class="fas fa-images text-purple-600 dark:text-purple-400"></i>
+                <span>คลังภาพ (แกลเลอรี)</span>
+              </button>
+            </div>
+            <!-- Input ซ่อนสำหรับกล้อง และสำหรับแกลเลอรี -->
+            <input type="file" id="n_img_cam" accept="image/*" capture="environment" class="hidden" onchange="handleDualPhotoChange(this, 'n_img', 'n_img_preview')">
+            <input type="file" id="n_img_gal" accept="image/*" class="hidden" onchange="handleDualPhotoChange(this, 'n_img', 'n_img_preview')">
+            <input type="file" id="n_img" accept="image/*" class="hidden">
+            <div id="n_img_preview" class="hidden relative mb-3 bg-gray-50 dark:bg-gray-800/80 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <img src="" class="h-14 w-14 object-cover rounded-lg shadow-sm border border-gray-300 dark:border-gray-600 shrink-0" alt="Preview">
+                <div class="overflow-hidden">
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200 block truncate"><i class="fas fa-check-circle text-emerald-500 mr-1"></i> แนบรูปถ่ายแล้ว</span>
+                  <span id="n_img_info" class="text-[10px] text-gray-500 dark:text-gray-400 block truncate"></span>
+                </div>
+              </div>
+              <button type="button" onclick="clearDualImagePreview('n_img', 'n_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition shrink-0">
+                <i class="fas fa-trash-alt mr-1"></i>ลบรูป
+              </button>
             </div>
 
             <div class="flex gap-2"><button onclick="backToScan()" class="w-1/3 bg-gray-500 text-white py-2 rounded-lg font-bold text-sm">กลับ</button><button onclick="saveNewAssetFromScan()" class="w-2/3 bg-blue-600 text-white py-2 rounded-lg font-bold shadow text-sm hover:bg-blue-700 transition"><i class="fas fa-save mr-1"></i> บันทึกข้อมูล</button></div>
@@ -1371,7 +1444,7 @@
         </div>
 
         <!-- VIEW: Add, Profile, Settings, Admin -->
-        <div id="view-add" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-2xl mx-auto"><h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-plus mr-2"></i>ลงทะเบียนพัสดุใหม่</h2><div class="grid grid-cols-2 gap-4 text-sm md:text-base"><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รหัสพัสดุ</label><input type="text" id="a_id" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white font-mono font-bold text-blue-600 focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" placeholder="พิมพ์ตัวเลข..."></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">ลักษณะ/คุณสมบัติ</label><input type="text" id="a_name" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รุ่น/ยี่ห้อ</label><input type="text" id="a_brand" class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">สถานที่ตั้ง</label><input type="text" id="a_loc" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">วันที่ (ที่รับ)</label><input type="text" id="a_date" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">📸 ถ่ายภาพ</label><input type="file" id="a_img" accept="image/*" capture="environment" onchange="previewThumbnail(this, 'a_img_preview')" class="w-full p-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white text-sm"><div id="a_img_preview" class="hidden relative mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-lg border flex items-center justify-between"><img src="" class="h-14 w-14 object-cover rounded shadow" alt="Preview"><button onclick="clearImagePreview('a_img', 'a_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1"><i class="fas fa-trash-alt mr-1"></i>ลบรูป</button></div></div></div><button type="button" onclick="submitAsset()" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-blue-700 transition">บันทึกข้อมูล</button></div></div>
+        <div id="view-add" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-2xl mx-auto"><h2 class="font-bold text-lg md:text-xl mb-4 dark:text-white border-b pb-2"><i class="fas fa-plus mr-2"></i>ลงทะเบียนพัสดุใหม่</h2><div class="grid grid-cols-2 gap-4 text-sm md:text-base"><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รหัสพัสดุ</label><input type="text" id="a_id" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white font-mono font-bold text-blue-600 focus:outline-none focus:border-blue-500" oninput="formatAssetId(event)" placeholder="พิมพ์ตัวเลข..."></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">ลักษณะ/คุณสมบัติ</label><input type="text" id="a_name" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">รุ่น/ยี่ห้อ</label><input type="text" id="a_brand" class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">สถานที่ตั้ง</label><input type="text" id="a_loc" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1 dark:text-gray-300">วันที่ (ที่รับ)</label><input type="text" id="a_date" required class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500"></div><div class="col-span-2 md:col-span-1"><label class="block font-bold mb-1.5 dark:text-gray-300 flex items-center justify-between"><span><i class="fas fa-camera text-blue-500 mr-1"></i> ภาพถ่ายพัสดุ</span><span class="text-[10px] text-gray-500 dark:text-gray-400 font-normal">เลือกถ่ายรูป หรือเลือกจากแกลเลอรี</span></label><div class="grid grid-cols-2 gap-2 mb-2"><button type="button" onclick="triggerPhotoChoice('a_img', 'camera')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-700 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs"><i class="fas fa-camera text-blue-600 dark:text-blue-400"></i><span>ถ่ายภาพ (กล้อง)</span></button><button type="button" onclick="triggerPhotoChoice('a_img', 'gallery')" class="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-purple-700 dark:text-purple-300 rounded-xl border border-purple-200 dark:border-gray-600 text-xs font-bold transition shadow-2xs"><i class="fas fa-images text-purple-600 dark:text-purple-400"></i><span>คลังภาพ (แกลเลอรี)</span></button></div><input type="file" id="a_img_cam" accept="image/*" capture="environment" class="hidden" onchange="handleDualPhotoChange(this, 'a_img', 'a_img_preview')"><input type="file" id="a_img_gal" accept="image/*" class="hidden" onchange="handleDualPhotoChange(this, 'a_img', 'a_img_preview')"><input type="file" id="a_img" accept="image/*" class="hidden"><div id="a_img_preview" class="hidden relative mt-2 bg-gray-50 dark:bg-gray-800/80 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between"><div class="flex items-center gap-2.5 overflow-hidden"><img src="" class="h-14 w-14 object-cover rounded-lg shadow-sm border border-gray-300 dark:border-gray-600 shrink-0" alt="Preview"><div class="overflow-hidden"><span class="text-xs font-bold text-gray-800 dark:text-gray-200 block truncate"><i class="fas fa-check-circle text-emerald-500 mr-1"></i> แนบรูปถ่ายแล้ว</span><span id="a_img_info" class="text-[10px] text-gray-500 dark:text-gray-400 block truncate"></span></div></div><button type="button" onclick="clearDualImagePreview('a_img', 'a_img_preview')" class="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition shrink-0"><i class="fas fa-trash-alt mr-1"></i>ลบรูป</button></div></div></div><button type="button" onclick="submitAsset()" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-blue-700 transition">บันทึกข้อมูล</button></div></div>
         
         <div id="view-profile" class="view hidden"><div class="glass p-6 md:p-8 rounded-xl shadow max-w-md mx-auto text-center"><div class="bg-blue-600 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg text-white mb-4"><i class="fas fa-user-edit text-5xl"></i></div><h2 class="font-bold text-2xl mb-1 dark:text-white">ข้อมูลส่วนตัว</h2><p class="text-blue-600 dark:text-blue-400 font-bold mb-6" id="profile_role">Role</p><div class="text-left bg-white/70 dark:bg-gray-800/70 p-4 rounded-lg border dark:border-gray-700 text-sm mb-6 dark:text-gray-200 space-y-4"><div><label class="block font-bold mb-1 text-gray-600 dark:text-gray-400">Username</label><input type="text" id="prof_username" readonly class="w-full p-2 rounded border bg-gray-200 dark:bg-gray-700 text-gray-500 font-mono"></div><div><label class="block font-bold mb-1">ชื่อ-นามสกุล</label><input type="text" id="prof_name" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div><label class="block font-bold mb-1">อีเมล</label><input type="email" id="prof_email" class="w-full p-2 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500"></div><div class="border-t border-gray-300 dark:border-gray-600 pt-4 mt-2"><label class="block font-bold mb-1 text-red-500"><i class="fas fa-key mr-1"></i>เปลี่ยนรหัสผ่าน</label><div class="relative"><input type="password" id="prof_password" class="w-full p-2 pr-10 rounded border dark:bg-gray-700 bg-white dark:text-white focus:outline-none focus:border-blue-500" placeholder="ปล่อยว่างไว้หากไม่เปลี่ยน"><button type="button" onclick="togglePasswordVisibility('prof_password', this)" class="absolute right-3 top-2.5 text-gray-400 hover:text-blue-600 focus:outline-none"><i class="fas fa-eye"></i></button></div></div></div><button onclick="updateProfile()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition mb-3"><i class="fas fa-save mr-2"></i> บันทึกข้อมูลส่วนตัว</button><a href="https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk" target="_blank" download class="w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow hover:from-emerald-700 transition mb-2"><i class="fab fa-android text-lime-300 text-sm"></i> ดาวน์โหลดแอป Android (.APK)</a><button onclick="installPWA()" type="button" class="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition mb-3"><i class="fas fa-mobile-alt text-blue-500"></i> บันทึกแอปลงหน้าจอมือถือ (Install PWA)</button></div></div>
         
@@ -1599,6 +1672,74 @@
       
       </div>
 
+      <!-- Modal: รายการพัสดุรอซิงค์เข้าฐานข้อมูล (Offline Queue Modal) -->
+      <div id="modal-offline-queue" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 animate-fade-in">
+          
+          <!-- Modal Header -->
+          <div class="px-5 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white flex items-center justify-between shrink-0 shadow">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-xl shadow">
+                <i class="fas fa-cloud-upload-alt text-white"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
+                  <span>พัสดุรอซิงค์เข้าฐานข้อมูล</span>
+                  <span id="offline-modal-badge" class="bg-black/30 text-white text-xs px-2 py-0.5 rounded-full font-mono font-bold">0 รายการ</span>
+                </h3>
+                <p class="text-[11px] text-amber-100">รายการที่สแกน/ตรวจนับไว้ขณะออฟไลน์ รอส่งขึ้น Google Sheets</p>
+              </div>
+            </div>
+            <button type="button" onclick="closeOfflineQueueModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+              <i class="fas fa-times text-base"></i>
+            </button>
+          </div>
+
+          <!-- Network Status Strip -->
+          <div id="offline-modal-network-strip" class="p-3 bg-amber-50 dark:bg-gray-900/60 border-b dark:border-gray-700 flex items-center justify-between text-xs shrink-0">
+            <div class="flex items-center gap-2" id="offline-modal-net-status">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span class="font-bold text-gray-700 dark:text-gray-200">ตรวจสอบสถานะการเชื่อมต่อ...</span>
+            </div>
+            <div class="text-[11px] text-gray-500 dark:text-gray-400">
+              <i class="fas fa-mobile-alt mr-1"></i> ข้อมูลอยู่ในเครื่องนี้
+            </div>
+          </div>
+
+          <!-- Search/Filter inside Modal -->
+          <div class="p-3 bg-gray-50 dark:bg-gray-900/40 border-b dark:border-gray-700 flex items-center gap-2 shrink-0">
+            <div class="relative flex-1">
+              <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+              <input type="text" id="offline-queue-search" oninput="filterOfflineQueueModal(this.value)" placeholder="ค้นหารหัสพัสดุ, ชื่อพัสดุ, สถานที่ในคิว..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <button type="button" onclick="clearAllOfflineQueue()" class="text-xs text-red-600 dark:text-red-400 hover:text-red-700 font-bold px-2.5 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 border border-transparent hover:border-red-200 dark:hover:border-red-800 transition shrink-0 flex items-center gap-1">
+              <i class="fas fa-trash-alt"></i> ล้างคิวทั้งหมด
+            </button>
+          </div>
+
+          <!-- Scrollable Items List Container -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-2.5 divide-y divide-gray-100 dark:divide-gray-700/60" id="offline-queue-items-container">
+            <!-- Items populated dynamically by renderOfflineQueueList() -->
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div class="text-xs text-gray-600 dark:text-gray-400 w-full sm:w-auto text-center sm:text-left">
+              <span class="font-medium">เมื่อมีสัญญาณอินเทอร์เน็ตแล้ว กดปุ่มซิงค์เพื่อส่งข้อมูลขึ้น Google Sheets ทันที</span>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button type="button" onclick="closeOfflineQueueModal()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                ปิดหน้าต่าง
+              </button>
+              <button type="button" id="btn-sync-offline-modal" onclick="syncOfflineData()" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-sync-alt"></i>
+                <span>ซิงค์เข้าฐานข้อมูลทันที</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal: ประวัติการสำรองข้อมูลย้อนหลัง และดาวน์โหลดไฟล์ -->
       <div id="modal-backups" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 animate-fade-in">
@@ -1822,7 +1963,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v6.1';
+    const APP_VERSION = 'v6.2';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -2309,12 +2450,70 @@
     };
 
     // ==========================================
-    // 🖼️ พรีวิวรูปภาพก่อนบันทึก
+    // 🖼️ ระบบเลือกและพรีวิวรูปภาพ (รองรับทั้ง กล้องถ่ายรูป และ แกลเลอรี)
     // ==========================================
+    window.selectedPhotoFiles = {};
+
+    window.triggerPhotoChoice = function(inputId, source) {
+      if (source === 'camera') {
+        const camInput = document.getElementById(inputId + '_cam');
+        if (camInput) camInput.click();
+      } else {
+        const galInput = document.getElementById(inputId + '_gal');
+        if (galInput) galInput.click();
+      }
+    };
+
+    window.handleDualPhotoChange = function(input, targetId, previewId) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        selectedPhotoFiles[targetId] = file;
+
+        // ซิงค์ไฟล์ไปยัง input หลัก (ถ้าเบราว์เซอร์รองรับ DataTransfer)
+        try {
+          const targetInput = document.getElementById(targetId);
+          if (targetInput && window.DataTransfer) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            targetInput.files = dt.files;
+          }
+        } catch(e) {}
+
+        const container = document.getElementById(previewId);
+        if (container) {
+          const img = container.querySelector('img');
+          const info = document.getElementById(targetId + '_info');
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            if (img) img.src = e.target.result;
+            if (info) {
+              const sizeKb = (file.size / 1024).toFixed(1);
+              info.innerText = `${file.name || 'รูปภาพ'} (${sizeKb} KB)`;
+            }
+            container.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    };
+
+    window.clearDualImagePreview = function(targetId, previewId) {
+      delete selectedPhotoFiles[targetId];
+      const camInput = document.getElementById(targetId + '_cam');
+      const galInput = document.getElementById(targetId + '_gal');
+      const mainInput = document.getElementById(targetId);
+      if (camInput) camInput.value = '';
+      if (galInput) galInput.value = '';
+      if (mainInput) mainInput.value = '';
+      const container = document.getElementById(previewId);
+      if (container) container.classList.add('hidden');
+    };
+
     window.previewThumbnail = function(input, previewContainerId) {
       const container = document.getElementById(previewContainerId);
       if (!container) return;
       if (input.files && input.files[0]) {
+        selectedPhotoFiles[input.id] = input.files[0];
         const img = container.querySelector('img');
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -2328,10 +2527,7 @@
     };
 
     window.clearImagePreview = function(inputId, previewContainerId) {
-      const input = document.getElementById(inputId);
-      const container = document.getElementById(previewContainerId);
-      if (input) input.value = '';
-      if (container) container.classList.add('hidden');
+      clearDualImagePreview(inputId, previewContainerId);
     };
 
     // ==========================================
@@ -2395,44 +2591,342 @@
       });
     }
 
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-
-    function updateOnlineStatus() {
-      const statusEl = document.getElementById('online-status');
-      if (navigator.onLine) {
-        statusEl.innerHTML = '<i class="fas fa-wifi text-green-500"></i> ออนไลน์';
-        statusEl.className = "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-green-200 dark:border-green-800";
-        if (offlineQueue.length > 0) syncOfflineData();
-      } else {
-        statusEl.innerHTML = `<i class="fas fa-wifi text-red-500"></i> ออฟไลน์ (รอซิงค์ ${offlineQueue.length})`;
-        statusEl.className = "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-red-200 dark:border-red-800";
+    window.addEventListener('online', () => {
+      updateOnlineStatus();
+      updateOfflineBadge();
+      if (offlineQueue.length > 0) {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: true,
+          confirmButtonText: 'ซิงค์ข้อมูลเดี๋ยวนี้',
+          showCancelButton: true,
+          cancelButtonText: 'ปิด',
+          timer: 8000
+        });
+        Toast.fire({
+          icon: 'info',
+          title: `เชื่อมต่ออินเทอร์เน็ตแล้ว!`,
+          html: `<span class="text-xs">มีพัสดุรอซิงค์ ${offlineQueue.length} รายการ</span>`
+        }).then((result) => {
+          if (result.isConfirmed) {
+            openOfflineQueueModal();
+          }
+        });
       }
-    }
+    });
+    window.addEventListener('offline', () => {
+      updateOnlineStatus();
+      updateOfflineBadge();
+    });
 
-    async function syncOfflineData() {
-      if (offlineQueue.length === 0) return;
-      showLoader(`กำลังซิงค์ข้อมูลออฟไลน์ (${offlineQueue.length} รายการ)...`);
+    window.updateOfflineBadge = function() {
+      const count = offlineQueue.length;
+      
+      // ปุ่มบนหน้าต่างสแกนเนอร์กล้อง
+      const scannerOfflineBtn = document.getElementById('scanner-offline-queue-btn');
+      const scannerOfflineCount = document.getElementById('scanner-offline-count');
+      if (scannerOfflineBtn) {
+        if (count > 0) {
+          scannerOfflineBtn.classList.remove('hidden');
+          if (scannerOfflineCount) scannerOfflineCount.innerText = count;
+        } else {
+          scannerOfflineBtn.classList.add('hidden');
+        }
+      }
+
+      // ป้ายสถานะออนไลน์/ออฟไลน์บนแถบสแกนต่อเนื่อง
+      const scannerOnlineChip = document.getElementById('scanner-online-chip');
+      if (scannerOnlineChip) {
+        if (!navigator.onLine) {
+          scannerOnlineChip.className = "text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 bg-red-950/80 text-red-300 border border-red-700/50";
+          scannerOnlineChip.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span> <span>ออฟไลน์</span>`;
+        } else {
+          scannerOnlineChip.className = "text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 bg-green-950/80 text-green-300 border border-green-700/50";
+          scannerOnlineChip.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> <span>ออนไลน์</span>`;
+        }
+      }
+
+      // แถบแจ้งเตือนในหน้าตรวจนับพัสดุ (view-scan)
+      const banner = document.getElementById('offline-queue-banner');
+      const bannerCount = document.getElementById('offline-banner-count');
+      if (banner) {
+        if (count > 0) {
+          banner.classList.remove('hidden');
+          if (bannerCount) bannerCount.innerText = count;
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+
+      // ป้ายสถานะบน Header เมนูด้านบน
+      updateOnlineStatus();
+    };
+
+    window.updateOnlineStatus = function() {
+      const statusEl = document.getElementById('online-status');
+      if (!statusEl) return;
+      const count = offlineQueue.length;
+
+      if (count > 0) {
+        if (navigator.onLine) {
+          statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt text-amber-500 animate-bounce"></i> รอซิงค์ (${count})`;
+          statusEl.className = "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-amber-300 dark:border-amber-700";
+        } else {
+          statusEl.innerHTML = `<i class="fas fa-wifi text-red-500"></i> ออฟไลน์ (รอซิงค์ ${count})`;
+          statusEl.className = "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-red-200 dark:border-red-800 animate-pulse";
+        }
+      } else {
+        if (navigator.onLine) {
+          statusEl.innerHTML = '<i class="fas fa-wifi text-green-500"></i> ออนไลน์';
+          statusEl.className = "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-green-200 dark:border-green-800";
+        } else {
+          statusEl.innerHTML = '<i class="fas fa-wifi text-red-500"></i> ออฟไลน์';
+          statusEl.className = "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-3 py-1 rounded-full text-xs font-bold shadow-sm cursor-pointer border border-red-200 dark:border-red-800";
+        }
+      }
+    };
+
+    window.openOfflineQueueModal = function() {
+      const modal = document.getElementById('modal-offline-queue');
+      if (modal) {
+        modal.classList.remove('hidden');
+        renderOfflineQueueList();
+      }
+    };
+
+    window.closeOfflineQueueModal = function() {
+      const modal = document.getElementById('modal-offline-queue');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.renderOfflineQueueList = function(filterQuery = '') {
+      const container = document.getElementById('offline-queue-items-container');
+      const badge = document.getElementById('offline-modal-badge');
+      const netStatus = document.getElementById('offline-modal-net-status');
+      const syncBtn = document.getElementById('btn-sync-offline-modal');
+      if (!container) return;
+
+      const count = offlineQueue.length;
+      if (badge) badge.innerText = `${count} รายการ`;
+
+      if (netStatus) {
+        if (navigator.onLine) {
+          netStatus.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span><span class="font-bold text-emerald-700 dark:text-emerald-300">🟢 ออนไลน์ (เชื่อมต่ออินเทอร์เน็ตแล้ว - พร้อมซิงค์)</span>`;
+        } else {
+          netStatus.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span><span class="font-bold text-red-600 dark:text-red-400">🔴 ออฟไลน์ (ยังไม่ได้เชื่อมต่อเน็ต - ข้อมูลถูกเก็บไว้ในเครื่องอย่างปลอดภัย)</span>`;
+        }
+      }
+
+      if (syncBtn) {
+        syncBtn.disabled = (!navigator.onLine || count === 0);
+      }
+
+      if (count === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 px-4">
+            <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-3xl shadow-sm border border-emerald-200 dark:border-emerald-800/50">
+              <i class="fas fa-check-double"></i>
+            </div>
+            <h4 class="font-bold text-gray-800 dark:text-gray-100 text-base">ไม่มีข้อมูลค้างซิงค์</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">
+              ข้อมูลการตรวจนับทั้งหมดถูกบันทึกขึ้นฐานข้อมูล Google Sheets เรียบร้อยแล้ว ข้อมูลหน้าเว็บและโทรศัพท์ตรงกัน 100%
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      const query = (filterQuery || '').toLowerCase().trim();
+      let filtered = offlineQueue.map((item, index) => ({ item, index }));
+      if (query) {
+        filtered = filtered.filter(({ item }) => {
+          const aId = (item.assetId || item.payload?.data?.assetId || '').toLowerCase();
+          const aName = (item.assetName || item.payload?.data?.name || '').toLowerCase();
+          const aLoc = (item.location || item.payload?.data?.newLocation || item.payload?.data?.location || '').toLowerCase();
+          return aId.includes(query) || aName.includes(query) || aLoc.includes(query);
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-gray-500 dark:text-gray-400 text-xs">
+            <i class="fas fa-search mb-1 text-base"></i><br>ไม่พบรายการที่ตรงกับคำค้นหา "${escapeHTML(query)}"
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(({ item, index }) => {
+        const data = item.payload?.data || {};
+        const assetId = item.assetId || data.assetId || '-';
+        let assetName = item.assetName || data.name || '';
+        if (!assetName && globalData && Array.isArray(globalData.assets)) {
+          const match = globalData.assets.find(a => normalizeAssetId(a.AssetID) === normalizeAssetId(assetId));
+          if (match) assetName = match.Name;
+        }
+        const loc = item.location || data.newLocation || data.location || '-';
+        const condition = item.condition || data.condition || 'ปกติ';
+        const hasPhoto = item.hasImage || !!data.imageBase64;
+        const actionText = item.action === 'apiAddAsset' ? 'ลงทะเบียนใหม่' : 'ตรวจนับพัสดุ';
+        const actionBadgeClass = item.action === 'apiAddAsset' 
+          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-purple-200 dark:border-purple-800' 
+          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+
+        let timeStr = '-';
+        if (item.timestamp) {
+          try {
+            const d = new Date(item.timestamp);
+            timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+          } catch(e) {}
+        }
+
+        html += `
+          <div class="pt-2.5 first:pt-0">
+            <div class="p-3 bg-gray-50/90 dark:bg-gray-700/50 hover:bg-white dark:hover:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600/70 shadow-2xs transition">
+              <div class="flex items-start justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[10px] font-mono font-bold bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded">#${index + 1}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${actionBadgeClass}">
+                    ${actionText}
+                  </span>
+                  <span class="font-mono font-bold text-blue-700 dark:text-blue-300 text-xs sm:text-sm">
+                    ${escapeHTML(assetId)}
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400"><i class="far fa-clock mr-0.5"></i>${timeStr}</span>
+                  <button type="button" onclick="removeOfflineQueueItem(${index})" class="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-1 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition" title="ลบรายการนี้ออกจากคิว">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              ${assetName ? `<p class="text-xs font-semibold text-gray-800 dark:text-gray-100 mb-1 truncate">${escapeHTML(assetName)}</p>` : ''}
+
+              <div class="flex flex-wrap items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300">
+                <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-500"></i> ${escapeHTML(loc)}</span>
+                <span class="flex items-center gap-1"><i class="fas fa-clipboard-check text-emerald-500"></i> ${escapeHTML(condition)}</span>
+                ${hasPhoto ? `<span class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"><i class="fas fa-camera"></i> มีรูปภาพ</span>` : ''}
+                ${item.inspector ? `<span class="text-gray-500 dark:text-gray-400 text-[10px]">(${escapeHTML(item.inspector)})</span>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    };
+
+    window.filterOfflineQueueModal = function(val) {
+      renderOfflineQueueList(val);
+    };
+
+    window.removeOfflineQueueItem = async function(index) {
+      if (index < 0 || index >= offlineQueue.length) return;
+      const target = offlineQueue[index];
+      const targetId = target.assetId || target.payload?.data?.assetId || 'พัสดุนี้';
+
+      const ask = await Swal.fire({
+        title: 'ยืนยันลบรายการ?',
+        text: `ต้องการลบรหัส ${targetId} ออกจากคิวรอซิงค์หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบรายการ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ef4444'
+      });
+
+      if (ask.isConfirmed) {
+        offlineQueue.splice(index, 1);
+        localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+        updateOfflineBadge();
+        renderOfflineQueueList(document.getElementById('offline-queue-search')?.value || '');
+        Swal.fire({
+          icon: 'success',
+          title: 'ลบเรียบร้อย',
+          timer: 1200,
+          showConfirmButton: false
+        });
+      }
+    };
+
+    window.clearAllOfflineQueue = async function() {
+      if (offlineQueue.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีรายการในคิว', 'info');
+
+      const ask = await Swal.fire({
+        title: 'ล้างคิวทั้งหมด?',
+        text: `ต้องการล้างรายการรอซิงค์ทั้งหมด ${offlineQueue.length} รายการหรือไม่? (ข้อมูลที่ยังไม่ซิงค์จะหายไป)`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ล้างทั้งหมด',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ef4444'
+      });
+
+      if (ask.isConfirmed) {
+        offlineQueue = [];
+        localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+        updateOfflineBadge();
+        renderOfflineQueueList();
+        Swal.fire({
+          icon: 'success',
+          title: 'ล้างคิวสำเร็จ',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    };
+
+    window.syncOfflineData = async function() {
+      if (offlineQueue.length === 0) {
+        Swal.fire('ไม่มีข้อมูลค้างซิงค์', 'ข้อมูลทั้งหมดซิงค์เข้าสู่ระบบ Google Sheets เรียบร้อยแล้ว', 'info');
+        return;
+      }
+      if (!navigator.onLine) {
+        Swal.fire('ออฟไลน์', 'คุณยังไม่ได้เชื่อมต่ออินเทอร์เน็ต กรุณาเชื่อมต่อ Wi-Fi หรือ Cellular ก่อนทำการซิงค์', 'warning');
+        return;
+      }
+
+      const countToSync = offlineQueue.length;
+      showLoader(`กำลังซิงค์ข้อมูล ${countToSync} รายการเข้าฐานข้อมูล Google Sheets...`);
       try {
         let res = await callAPI('apiSyncOffline', { data: offlineQueue, user: currentUser ? currentUser.username : 'offline' });
         hideLoader();
-        if (res.success) {
-          Swal.fire('ซิงค์สำเร็จ!', res.message, 'success');
+        if (res && res.success !== false) {
           offlineQueue = [];
           localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-          updateOnlineStatus();
-          fetchGlobalData();
+          updateOfflineBadge();
+          renderOfflineQueueList();
+          closeOfflineQueueModal();
+
+          // บังคับดึงข้อมูลสด 100% จาก Google Sheets (ล้าง Server Cache)
+          fetchGlobalData(true);
+
+          Swal.fire({
+            title: 'ซิงค์ข้อมูลสำเร็จ! 🎉',
+            html: `
+              <div class="text-sm space-y-1">
+                <p class="font-bold text-emerald-600">${res.message || 'ซิงค์ข้อมูลเรียบร้อยแล้ว'}</p>
+                <p class="text-xs text-gray-500">ข้อมูลบนโทรศัพท์และหน้าเว็บได้รับการอัปเดตตรงกันแล้ว</p>
+              </div>
+            `,
+            icon: 'success',
+            confirmButtonText: 'ยอดเยี่ยม'
+          });
         } else {
-          Swal.fire('แจ้งเตือนการซิงค์', res.message, 'warning');
+          Swal.fire('แจ้งเตือนการซิงค์', res.message || 'ไม่สามารถซิงค์ข้อมูลได้', 'warning');
         }
       } catch(e) {
         hideLoader();
         console.error("syncOfflineData Error: ", e);
+        Swal.fire('เกิดข้อผิดพลาดในการซิงค์', e.message || 'การเชื่อมต่อขัดข้อง โปรดลองใหม่อีกครั้ง', 'error');
       }
-    }
+    };
     
     window.forceSyncOffline = function() {
-      if (navigator.onLine && offlineQueue.length > 0) syncOfflineData();
+      openOfflineQueueModal();
     };
 
     async function callAPI(action, payload = {}) {
@@ -2496,6 +2990,7 @@
         fetchGlobalData(false);
       }
       document.getElementById('qr-fallback-input').addEventListener('change', handleFallbackScan);
+      updateOfflineBadge();
       updateOnlineStatus(); 
     };
 
@@ -6218,6 +6713,9 @@
         if (countEl) countEl.innerText = continuousScanSessionCount;
 
         const noteText = isAlreadyDone ? 'ตรวจนับซ้ำ (Auto-Count)' : 'สแกนด่วนต่อเนื่อง (Auto-Count)';
+        const offlineToastNote = !navigator.onLine 
+          ? `<div class="text-[10px] text-amber-300 font-bold mt-0.5 flex items-center justify-center gap-1"><i class="fas fa-cloud-upload-alt"></i> บันทึกออฟไลน์ (รอซิงค์ ${offlineQueue.length + 1} ชิ้น)</div>` 
+          : '';
         showScannerToast('success', `
           <div class="flex items-center justify-center gap-1.5 mb-0.5">
             <span class="text-yellow-300">⚡</span>
@@ -6226,6 +6724,7 @@
           </div>
           <div class="text-[11px] font-normal truncate max-w-xs mx-auto text-emerald-100">${escapeHTML(normAsset.Name || 'ไม่ระบุชื่อ')}</div>
           <div class="text-[10px] text-emerald-200 mt-0.5">สภาพ: ปกติ ${isAlreadyDone ? '(อัปเดตรอบนี้แล้ว)' : ''}</div>
+          ${offlineToastNote}
         `);
 
         // ส่งข้อมูลบันทึกลงเซิร์ฟเวอร์ใน Background
@@ -6238,17 +6737,38 @@
           newLocation: currentLoc || normAsset.Location || '-'
         };
 
+        const queueItem = {
+          action: 'apiAddInspection',
+          assetId: normAsset.AssetID,
+          assetName: normAsset.Name || '',
+          condition: '1. ตรวจนับ (ปกติ)',
+          location: currentLoc || normAsset.Location || '-',
+          note: noteText,
+          inspector: inspectorName,
+          hasImage: false,
+          payload: { data: inspectPayload, user: inspectorName },
+          timestamp: inspectTime.toISOString()
+        };
+
         if (!navigator.onLine) {
-          offlineQueue.push({ action: 'apiAddInspection', payload: { data: inspectPayload, user: inspectorName }, timestamp: inspectTime.toISOString() });
+          offlineQueue.push(queueItem);
           localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+          try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
           updateOfflineBadge();
         } else {
           callAPI('apiAddInspection', { data: inspectPayload, user: inspectorName }).then(res => {
-            if (!res.success) console.warn('Continuous inspect error:', res.message);
+            if (!res.success) {
+              console.warn('Continuous inspect error:', res.message);
+              offlineQueue.push(queueItem);
+              localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+              try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
+              updateOfflineBadge();
+            }
           }).catch(err => {
             console.warn('Continuous inspect network error:', err);
-            offlineQueue.push({ action: 'apiAddInspection', payload: { data: inspectPayload, user: inspectorName }, timestamp: inspectTime.toISOString() });
+            offlineQueue.push(queueItem);
             localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+            try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
             updateOfflineBadge();
           });
         }
@@ -7170,10 +7690,53 @@
     window.executeGasSubmit = async function(actionFunc, dataObj) {
       if (!navigator.onLine) {
         try {
-          offlineQueue.push({ action: actionFunc, payload: { data: dataObj, user: currentUser.username } });
+          const assetObj = (globalData && Array.isArray(globalData.assets)) 
+            ? globalData.assets.find(x => normalizeAssetId(x.AssetID) === normalizeAssetId(dataObj.assetId)) 
+            : null;
+          const currentRound = (globalData.settings && globalData.settings.round) || '';
+          
+          offlineQueue.push({
+            action: actionFunc,
+            assetId: dataObj.assetId || '-',
+            assetName: dataObj.name || (assetObj ? assetObj.Name : '') || '-',
+            condition: dataObj.condition || '-',
+            location: dataObj.newLocation || dataObj.location || (assetObj ? assetObj.Location : '') || '-',
+            note: dataObj.note || '',
+            inspector: currentUser ? (currentUser.name || currentUser.username) : 'จนท.',
+            hasImage: !!dataObj.imageBase64,
+            payload: { data: dataObj, user: currentUser ? currentUser.username : 'offline' },
+            timestamp: new Date().toISOString()
+          });
           localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-          Swal.fire('โหมดออฟไลน์', 'ข้อมูลถูกบันทึกไว้ในเครื่องเรียบร้อยแล้ว ระบบจะซิงค์ให้อัตโนมัติเมื่อต่ออินเทอร์เน็ต', 'info');
-          updateOnlineStatus();
+
+          // อัปเดตข้อมูลในหน่วยความจำและ LocalStorage ทันที เพื่อให้หน้าจอแสดงผลตรวจนับสำเร็จ
+          if (actionFunc === 'apiAddInspection' && assetObj) {
+            assetObj.Status = (dataObj.condition || 'ปกติ').replace(/^[0-9]+\.\s*/, '').trim();
+            assetObj.InspectRound = currentRound;
+            assetObj.Inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
+            assetObj.InspectDate = dataObj.inspectDate || getTodayThaiDate();
+            if (dataObj.newLocation && dataObj.newLocation !== '-') {
+              assetObj.Location = dataObj.newLocation;
+            }
+          }
+          try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
+          renderAllViews();
+
+          Swal.fire({
+            title: 'บันทึกออฟไลน์เรียบร้อย 💾',
+            html: `
+              <div class="text-sm space-y-2">
+                <p class="font-bold text-gray-700 dark:text-gray-200">ข้อมูลถูกบันทึกไว้ในโทรศัพท์เครื่องนี้เรียบร้อยแล้ว</p>
+                <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs">
+                  <i class="fas fa-cloud-upload-alt text-amber-500 mr-1"></i> มีพัสดุรอซิงค์เข้าฐานข้อมูล <b>${offlineQueue.length}</b> รายการ
+                </div>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">เมื่อต่ออินเทอร์เน็ตแล้ว แตะปุ่ม "รอซิงค์" ด้านบนเพื่อส่งข้อมูลขึ้น Google Sheets</p>
+              </div>
+            `,
+            icon: 'info',
+            confirmButtonText: 'ตกลง'
+          });
+          updateOfflineBadge();
           backToScan();
           hideLoader();
           return;
@@ -7189,7 +7752,7 @@
         hideLoader();
         if (res.success) {
           Swal.fire('สำเร็จ', res.message || 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
-          fetchGlobalData();
+          fetchGlobalData(true);
           backToScan();
         } else {
           Swal.fire('ล้มเหลว', res.message, 'error');
@@ -7254,10 +7817,11 @@
       };
       showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
-        if (fileInput.files.length > 0) {
+        const fileToUpload = selectedPhotoFiles['f_img'] || (fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
+        if (fileToUpload) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
           const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} | ผู้ตรวจ: ${inspector} | ${getAppOrgName()}`;
-          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
+          data.imageBase64 = await compressImage(fileToUpload, 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddInspection', data);
       } catch(err) {
@@ -7280,10 +7844,11 @@
       if (!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
       showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
-        if (fileInput.files.length > 0) {
+        const fileToUpload = selectedPhotoFiles['n_img'] || (fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
+        if (fileToUpload) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
           const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ${getAppOrgName()}`;
-          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
+          data.imageBase64 = await compressImage(fileToUpload, 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
       } catch(err) {
@@ -7306,10 +7871,11 @@
       if (!data.assetId || !data.name) return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
       showLoader('กำลังประมวลผลรูปภาพและประทับลายน้ำ...');
       try {
-        if (fileInput && fileInput.files.length > 0) {
+        const fileToUpload = selectedPhotoFiles['a_img'] || (fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null);
+        if (fileToUpload) {
           const inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
           const watermark = `รหัส: ${data.assetId} | ${new Date().toLocaleDateString('th-TH')} | ผู้ลงทะเบียน: ${inspector} | ${getAppOrgName()}`;
-          data.imageBase64 = await compressImage(fileInput.files[0], 1280, 0.75, watermark);
+          data.imageBase64 = await compressImage(fileToUpload, 1280, 0.75, watermark);
         }
         submitDataToGas('apiAddAsset', data);
       } catch(err) {
