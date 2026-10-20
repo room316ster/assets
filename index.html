@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v5.8 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v6.1 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -1822,7 +1822,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v6.0';
+    const APP_VERSION = 'v6.1';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -6460,8 +6460,12 @@
 
       // สร้าง constraints สำหรับกล้อง: บังคับกล้องหลัง (environment) เป็นค่าเริ่มต้น
       let constraints = { video: {} };
-      if (videoInputDevices.length > 0 && currentDeviceIndex >= 0 && videoInputDevices[currentDeviceIndex]) {
-        constraints.video = { deviceId: { exact: videoInputDevices[currentDeviceIndex].deviceId } };
+      if (videoInputDevices.length > 0 && currentDeviceIndex >= 0 && videoInputDevices[currentDeviceIndex] && videoInputDevices[currentDeviceIndex].deviceId) {
+        constraints.video = { 
+          deviceId: { ideal: videoInputDevices[currentDeviceIndex].deviceId },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
       } else {
         // บังคับกล้องหลังก่อนเสมอ (facingMode: "environment")
         constraints.video = {
@@ -6471,25 +6475,7 @@
         };
       }
 
-      const reader = initCodeReader();
-      
-      // วิธีที่ 1: สแกนผ่าน ZXing
-      if (reader) {
-        reader.decodeFromConstraints(constraints, 'reader-video', (result, err) => {
-          if (result && result.text) {
-            handleScanSuccess(result.text);
-          }
-        }).then(() => {
-          inspectVideoTrack();
-          updateCameraDevices();
-        }).catch(err => {
-          console.warn("ZXing constraints decode failed, switching to native camera stream:", err);
-          startNativeCameraStream(constraints);
-        });
-      } else {
-        // วิธีที่ 2: หากโหลด ZXing ไม่ได้ ให้ใช้ Native BarcodeDetector ร่วมกับ getUserMedia
-        startNativeCameraStream(constraints);
-      }
+      startCameraAndScanner(constraints);
     };
 
     function inspectVideoTrack() {
@@ -6507,66 +6493,236 @@
       }
     }
 
-    function startNativeCameraStream(constraints) {
+    // ⚡ ระบบเปิดกล้องอัจฉริยะแบบ Adaptive Multi-tier Fallback (รองรับ Vivo, Xiaomi, Oppo, Samsung ทุกรุ่น)
+    async function openCameraStreamWithFallback(preferredConstraints) {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        handleCameraUnavailable('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้องสด (เช่น LINE in-app browser) สามารถใช้การถ่ายรูปแทนได้');
-        return;
+        throw new Error('เบราว์เซอร์นี้ไม่รองรับการเปิดกล้องสด (getUserMedia) เช่น LINE Browser สามารถใช้การถ่ายรูปแทนได้');
       }
 
-      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-        activeMediaStream = stream;
-        const videoElem = document.getElementById('reader-video');
-        if (videoElem) {
-          videoElem.srcObject = stream;
-          videoElem.setAttribute('playsinline', 'true');
-          videoElem.play().catch(e => console.warn(e));
-          inspectVideoTrack();
-          updateCameraDevices();
+      // ปิด MediaStream เดิมที่อาจเปิดค้างไว้ เพื่อปลดล็อกฮาร์ดแวร์กล้อง
+      if (activeMediaStream) {
+        try {
+          activeMediaStream.getTracks().forEach(t => t.stop());
+        } catch(e) {}
+        activeMediaStream = null;
+      }
 
-          // วนลูปสแกนด้วย BarcodeDetector
-          if (nativeBarcodeDetector) {
-            const scanLoop = async () => {
-              if (!activeMediaStream) return;
-              if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA) {
-                try {
-                  const barcodes = await nativeBarcodeDetector.detect(videoElem);
-                  if (barcodes.length > 0 && barcodes[0].rawValue) {
-                    handleScanSuccess(barcodes[0].rawValue);
-                    if (!isContinuousScanMode || currentScannerMode !== 'inspect') {
-                      return;
-                    }
-                  }
-                } catch(e) {}
-              }
-              nativeScanRafId = requestAnimationFrame(scanLoop);
-            };
-            nativeScanRafId = requestAnimationFrame(scanLoop);
+      // ลำดับการทดสอบ constraints จากเฉพาะเจาะจง -> กว้างที่สุด
+      const attempts = [
+        preferredConstraints,
+        { video: { facingMode: { ideal: currentFacingMode || 'environment' } } },
+        { video: { facingMode: currentFacingMode || 'environment' } },
+        { video: true }
+      ];
+
+      let lastError = null;
+      for (let i = 0; i < attempts.length; i++) {
+        const c = attempts[i];
+        if (!c) continue;
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(c);
+          if (stream) return stream;
+        } catch(err) {
+          lastError = err;
+          console.warn(`Camera attempt ${i + 1} (${err.name}):`, err.message);
+          // หากเป็นข้อผิดพลาดเรื่องสิทธิ์ (NotAllowedError / SecurityError) แสดงว่าถูกบล็อก ไม่ต้องลอง fallback อื่นต่อ
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError') {
+            throw err;
           }
         }
-      }).catch(err => {
-        console.error("Camera access error:", err);
-        handleCameraUnavailable('ไม่สามารถเปิดกล้องได้ หรือถูกปฏิเสธการเข้าถึง');
-      });
+      }
+      throw lastError || new Error('ไม่สามารถเปิดสัญญาณกล้องได้');
     }
 
-    function handleCameraUnavailable(message) {
+    async function startCameraAndScanner(constraints) {
+      try {
+        const stream = await openCameraStreamWithFallback(constraints);
+        activeMediaStream = stream;
+        const videoElem = document.getElementById('reader-video');
+        if (!videoElem) return;
+
+        videoElem.srcObject = stream;
+        videoElem.setAttribute('playsinline', 'true');
+        await videoElem.play().catch(e => console.warn("Video play note:", e));
+        inspectVideoTrack();
+        updateCameraDevices();
+
+        // 1. ถ้ารองรับ BarcodeDetector แบบเนทีฟ (Chrome บน Android) ให้ใช้ตัวนี้ เร็วและลื่นที่สุด
+        if (nativeBarcodeDetector) {
+          const scanLoop = async () => {
+            if (!activeMediaStream) return;
+            if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA) {
+              try {
+                const barcodes = await nativeBarcodeDetector.detect(videoElem);
+                if (barcodes.length > 0 && barcodes[0].rawValue) {
+                  handleScanSuccess(barcodes[0].rawValue);
+                  if (!isContinuousScanMode || currentScannerMode !== 'inspect') {
+                    return;
+                  }
+                }
+              } catch(e) {}
+            }
+            nativeScanRafId = requestAnimationFrame(scanLoop);
+          };
+          nativeScanRafId = requestAnimationFrame(scanLoop);
+        } else {
+          // 2. ถ้าไม่มี BarcodeDetector ให้ใช้ ZXing ถอดรหัสจาก video element ที่เล่นอยู่
+          const reader = initCodeReader();
+          if (reader) {
+            reader.decodeFromVideoElement(videoElem, (result, err) => {
+              if (result && result.text) {
+                handleScanSuccess(result.text);
+              }
+            });
+          }
+        }
+      } catch(err) {
+        console.error("Camera access error:", err);
+        handleCameraUnavailable(err);
+      }
+    }
+
+    function handleCameraUnavailable(err) {
       const readerContainer = document.getElementById('reader-container');
       if (readerContainer) readerContainer.classList.add('hidden');
       document.body.style.overflow = '';
+
+      const errName = err ? (err.name || '') : '';
+      const errMsg = err ? (err.message || err.toString()) : '';
+      
+      const isPermissionDenied = errName === 'NotAllowedError' || 
+                                 errName === 'PermissionDeniedError' || 
+                                 errName === 'SecurityError' ||
+                                 errMsg.includes('Permission denied') || 
+                                 errMsg.includes('NotAllowedError');
+      const isCameraInUse = errName === 'NotReadableError' || 
+                            errName === 'TrackStartError' || 
+                            errMsg.includes('Could not start video source');
+
+      let title = 'กล้องเปิดไม่สำเร็จ';
+      let icon = 'warning';
+      let htmlContent = '';
+
+      if (isPermissionDenied) {
+        title = 'สิทธิ์เข้าถึงกล้องถูกปฏิเสธ';
+        htmlContent = `
+          <div class="text-left text-xs space-y-2 mt-2">
+            <div class="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300">
+              <p class="font-bold mb-1 flex items-center gap-1.5"><i class="fas fa-ban"></i> เบราว์เซอร์หรือเครื่อง Vivo ปฏิเสธการเข้าถึงกล้อง</p>
+              <p class="text-[11px] leading-relaxed">เกิดจากเบราว์เซอร์ Chrome หรือระบบความปลอดภัยของมือถือ Vivo ตั้งค่าไม่อนุญาตให้ใช้กล้อง</p>
+            </div>
+            
+            <div class="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 space-y-1.5">
+              <p class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1"><i class="fas fa-wrench"></i> วิธีแก้ไขด่วนบน Vivo / Chrome:</p>
+              <p><b>1. ใน Google Chrome:</b> แตะไอคอน <b>แม่กุญแจ 🔒</b> หรือการตั้งค่าข้างชื่อเว็บด้านบน > เลือก <b>สิทธิ์ (Permissions)</b> > เลือก <b>กล้อง (Camera)</b> > กด <b>"อนุญาต" (Allow)</b></p>
+              <p><b>2. ในเครื่อง Vivo:</b> ไปที่ <b>การตั้งค่า</b> > <b>แอป</b> > <b>Chrome / AssetPro</b> > <b>สิทธิ์</b> > <b>กล้องถ่ายรูป</b> > เลือก <b>"อนุญาตขณะใช้แอป"</b></p>
+            </div>
+
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 text-center pt-0.5">
+              💡 <b>ระหว่างนี้:</b> สามารถกดปุ่ม <b>"ถ่ายรูปสแกนแทน"</b> เพื่อสแกนบาร์โค้ดได้ทันที!
+            </p>
+          </div>
+        `;
+      } else if (isCameraInUse) {
+        title = 'กล้องกำลังถูกใช้งานอยู่';
+        htmlContent = `
+          <div class="text-left text-xs space-y-2 mt-2">
+            <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+              <p class="font-bold mb-1 flex items-center gap-1"><i class="fas fa-video-slash"></i> มีแอปอื่นกำลังเปิดใช้งานกล้องในเครื่อง Vivo</p>
+              <p class="text-[11px]">กรุณากดสลับแอป แล้วปิดแอปกล้องถ่ายรูป หรือแอปอื่นที่กำลังใช้กล้องค้างอยู่ แล้วลองใหม่อีกครั้ง</p>
+            </div>
+          </div>
+        `;
+      } else {
+        htmlContent = `
+          <div class="text-left text-xs space-y-2 mt-2">
+            <p class="text-gray-600 dark:text-gray-300">${typeof err === 'string' ? err : (errMsg || 'ไม่สามารถเปิดกล้องสดได้ หรือถูกปฏิเสธการเข้าถึง')}</p>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">คุณสามารถถ่ายรูปสแกนแทน หรือพิมพ์รหัสด้วยตนเองได้ทันที</p>
+          </div>
+        `;
+      }
+
       Swal.fire({
-        title: 'กล้องเปิดไม่สำเร็จ',
-        text: (message || 'กล้องถูกบล็อก') + ' คุณต้องการถ่ายรูปสแกนแทนหรือไม่?',
-        icon: 'warning',
+        title: title,
+        html: htmlContent,
+        icon: icon,
         showCancelButton: true,
-        confirmButtonText: 'ถ่ายรูปสแกน',
-        cancelButtonText: 'พิมพ์รหัสเอง'
+        showDenyButton: true,
+        confirmButtonText: '<i class="fas fa-camera mr-1"></i> ถ่ายรูปสแกนแทน',
+        denyButtonText: '<i class="fas fa-book-open mr-1"></i> ดูวิธีตั้งค่า Vivo',
+        cancelButtonText: '<i class="fas fa-keyboard mr-1"></i> พิมพ์รหัสเอง',
+        confirmButtonColor: '#7c3aed',
+        denyButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b'
       }).then((res) => {
         if (res.isConfirmed) {
           const fallbackInput = document.getElementById('qr-fallback-input');
           if (fallbackInput) fallbackInput.click();
+        } else if (res.isDenied) {
+          showVivoCameraPermissionGuide();
         }
       });
     }
+
+    // 📱 คู่มือแนะนำวิธีเปิดสิทธิ์กล้องบนมือถือ Vivo และ Google Chrome
+    window.showVivoCameraPermissionGuide = function() {
+      Swal.fire({
+        title: '📱 วิธีเปิดสิทธิ์กล้องสำหรับเครื่อง Vivo',
+        html: `
+          <div class="text-left text-xs space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+            
+            <!-- ส่วนที่ 1: วิธีใน Google Chrome (เร็วที่สุด) -->
+            <div class="p-3 bg-blue-50 dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-gray-700 space-y-1.5">
+              <div class="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5 text-sm">
+                <i class="fab fa-chrome text-base"></i> วิธีที่ 1: แก้ไขใน Google Chrome (ตรงช่องเว็บ)
+              </div>
+              <ol class="list-decimal pl-4 space-y-1 text-gray-700 dark:text-gray-300">
+                <li>มองไปที่แถบที่อยู่ด้านบนสุด ตรงซ้ายมือของชื่อเว็บ <code>room316ster.github.io</code></li>
+                <li>แตะที่ไอคอน <b>แม่กุญแจ 🔒</b> หรือไอคอน <b>การตั้งค่าหน้าเว็บ ⚙️</b></li>
+                <li>แตะเมนู <b>"สิทธิ์" (Permissions)</b> หรือ <b>"การตั้งค่าไซต์"</b></li>
+                <li>หาคำว่า <b>"กล้อง" (Camera)</b> แล้วแตะเปลี่ยนเป็น <b>"อนุญาต" (Allow)</b></li>
+                <li>กากบาทปิด แล้วกด <b>รีเฟรชหน้าเว็บ (Refresh) 1 ครั้ง</b> แล้วลองกดปุ่มสแกนใหม่</li>
+              </ol>
+            </div>
+
+            <!-- ส่วนที่ 2: วิธีในการตั้งค่าเครื่อง Vivo (Funtouch OS) -->
+            <div class="p-3 bg-indigo-50 dark:bg-gray-800 rounded-xl border border-indigo-200 dark:border-gray-700 space-y-1.5">
+              <div class="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 text-sm">
+                <i class="fas fa-mobile-screen-button text-base"></i> วิธีที่ 2: แก้ในการตั้งค่าเครื่อง Vivo
+              </div>
+              <ol class="list-decimal pl-4 space-y-1 text-gray-700 dark:text-gray-300">
+                <li>เปิด <b>การตั้งค่า (Settings)</b> ของมือถือ Vivo</li>
+                <li>เข้าไปที่ <b>"แอปและการแจ้งเตือน" (Apps & Permissions)</b> > <b>"การจัดการแอป"</b></li>
+                <li>ค้นหาและเลือกแอป <b>"Chrome"</b> (หรือแอป <b>"AssetPro"</b> ถ้าเปิดผ่าน APK)</li>
+                <li>แตะที่ <b>"สิทธิ์" (Permissions)</b> > แตะที่ <b>"กล้องถ่ายรูป" (Camera)</b></li>
+                <li>เลือกเปลี่ยนเป็น <b>"อนุญาตขณะใช้แอปเท่านั้น" (Allow only while using the app)</b></li>
+              </ol>
+            </div>
+
+            <!-- ส่วนที่ 3: แอป iManager ของ Vivo -->
+            <div class="p-3 bg-amber-50 dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-gray-700 space-y-1.5">
+              <div class="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 text-sm">
+                <i class="fas fa-shield-alt text-base"></i> วิธีที่ 3: ตรวจสอบแอป iManager (เฉพาะ Vivo)
+              </div>
+              <p class="text-gray-700 dark:text-gray-300">
+                เปิดแอปสีฟ้า <b>"iManager" (ตัวจัดการระบบ)</b> ในเครื่อง Vivo > เลือก <b>"การจัดการสิทธิ์"</b> > <b>"การจัดการสิทธิ์ของแอป"</b> > <b>"กล้องถ่ายรูป"</b> > ตรวจสอบว่า Chrome / AssetPro ได้รับการอนุญาตแล้ว
+              </p>
+            </div>
+
+            <!-- คำแนะนำเรื่อง PWA vs APK -->
+            <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+              <p class="font-bold mb-1"><i class="fas fa-lightbulb mr-1 text-yellow-500"></i> แนะนำเพิ่มเติมสำหรับ Android:</p>
+              <p class="text-[11px] leading-relaxed">
+                การใช้งานผ่าน <b>Google Chrome</b> หรือกดปุ่ม <b>"ติดตั้งแอป (PWA)"</b> ลงหน้าจอมือถือ จะรองรับกล้องได้สมบูรณ์และเสถียรกว่าตัว APK แบบเดิมมาก ไม่ติดปัญหาการบล็อกกล้องของระบบ
+              </p>
+            </div>
+
+          </div>
+        `,
+        confirmButtonText: 'เข้าใจแล้ว',
+        confirmButtonColor: '#2563eb'
+      });
+    };
 
     window.switchCamera = function() {
       if (videoInputDevices.length > 1) {
