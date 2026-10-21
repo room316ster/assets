@@ -7767,12 +7767,13 @@
     };
 
     window.executeGasSubmit = async function(actionFunc, dataObj) {
+      const assetObj = (globalData && Array.isArray(globalData.assets)) 
+        ? globalData.assets.find(x => normalizeAssetId(x.AssetID) === normalizeAssetId(dataObj.assetId)) 
+        : null;
+      const currentRound = (globalData && globalData.settings && globalData.settings.round) || '';
+
       if (!navigator.onLine) {
         try {
-          const assetObj = (globalData && Array.isArray(globalData.assets)) 
-            ? globalData.assets.find(x => normalizeAssetId(x.AssetID) === normalizeAssetId(dataObj.assetId)) 
-            : null;
-          const currentRound = (globalData.settings && globalData.settings.round) || '';
           
           offlineQueue.push({
             action: actionFunc,
