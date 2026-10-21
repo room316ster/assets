@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v6.3 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v6.5 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,6 +27,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';document.head.appendChild(s);"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.10.8/sweetalert2.all.min.js';document.head.appendChild(s);"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';document.head.appendChild(s);"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js';document.head.appendChild(s);"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
 
   <!-- Universal Polyfill & Failsafe Fallbacks for Mobile Browsers -->
@@ -1963,7 +1964,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v6.3';
+    const APP_VERSION = 'v6.5';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -6617,30 +6618,111 @@
 
     // ==========================================
     // 📷 ระบบสแกนอเนกประสงค์รองรับทุกอุปกรณ์ (Universal Barcode/QR Scanner)
-    // รองรับ: Native BarcodeDetector (เร็วสูงสุด ไม่พึ่ง library), ZXing (ทุกแพลตฟอร์ม), และ Photo Fallback
+    // รองรับ: Multi-Engine (ZXing + Native BarcodeDetector + jsQR) และ Photo Fallback
     // ==========================================
     let nativeBarcodeDetector = null;
     let nativeScanRafId = null;
     let activeMediaStream = null;
+    let isScannerBusy = false;
+    let isScanHandled = false;
 
-    if ('BarcodeDetector' in window) {
-      try {
-        nativeBarcodeDetector = new BarcodeDetector({
-          formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'data_matrix']
-        });
-      } catch(e) {
-        console.warn("BarcodeDetector formats note:", e);
+    // ระบบฟอกรหัสที่สแกนได้ให้อยู่ในรูป Asset ID แท้จริงเสมอ
+    // รองรับ QR Code ที่มี URL (เช่น https://.../?id=7440-001-0001), JSON, หรือคำนำหน้า
+    function cleanScannedCode(raw) {
+      if (!raw) return '';
+      let str = raw.toString().trim();
+
+      // 1. ตรวจสอบรูปแบบ JSON เช่น {"assetId": "..."}
+      if (str.startsWith('{') && str.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(str);
+          const val = parsed.assetId || parsed.AssetID || parsed.id || parsed.code || parsed.barcode;
+          if (val) return val.toString().trim();
+        } catch(e) {}
+      }
+
+      // 2. ตรวจสอบรูปแบบ URL เช่น https://.../?assetId=... หรือ hash หรือ path segment
+      if (str.startsWith('http://') || str.startsWith('https://')) {
+        try {
+          const url = new URL(str);
+          const q = url.searchParams.get('assetId') || url.searchParams.get('AssetID') || 
+                    url.searchParams.get('id') || url.searchParams.get('code') || 
+                    url.searchParams.get('barcode') || url.searchParams.get('asset') || 
+                    url.searchParams.get('q');
+          if (q) return q.trim();
+
+          if (url.hash && url.hash.length > 1) {
+            const h = decodeURIComponent(url.hash.substring(1)).trim();
+            if (h) return h;
+          }
+
+          const segs = url.pathname.split('/').filter(Boolean);
+          if (segs.length > 0) {
+            const last = decodeURIComponent(segs[segs.length - 1]).trim();
+            if (/\d/.test(last)) return last;
+          }
+        } catch(e) {}
+      }
+
+      // 3. ตรวจสอบคำนำหน้าข้อความ เช่น "รหัสครุภัณฑ์: 7440-001-0001/67"
+      const prefixMatch = str.match(/(?:รหัสครุภัณฑ์|รหัสพัสดุ|รหัส|asset\s*id|barcode|code|id)\s*[:=]\s*([^\r\n]+)/i);
+      if (prefixMatch && prefixMatch[1]) {
+        return prefixMatch[1].trim();
+      }
+
+      return str;
+    }
+
+    // กำหนดค่า BarcodeDetector อย่างปลอดภัยตามฟอร์แมตที่เบราว์เซอร์นั้นๆ รองรับจริง
+    async function initNativeBarcodeDetector() {
+      if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+        try {
+          if (typeof BarcodeDetector.getSupportedFormats === 'function') {
+            const supported = await BarcodeDetector.getSupportedFormats();
+            const preferred = ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'data_matrix'];
+            const available = preferred.filter(f => supported.includes(f));
+            if (available.length > 0) {
+              nativeBarcodeDetector = new BarcodeDetector({ formats: available });
+            }
+          } else {
+            nativeBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+          }
+        } catch(e) {
+          try {
+            nativeBarcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+          } catch(e2) {
+            console.warn("BarcodeDetector fallback note:", e2);
+          }
+        }
       }
     }
+    initNativeBarcodeDetector();
 
     function initCodeReader() {
       if (codeReader) return codeReader;
       if (typeof ZXing !== 'undefined') {
         try {
-          codeReader = new ZXing.BrowserMultiFormatReader();
+          const hints = new Map();
+          if (ZXing.DecodeHintType && ZXing.BarcodeFormat) {
+            hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+              ZXing.BarcodeFormat.QR_CODE,
+              ZXing.BarcodeFormat.CODE_128,
+              ZXing.BarcodeFormat.CODE_39,
+              ZXing.BarcodeFormat.EAN_13,
+              ZXing.BarcodeFormat.EAN_8,
+              ZXing.BarcodeFormat.DATA_MATRIX
+            ]);
+            hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+          }
+          codeReader = new ZXing.BrowserMultiFormatReader(hints);
           return codeReader;
         } catch(e) {
-          console.warn("ZXing Init note:", e);
+          try {
+            codeReader = new ZXing.BrowserMultiFormatReader();
+            return codeReader;
+          } catch(e2) {
+            console.warn("ZXing Init note:", e2);
+          }
         }
       }
       return null;
@@ -6740,9 +6822,22 @@
     function handleScanSuccess(codeText) {
       if (!codeText) return;
       
+      const rawCode = codeText.toString().trim();
+      const cleanedCode = cleanScannedCode(rawCode);
+      const codeToUse = cleanedCode || rawCode;
+      const normCode = normalizeAssetId(codeToUse);
+      const normRaw = normalizeAssetId(rawCode);
+
+      // ค้นหาข้อมูลพัสดุในระบบ (รองรับทั้งแบบ Cleaned, Raw, Normalized)
+      const normAsset = (globalData.assets || []).find(a => normalizeAssetId(a.AssetID) === normCode)
+        || (globalData.assets || []).find(a => (a.AssetID || '').trim() === codeToUse)
+        || (globalData.assets || []).find(a => normalizeAssetId(a.AssetID) === normRaw)
+        || (globalData.assets || []).find(a => (a.AssetID || '').trim() === rawCode);
+
+      const finalAssetId = normAsset ? normAsset.AssetID : codeToUse;
+
       // ⚡ กรณีเปิดโหมดสแกนต่อเนื่อง (Continuous / Batch Scan)
       if (currentScannerMode === 'inspect' && isContinuousScanMode) {
-        const normCode = normalizeAssetId(codeText.trim());
         const now = Date.now();
         
         // Cooldown 3 วินาที สำหรับรหัสเดิมเพื่อป้องกันการบันทึกซ้ำซ้อนขณะกล้องยังเล็งอยู่
@@ -6751,14 +6846,12 @@
         }
 
         const currentRound = (globalData.settings && globalData.settings.round) || '';
-        const normAsset = (globalData.assets || []).find(a => normalizeAssetId(a.AssetID) === normCode)
-          || (globalData.assets || []).find(a => (a.AssetID || '').trim() === codeText.trim());
 
         if (!normAsset) {
           playScanBeep();
           lastContinuousScanCode = normCode;
           lastContinuousScanTime = now;
-          showScannerToast('warn', `<i class="fas fa-exclamation-triangle mr-1"></i> ไม่พบรหัส <code>${escapeHTML(codeText)}</code> ในฐานข้อมูลพัสดุ`);
+          showScannerToast('warn', `<i class="fas fa-exclamation-triangle mr-1"></i> ไม่พบรหัส <code>${escapeHTML(codeToUse)}</code> ในฐานข้อมูลพัสดุ`);
           return;
         }
 
@@ -6858,16 +6951,19 @@
         return; // ไม่ปิดกล้อง! ให้กล้องทำงานสแกนชิ้นต่อไปได้ทันที
       }
 
-      // โหมดปกติ (ปิดกล้องและเปิดหน้าจอตรวจนับ)
+      // โหมดปกติ (ป้องกันการประมวลผลซ้ำซ้อน)
+      if (isScanHandled) return;
+      isScanHandled = true;
+
       playScanBeep();
       if (currentScannerMode === 'inspect') {
         const sInput = document.getElementById('s_barcode');
-        if (sInput) sInput.value = codeText;
+        if (sInput) sInput.value = finalAssetId;
         stopScanner();
         searchAsset();
       } else {
         const bInput = document.getElementById('b_barcode');
-        if (bInput) bInput.value = codeText;
+        if (bInput) bInput.value = finalAssetId;
         stopScanner();
         searchForBorrow();
       }
@@ -7027,6 +7123,8 @@
       currentScannerMode = mode;
       lastContinuousScanCode = '';
       lastContinuousScanTime = 0;
+      isScanHandled = false;
+      isScannerBusy = false;
 
       if (typeof forceContinuous === 'boolean') {
         toggleContinuousScan(forceContinuous);
@@ -7142,39 +7240,87 @@
 
         videoElem.srcObject = stream;
         videoElem.setAttribute('playsinline', 'true');
+        videoElem.setAttribute('webkit-playsinline', 'true');
+        videoElem.muted = true;
         await videoElem.play().catch(e => console.warn("Video play note:", e));
         inspectVideoTrack();
         updateCameraDevices();
 
-        // 1. ถ้ารองรับ BarcodeDetector แบบเนทีฟ (Chrome บน Android) ให้ใช้ตัวนี้ เร็วและลื่นที่สุด
-        if (nativeBarcodeDetector) {
-          const scanLoop = async () => {
-            if (!activeMediaStream) return;
-            if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA) {
-              try {
-                const barcodes = await nativeBarcodeDetector.detect(videoElem);
-                if (barcodes.length > 0 && barcodes[0].rawValue) {
-                  handleScanSuccess(barcodes[0].rawValue);
-                  if (!isContinuousScanMode || currentScannerMode !== 'inspect') {
-                    return;
-                  }
+        isScanHandled = false;
+        isScannerBusy = false;
+
+        // 1. ถอดรหัสหลัก: ZXing decodeFromVideoElementContinuously (รองรับทั้ง QR Code และ Barcode ทุกรูปแบบ)
+        const reader = initCodeReader();
+        if (reader) {
+          try {
+            reader.decodeFromVideoElementContinuously(videoElem, (result, err) => {
+              if (result) {
+                const text = (typeof result.getText === 'function' ? result.getText() : (result.text || '')).trim();
+                if (text) {
+                  handleScanSuccess(text);
                 }
-              } catch(e) {}
-            }
-            nativeScanRafId = requestAnimationFrame(scanLoop);
-          };
-          nativeScanRafId = requestAnimationFrame(scanLoop);
-        } else {
-          // 2. ถ้าไม่มี BarcodeDetector ให้ใช้ ZXing ถอดรหัสจาก video element ที่เล่นอยู่
-          const reader = initCodeReader();
-          if (reader) {
-            reader.decodeFromVideoElement(videoElem, (result, err) => {
-              if (result && result.text) {
-                handleScanSuccess(result.text);
               }
             });
+          } catch(e) {
+            console.warn("ZXing continuous scan note:", e);
           }
         }
+
+        // 2. ระบบสแกนเสริมความเร็วคู่ขนาน (Dual-Engine / Multi-Engine Fast Detection Loop)
+        // ใช้ Native BarcodeDetector (บน Android) + jsQR (สำหรับ QR Code ความเร็วสูง)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        const fastScanTick = async () => {
+          if (!activeMediaStream || isScanHandled) return;
+          if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA && videoElem.videoWidth > 0 && !isScannerBusy) {
+            isScannerBusy = true;
+            try {
+              // 2.1 ลองใช้ Native BarcodeDetector ก่อน (ถ้ามี)
+              if (nativeBarcodeDetector) {
+                try {
+                  const barcodes = await nativeBarcodeDetector.detect(videoElem);
+                  if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                    handleScanSuccess(barcodes[0].rawValue);
+                    isScannerBusy = false;
+                    return;
+                  }
+                } catch(e) {}
+              }
+
+              // 2.2 ลองใช้ jsQR สำหรับ QR Code (ถอดรหัสไวมาก แม้แสงน้อยหรือกล้องเอียง)
+              if (typeof window.jsQR !== 'undefined' && videoElem.videoWidth > 0) {
+                const vw = videoElem.videoWidth;
+                const vh = videoElem.videoHeight;
+                const scale = Math.min(1, 640 / Math.max(vw, vh));
+                const cw = Math.round(vw * scale);
+                const ch = Math.round(vh * scale);
+                if (canvas.width !== cw || canvas.height !== ch) {
+                  canvas.width = cw;
+                  canvas.height = ch;
+                }
+                ctx.drawImage(videoElem, 0, 0, cw, ch);
+                const imgData = ctx.getImageData(0, 0, cw, ch);
+                const qrResult = window.jsQR(imgData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+                if (qrResult && qrResult.data) {
+                  handleScanSuccess(qrResult.data);
+                  isScannerBusy = false;
+                  return;
+                }
+              }
+            } catch(err) {
+              // ละเว้นข้อผิดพลาดในเฟรมสแกน
+            } finally {
+              isScannerBusy = false;
+            }
+          }
+          if (activeMediaStream && !isScanHandled) {
+            nativeScanRafId = requestAnimationFrame(fastScanTick);
+          }
+        };
+
+        nativeScanRafId = requestAnimationFrame(fastScanTick);
+
       } catch(err) {
         console.error("Camera access error:", err);
         handleCameraUnavailable(err);
@@ -7345,6 +7491,8 @@
     };
 
     window.stopScanner = function() {
+      isScanHandled = true;
+      isScannerBusy = false;
       if (nativeScanRafId) {
         cancelAnimationFrame(nativeScanRafId);
         nativeScanRafId = null;
@@ -7393,45 +7541,82 @@
       showLoader('กำลังวิเคราะห์รูปภาพ...');
       const file = e.target.files[0];
 
-      // 1. ลองถอดรหัสด้วย Native BarcodeDetector ก่อน (เร็วสุด ไม่พึ่งพาไลบรารีภายนอก)
-      if (nativeBarcodeDetector) {
-        try {
-          const img = new Image();
-          const imgUrl = URL.createObjectURL(file);
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = imgUrl;
-          });
-          const barcodes = await nativeBarcodeDetector.detect(img);
-          URL.revokeObjectURL(imgUrl);
-          if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-            hideLoader();
-            document.getElementById('qr-fallback-input').value = "";
-            handleScanSuccess(barcodes[0].rawValue);
-            return;
-          }
-        } catch(err) {
-          console.warn("BarcodeDetector fallback note:", err);
-        }
-      }
+      try {
+        const img = new Image();
+        const imgUrl = URL.createObjectURL(file);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = imgUrl;
+        });
 
-      // 2. ลองถอดรหัสด้วย ZXing
-      const reader = initCodeReader();
-      if (reader) {
-        try {
-          const imgUrl = URL.createObjectURL(file);
-          const result = await reader.decodeFromImageUrl(imgUrl);
-          URL.revokeObjectURL(imgUrl);
-          if (result && result.text) {
-            hideLoader();
-            document.getElementById('qr-fallback-input').value = "";
-            handleScanSuccess(result.text);
-            return;
+        // 1. ลองถอดรหัสด้วย Native BarcodeDetector ก่อน (เร็วสุด ไม่พึ่งพาไลบรารีภายนอก)
+        if (nativeBarcodeDetector) {
+          try {
+            const barcodes = await nativeBarcodeDetector.detect(img);
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+              URL.revokeObjectURL(imgUrl);
+              hideLoader();
+              document.getElementById('qr-fallback-input').value = "";
+              handleScanSuccess(barcodes[0].rawValue);
+              return;
+            }
+          } catch(err) {
+            console.warn("BarcodeDetector fallback note:", err);
           }
-        } catch(err) {
-          console.warn("ZXing fallback note:", err);
         }
+
+        // 2. ลองใช้ jsQR ผ่าน Canvas (เหมาะมากกับรูปถ่ายมือถือความละเอียดสูง)
+        if (typeof window.jsQR !== 'undefined') {
+          try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const maxDim = 1600;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            if (w > maxDim || h > maxDim) {
+              const r = Math.min(maxDim / w, maxDim / h);
+              w = Math.round(w * r);
+              h = Math.round(h * r);
+            }
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const qr = window.jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+            if (qr && qr.data) {
+              URL.revokeObjectURL(imgUrl);
+              hideLoader();
+              document.getElementById('qr-fallback-input').value = "";
+              handleScanSuccess(qr.data);
+              return;
+            }
+          } catch(err) {
+            console.warn("jsQR fallback note:", err);
+          }
+        }
+
+        // 3. ลองถอดรหัสด้วย ZXing
+        const reader = initCodeReader();
+        if (reader) {
+          try {
+            const result = await reader.decodeFromImageUrl(imgUrl);
+            URL.revokeObjectURL(imgUrl);
+            const text = (result && (typeof result.getText === 'function' ? result.getText() : result.text)) || '';
+            if (text) {
+              hideLoader();
+              document.getElementById('qr-fallback-input').value = "";
+              handleScanSuccess(text);
+              return;
+            }
+          } catch(err) {
+            console.warn("ZXing fallback note:", err);
+          }
+        }
+
+        URL.revokeObjectURL(imgUrl);
+      } catch(err) {
+        console.error("Fallback scan error:", err);
       }
 
       hideLoader();
@@ -7717,14 +7902,20 @@
     };
 
     window.searchAsset = function() {
-      const barcode = document.getElementById('s_barcode').value.trim();
+      const rawBarcode = (document.getElementById('s_barcode')?.value || '').trim();
       let currentLoc = (document.getElementById('s_location')?.value || '').trim();
-      if (!barcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสพัสดุ', 'warning');
+      if (!rawBarcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสพัสดุ', 'warning');
       
+      const cleaned = cleanScannedCode(rawBarcode);
+      const barcode = cleaned || rawBarcode;
       const normBarcode = normalizeAssetId(barcode);
+      const normRaw = normalizeAssetId(rawBarcode);
+
       let asset = globalData.assets.find(a => (a.AssetID || '').trim() === barcode)
         || globalData.assets.find(a => (a.AssetID || '').trim().toLowerCase() === barcode.toLowerCase())
-        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode);
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode)
+        || globalData.assets.find(a => (a.AssetID || '').trim() === rawBarcode)
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normRaw);
 
       document.getElementById('scan-step-1').classList.add('hidden');
       if (asset) {
@@ -8014,13 +8205,19 @@
     };
 
     window.searchForBorrow = function() {
-      const barcode = document.getElementById('b_barcode').value.trim();
-      if (!barcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสครุภัณฑ์', 'warning');
+      const rawBarcode = (document.getElementById('b_barcode')?.value || '').trim();
+      if (!rawBarcode) return Swal.fire('แจ้งเตือน', 'กรุณาระบุรหัสครุภัณฑ์', 'warning');
       
+      const cleaned = cleanScannedCode(rawBarcode);
+      const barcode = cleaned || rawBarcode;
       const normBarcode = normalizeAssetId(barcode);
+      const normRaw = normalizeAssetId(rawBarcode);
+
       let asset = globalData.assets.find(a => (a.AssetID || '').trim() === barcode)
         || globalData.assets.find(a => (a.AssetID || '').trim().toLowerCase() === barcode.toLowerCase())
-        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode);
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normBarcode)
+        || globalData.assets.find(a => (a.AssetID || '').trim() === rawBarcode)
+        || globalData.assets.find(a => normalizeAssetId(a.AssetID) === normRaw);
 
       document.getElementById('borrow-step-1').classList.add('hidden');
       if (asset) {
