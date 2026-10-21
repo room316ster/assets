@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
   
-  <title>Asset Management Pro (ERP) v6.5 - ศาลแขวงอุบลราชธานี</title>
+  <title>Asset Management Pro (ERP) v6.6 - ศาลแขวงอุบลราชธานี</title>
   
   <!-- Tailwind CSS & Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -164,12 +164,12 @@
 
       <!-- กรอบเล็งสแกน (Targeting Frame) -->
       <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-        <div class="w-64 h-64 sm:w-80 sm:h-80 relative border-2 border-blue-400/70 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
+        <div id="scanner-target-box" class="w-64 h-64 sm:w-80 sm:h-80 relative border-2 border-blue-400/70 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-all duration-150">
           <!-- มุมกรอบเล็ง 4 มุม -->
-          <span class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></span>
-          <span class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></span>
-          <span class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></span>
-          <span class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></span>
+          <span class="scanner-corner absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl-lg transition-colors duration-150"></span>
+          <span class="scanner-corner absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr-lg transition-colors duration-150"></span>
+          <span class="scanner-corner absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl-lg transition-colors duration-150"></span>
+          <span class="scanner-corner absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br-lg transition-colors duration-150"></span>
           <!-- เส้นเลเซอร์วิ่งสแกน -->
           <div class="scanner-laser-line"></div>
         </div>
@@ -1964,7 +1964,7 @@
     // ==========================================================
 
     // 🏷️ ข้อมูลเวอร์ชันโปรแกรมปัจจุบัน (App Version)
-    const APP_VERSION = 'v6.5';
+    const APP_VERSION = 'v6.6';
     const ANDROID_APK_URL = "https://github.com/room316ster/assets/releases/download/5.7/AssetPro.apk";
 
     // ดึงและอัปเดตชื่อหน่วยงาน/องค์กรทั่วทั้งระบบ
@@ -2063,6 +2063,16 @@
       const m = ('0' + (now.getMonth() + 1)).slice(-2);
       const y = now.getFullYear() < 2400 ? now.getFullYear() + 543 : now.getFullYear();
       return `${d}/${m}/${y}`;
+    };
+
+    window.formatThaiDate = function(dateInput) {
+      if (!dateInput) return (typeof window.getTodayThaiDate === 'function' ? window.getTodayThaiDate() : '');
+      const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
+      if (isNaN(d.getTime())) return (typeof window.getTodayThaiDate === 'function' ? window.getTodayThaiDate() : '');
+      const day = ('0' + d.getDate()).slice(-2);
+      const month = ('0' + (d.getMonth() + 1)).slice(-2);
+      const year = d.getFullYear() < 2400 ? d.getFullYear() + 543 : d.getFullYear();
+      return `${day}/${month}/${year}`;
     };
 
     window.formatDisplayDate = function(val) {
@@ -6819,6 +6829,27 @@
       }, 2500);
     }
 
+    // ⚡ เอฟเฟกต์กระพริบกรอบเล็งกล้องเป็นสีเขียวทันทีที่สแกนติด (Visual Feedback)
+    function flashTargetBoxSuccess() {
+      const box = document.getElementById('scanner-target-box');
+      if (!box) return;
+      box.classList.remove('border-blue-400/70');
+      box.classList.add('border-emerald-400', 'bg-emerald-500/20', 'shadow-[0_0_25px_rgba(16,185,129,0.9)]');
+      const corners = box.querySelectorAll('.scanner-corner');
+      corners.forEach(c => {
+        c.classList.remove('border-blue-500');
+        c.classList.add('border-emerald-400');
+      });
+      setTimeout(() => {
+        box.classList.remove('border-emerald-400', 'bg-emerald-500/20', 'shadow-[0_0_25px_rgba(16,185,129,0.9)]');
+        box.classList.add('border-blue-400/70');
+        corners.forEach(c => {
+          c.classList.remove('border-emerald-400');
+          c.classList.add('border-blue-500');
+        });
+      }, 250);
+    }
+
     function handleScanSuccess(codeText) {
       if (!codeText) return;
       
@@ -6840,12 +6871,12 @@
       if (currentScannerMode === 'inspect' && isContinuousScanMode) {
         const now = Date.now();
         
-        // Cooldown 3 วินาที สำหรับรหัสเดิมเพื่อป้องกันการบันทึกซ้ำซ้อนขณะกล้องยังเล็งอยู่
-        if (normCode === lastContinuousScanCode && (now - lastContinuousScanTime < 3000)) {
+        // Cooldown 1.2 วินาที สำหรับรหัสเดิมเพื่อป้องกันการบันทึกซ้ำซ้อนขณะกล้องยังเล็งอยู่ (รหัสต่างกันสแกนต่อได้ทันที 0ms)
+        if (normCode === lastContinuousScanCode && (now - lastContinuousScanTime < 1200)) {
           return;
         }
 
-        const currentRound = (globalData.settings && globalData.settings.round) || '';
+        const currentRound = (globalData && globalData.settings && globalData.settings.round) || '';
 
         if (!normAsset) {
           playScanBeep();
@@ -6863,7 +6894,9 @@
         const currentLoc = locSelect ? locSelect.value.trim() : '';
         const inspectorName = (currentUser && (currentUser.name || currentUser.username)) || 'เจ้าหน้าที่';
         const inspectTime = new Date();
-        const displayDate = formatThaiDate(inspectTime);
+        const displayDate = typeof window.formatThaiDate === 'function' 
+          ? window.formatThaiDate(inspectTime) 
+          : (typeof getTodayThaiDate === 'function' ? getTodayThaiDate() : (typeof formatDisplayDate === 'function' ? formatDisplayDate(inspectTime) : new Date().toLocaleDateString('th-TH')));
 
         // อัปเดตข้อมูลในหน่วยความจำทันที (Instant UI feedback)
         normAsset.Status = 'ปกติ';
@@ -6880,6 +6913,9 @@
           try { navigator.vibrate([60, 40, 60]); } catch(e) {}
         }
 
+        // กระพริบกรอบเล็งกล้องเป็นสีเขียวทันที (Instant Visual Feedback)
+        flashTargetBoxSuccess();
+
         continuousScanSessionCount++;
         const countEl = document.getElementById('continuous-scan-count');
         if (countEl) countEl.innerText = continuousScanSessionCount;
@@ -6891,11 +6927,11 @@
         showScannerToast('success', `
           <div class="flex items-center justify-center gap-1.5 mb-0.5">
             <span class="text-yellow-300">⚡</span>
-            <span class="font-mono text-white font-black">${normAsset.AssetID}</span>
+            <span class="font-mono text-white font-black">${escapeHTML(normAsset.AssetID)}</span>
             <span class="bg-black/40 px-1.5 py-0.2 rounded text-[10px] text-emerald-200">#${continuousScanSessionCount}</span>
           </div>
           <div class="text-[11px] font-normal truncate max-w-xs mx-auto text-emerald-100">${escapeHTML(normAsset.Name || 'ไม่ระบุชื่อ')}</div>
-          <div class="text-[10px] text-emerald-200 mt-0.5">สภาพ: ปกติ ${isAlreadyDone ? '(อัปเดตรอบนี้แล้ว)' : ''}</div>
+          <div class="text-[10px] text-emerald-200 mt-0.5">สภาพ: ปกติ ${isAlreadyDone ? '(ตรวจซ้ำในรอบนี้)' : ''}</div>
           ${offlineToastNote}
         `);
 
@@ -6905,7 +6941,7 @@
           condition: '1. ตรวจนับ (ปกติ)',
           note: noteText,
           inspectorName: inspectorName,
-          inspectDate: inspectTime,
+          inspectDate: (inspectTime && inspectTime.toISOString) ? inspectTime.toISOString() : new Date().toISOString(),
           newLocation: currentLoc || normAsset.Location || '-'
         };
 
@@ -6919,7 +6955,7 @@
           inspector: inspectorName,
           hasImage: false,
           payload: { data: inspectPayload, user: inspectorName },
-          timestamp: inspectTime.toISOString()
+          timestamp: new Date().toISOString()
         };
 
         if (!navigator.onLine) {
@@ -6929,8 +6965,8 @@
           updateOfflineBadge();
         } else {
           callAPI('apiAddInspection', { data: inspectPayload, user: inspectorName }).then(res => {
-            if (!res.success) {
-              console.warn('Continuous inspect error:', res.message);
+            if (!res || !res.success) {
+              console.warn('Continuous inspect error:', res ? res.message : 'no response');
               offlineQueue.push(queueItem);
               localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
               try { localStorage.setItem('cachedGlobalData', JSON.stringify(globalData)); } catch(e) {}
@@ -6945,9 +6981,9 @@
           });
         }
 
-        // รีเฟรชรายการในห้องเบื้องหลัง
-        renderScanLocationAssets();
-        updateDashboard();
+        // รีเฟรชรายการในห้องเบื้องหลังอย่างปลอดภัย
+        try { renderScanLocationAssets(); } catch(e) { console.warn("renderScanLocationAssets note:", e); }
+        try { if (typeof renderAllViews === 'function') renderAllViews(); } catch(e) {}
         return; // ไม่ปิดกล้อง! ให้กล้องทำงานสแกนชิ้นต่อไปได้ทันที
       }
 
@@ -6996,7 +7032,8 @@
       const countPendingEl = document.getElementById('scan-count-pending');
       const countDoneEl = document.getElementById('scan-count-done');
       const searchVal = (document.getElementById('scan-loc-search')?.value || '').toLowerCase().trim();
-      const currentRound = globalData.settings.round || '';
+      const currentRound = (globalData && globalData.settings && globalData.settings.round) || '';
+      const allAssets = (globalData && Array.isArray(globalData.assets)) ? globalData.assets : [];
 
       if (!loc) {
         if (summaryEl) summaryEl.innerText = 'กรุณาเลือกสถานที่ตั้งด้านบน';
@@ -7006,7 +7043,7 @@
         return;
       }
 
-      const locAssets = globalData.assets.filter(a => a.Location === loc);
+      const locAssets = allAssets.filter(a => a.Location === loc);
       const pendingAssets = locAssets.filter(a => a.InspectRound !== currentRound);
       const doneAssets = locAssets.filter(a => a.InspectRound === currentRound);
 
@@ -7028,7 +7065,7 @@
           targetList = filteredInLoc;
         } else {
           // หากไม่พบในสถานที่นี้ ให้ค้นหาจากฐานข้อมูลพัสดุทั้งหมด เพื่ออำนวยความสะดวกในการค้นหา/ย้ายห้อง
-          let allMatches = globalData.assets.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
+          let allMatches = allAssets.filter(a => `${a.AssetID || ''} ${a.Name || ''} ${a.Brand || ''}`.toLowerCase().includes(searchVal));
           if (allMatches.length > 0) {
             targetList = (activeScanTab === 'pending')
               ? allMatches.filter(a => a.InspectRound !== currentRound)
@@ -7126,6 +7163,13 @@
       isScanHandled = false;
       isScannerBusy = false;
 
+      const readerContainer = document.getElementById('reader-container');
+      if (!readerContainer) return;
+
+      // แสดงหน้าต่างสแกนเนอร์ขนาดใหญ่เต็มจอ และล็อกการเลื่อนหน้าจอด้านหลังทันที
+      readerContainer.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
       if (typeof forceContinuous === 'boolean') {
         toggleContinuousScan(forceContinuous);
       } else {
@@ -7144,13 +7188,6 @@
       continuousScanSessionCount = 0;
       const countEl = document.getElementById('continuous-scan-count');
       if (countEl) countEl.innerText = '0';
-
-      const readerContainer = document.getElementById('reader-container');
-      if (!readerContainer) return;
-
-      // แสดงหน้าต่างสแกนเนอร์ขนาดใหญ่เต็มจอ และล็อกการเลื่อนหน้าจอด้านหลัง
-      readerContainer.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
 
       if (document.getElementById('s_barcode')) document.getElementById('s_barcode').value = '';
       if (document.getElementById('b_barcode')) document.getElementById('b_barcode').value = '';
@@ -7249,46 +7286,30 @@
         isScanHandled = false;
         isScannerBusy = false;
 
-        // 1. ถอดรหัสหลัก: ZXing decodeFromVideoElementContinuously (รองรับทั้ง QR Code และ Barcode ทุกรูปแบบ)
-        const reader = initCodeReader();
-        if (reader) {
-          try {
-            reader.decodeFromVideoElementContinuously(videoElem, (result, err) => {
-              if (result) {
-                const text = (typeof result.getText === 'function' ? result.getText() : (result.text || '')).trim();
-                if (text) {
-                  handleScanSuccess(text);
-                }
-              }
-            });
-          } catch(e) {
-            console.warn("ZXing continuous scan note:", e);
-          }
-        }
-
-        // 2. ระบบสแกนเสริมความเร็วคู่ขนาน (Dual-Engine / Multi-Engine Fast Detection Loop)
-        // ใช้ Native BarcodeDetector (บน Android) + jsQR (สำหรับ QR Code ความเร็วสูง)
+        // ระบบสแกนคู่ขนานความเร็วสูง (Multi-Engine Continuous Real-time Scanner)
+        // ทำงานผ่าน Canvas และ Video Frame โดยไม่รบกวน srcObject ของกล้อง
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         const fastScanTick = async () => {
           if (!activeMediaStream || isScanHandled) return;
-          if (videoElem.readyState >= videoElem.HAVE_CURRENT_DATA && videoElem.videoWidth > 0 && !isScannerBusy) {
-            isScannerBusy = true;
-            try {
-              // 2.1 ลองใช้ Native BarcodeDetector ก่อน (ถ้ามี)
+          try {
+            if (!isScannerBusy && videoElem.readyState >= videoElem.HAVE_CURRENT_DATA && videoElem.videoWidth > 0) {
+              isScannerBusy = true;
+
+              // 1. ลองใช้ Native BarcodeDetector ก่อน (เร็วสุด ฮาร์ดแวร์เร่งความเร็วบน Chrome/Android)
               if (nativeBarcodeDetector) {
                 try {
                   const barcodes = await nativeBarcodeDetector.detect(videoElem);
                   if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
                     handleScanSuccess(barcodes[0].rawValue);
-                    isScannerBusy = false;
                     return;
                   }
                 } catch(e) {}
               }
 
-              // 2.2 ลองใช้ jsQR สำหรับ QR Code (ถอดรหัสไวมาก แม้แสงน้อยหรือกล้องเอียง)
+              // 2. ลองใช้ jsQR (สำหรับ QR Code ไวและแม่นยำสูงมากแม้แสงน้อยหรือกล้องเอียง)
+              let hasDrawnToCanvas = false;
               if (typeof window.jsQR !== 'undefined' && videoElem.videoWidth > 0) {
                 const vw = videoElem.videoWidth;
                 const vh = videoElem.videoHeight;
@@ -7300,22 +7321,70 @@
                   canvas.height = ch;
                 }
                 ctx.drawImage(videoElem, 0, 0, cw, ch);
+                hasDrawnToCanvas = true;
                 const imgData = ctx.getImageData(0, 0, cw, ch);
                 const qrResult = window.jsQR(imgData.data, cw, ch, { inversionAttempts: 'attemptBoth' });
                 if (qrResult && qrResult.data) {
                   handleScanSuccess(qrResult.data);
-                  isScannerBusy = false;
                   return;
                 }
               }
-            } catch(err) {
-              // ละเว้นข้อผิดพลาดในเฟรมสแกน
-            } finally {
-              isScannerBusy = false;
+
+              // 3. Fallback: ZXing MultiFormatReader บน Canvas (สำหรับ 1D Barcode เช่น Code128, Code39 เมื่อไม่มี Native BarcodeDetector)
+              if (typeof ZXing !== 'undefined' && ZXing.HTMLCanvasElementLuminanceSource && ZXing.BinaryBitmap && ZXing.HybridBinarizer) {
+                try {
+                  if (!hasDrawnToCanvas && videoElem.videoWidth > 0) {
+                    const vw = videoElem.videoWidth;
+                    const vh = videoElem.videoHeight;
+                    const scale = Math.min(1, 640 / Math.max(vw, vh));
+                    const cw = Math.round(vw * scale);
+                    const ch = Math.round(vh * scale);
+                    if (canvas.width !== cw || canvas.height !== ch) {
+                      canvas.width = cw;
+                      canvas.height = ch;
+                    }
+                    ctx.drawImage(videoElem, 0, 0, cw, ch);
+                  }
+                  if (!window._zxingMultiReader) {
+                    const hints = new Map();
+                    if (ZXing.DecodeHintType && ZXing.BarcodeFormat) {
+                      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                        ZXing.BarcodeFormat.CODE_128,
+                        ZXing.BarcodeFormat.CODE_39,
+                        ZXing.BarcodeFormat.EAN_13,
+                        ZXing.BarcodeFormat.EAN_8,
+                        ZXing.BarcodeFormat.QR_CODE
+                      ]);
+                      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+                    }
+                    window._zxingMultiReader = new ZXing.MultiFormatReader();
+                    if (hints.size > 0 && typeof window._zxingMultiReader.setHints === 'function') {
+                      window._zxingMultiReader.setHints(hints);
+                    }
+                  }
+                  const lum = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                  const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(lum));
+                  const zxRes = window._zxingMultiReader.decode(bmp);
+                  if (zxRes) {
+                    const zxText = (typeof zxRes.getText === 'function' ? zxRes.getText() : (zxRes.text || '')).trim();
+                    if (zxText) {
+                      handleScanSuccess(zxText);
+                      return;
+                    }
+                  }
+                } catch(e) {
+                  // NotFoundException เกิดขึ้นตามปกติเมื่อไม่มีบาร์โค้ดในเฟรม
+                }
+              }
             }
-          }
-          if (activeMediaStream && !isScanHandled) {
-            nativeScanRafId = requestAnimationFrame(fastScanTick);
+          } catch(err) {
+            console.warn("Scan frame note:", err);
+          } finally {
+            isScannerBusy = false;
+            // ⚡ หัวใจสำคัญ: รักษาวงรอบการสแกนต่อไปเสมอในโหมดสแกนด่วนต่อเนื่อง ไม่ว่าสแกนติดหรือไม่ติด
+            if (activeMediaStream && !isScanHandled) {
+              nativeScanRafId = requestAnimationFrame(fastScanTick);
+            }
           }
         };
 
