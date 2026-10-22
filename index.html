@@ -334,6 +334,10 @@
           <span class="flex items-center"><i class="fas fa-users-cog w-6"></i> จัดการผู้ใช้งาน</span>
           <span id="pending-users-badge" class="hidden bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow animate-pulse">0</span>
         </a>
+        <a href="#" id="menu_admin_duplicates" onclick="nav('admin_duplicates')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-rose-600 dark:text-rose-400 font-bold mt-1 items-center justify-between">
+          <span class="flex items-center"><i class="fas fa-clone w-6"></i> จัดการเลขซ้ำ</span>
+          <span id="duplicates-badge" class="hidden bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow">0</span>
+        </a>
         <a href="#" id="menu_admin_logs" onclick="nav('admin_logs')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-orange-600 dark:text-orange-400 font-bold mt-1"><i class="fas fa-history w-6"></i> ประวัติระบบ (Logs)</a>
         <a href="#" id="menu_settings" onclick="nav('settings')" class="hidden px-3 py-2 rounded-xl hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 transition text-blue-600 dark:text-blue-400 font-bold border border-dashed border-gray-400 mt-2"><i class="fas fa-cog w-6"></i> ตั้งค่าระบบ</a>
       </nav>
@@ -917,7 +921,7 @@
 
             <div class="flex flex-col sm:flex-row justify-between mb-4 gap-2">
                 <div class="flex-grow flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="searchInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ, ยี่ห้อ, สถานที่, ผู้ตรวจ..." class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500 text-sm" onkeyup="filterTableAssets()">
+                    <input type="text" id="searchInput" placeholder="🔍 ค้นหา รหัส, ลักษณะ, ยี่ห้อ, สถานที่, ผู้ตรวจ..." class="w-full px-4 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white focus:outline-none focus:border-blue-500 text-sm" oninput="filterTableAssetsDebounced()">
                     <div class="flex gap-2">
                       <select id="asset-location-filter" onchange="filterTableAssets()" class="px-3 py-2 rounded-lg border dark:bg-gray-800 bg-white/90 dark:text-white font-bold text-xs focus:outline-none focus:border-blue-500 min-w-[130px]" title="กรองตามสถานที่ตั้ง">
                         <option value="all">📍 ทุกสถานที่</option>
@@ -1524,6 +1528,74 @@
           </div>
         </div>
         
+        <!-- VIEW: Admin Duplicate Assets Manager -->
+        <div id="view-admin_duplicates" class="view hidden">
+          <div class="glass p-4 md:p-6 rounded-2xl shadow-xl space-y-5">
+            <!-- Header section -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 dark:border-gray-700">
+              <div>
+                <h2 class="font-bold text-xl dark:text-white flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
+                    <i class="fas fa-clone"></i>
+                  </span>
+                  <span>ตรวจสอบและจัดการเลขครุภัณฑ์ซ้ำ (Duplicate Assets Manager)</span>
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">ค้นหาครุภัณฑ์ที่มีเลขรหัสซ้ำกันในชีต Assets พร้อมเครื่องมือแก้ไขและลบรายการที่ซ้ำซ้อนโดยใช้สิทธิ์ Admin</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="loadAdminDuplicates(true)" class="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border border-gray-200 dark:border-gray-700 shadow-2xs">
+                  <i class="fas fa-sync-alt" id="admin-duplicates-refresh-icon"></i>
+                  <span>รีเฟรชข้อมูล</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/40 shadow-xs flex items-center justify-between">
+                <div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">กลุ่มเลขที่พบซ้ำ</span>
+                  <div class="text-2xl font-black text-rose-600 dark:text-rose-400" id="dup-stat-groups">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 text-lg">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+              </div>
+              <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/40 shadow-xs flex items-center justify-between">
+                <div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">จำนวนแถวที่ซ้ำทั้งหมด</span>
+                  <div class="text-2xl font-black text-amber-600 dark:text-amber-400" id="dup-stat-rows">0</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 text-lg">
+                  <i class="fas fa-exclamation-triangle"></i>
+                </div>
+              </div>
+              <div class="bg-white/80 dark:bg-gray-800/80 p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/40 shadow-xs flex items-center justify-between">
+                <div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">สิทธิ์การดำเนินการ</span>
+                  <div class="text-sm font-bold text-blue-600 dark:text-blue-400 mt-1">ผู้ดูแลระบบ (Admin)</div>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 text-lg">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search bar -->
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <i class="fas fa-search text-xs"></i>
+              </span>
+              <input type="text" id="admin-duplicates-search" placeholder="ค้นหารหัสครุภัณฑ์, ชื่อรายการ, สถานที่ที่ซ้ำ..." oninput="filterAdminDuplicatesList()" class="w-full pl-8 pr-3 py-2 rounded-xl border text-xs dark:bg-gray-800 bg-white/90 dark:text-white dark:border-gray-700 outline-none focus:border-rose-500 transition">
+            </div>
+
+            <!-- Duplicates List Container -->
+            <div id="admin-duplicates-container" class="space-y-4">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+        
         <div id="view-admin_logs" class="view hidden"><div class="glass p-4 md:p-6 rounded-xl shadow"><div class="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-700"><h2 class="font-bold text-lg dark:text-white"><i class="fas fa-history mr-2 text-orange-500"></i> ประวัติระบบ</h2><button onclick="loadAdminLogs()" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-300 text-xs"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button></div><div class="overflow-x-auto rounded-lg"><table class="w-full text-left border-collapse whitespace-nowrap bg-white/40 dark:bg-gray-800/40 text-xs"><thead><tr class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"><th class="p-2 border-b dark:border-gray-700">วัน/เวลา</th><th class="p-2 border-b dark:border-gray-700">ผู้ใช้งาน</th><th class="p-2 border-b dark:border-gray-700">หมวดหมู่</th><th class="p-2 border-b dark:border-gray-700">รายละเอียด</th></tr></thead><tbody id="admin-logs-body"></tbody></table></div></div></div>
         
         <div id="view-settings" class="view hidden">
@@ -1673,6 +1745,67 @@
           </div>
         </div>
       
+      </div>
+
+      <!-- Modal: แก้ไขข้อมูลแถวครุภัณฑ์ (Admin Edit Asset Row Modal) -->
+      <div id="modal-edit-asset-row" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in duration-150">
+          <div class="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/70">
+            <h3 class="font-bold text-base text-gray-800 dark:text-white flex items-center gap-2">
+              <i class="fas fa-edit text-blue-600 dark:text-blue-400"></i>
+              <span>แก้ไขข้อมูลครุภัณฑ์</span>
+              <span id="modal-edit-row-badge" class="bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-mono">แถวที่ -</span>
+            </h3>
+            <button onclick="closeEditAssetRowModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold transition">&times;</button>
+          </div>
+          <form onsubmit="event.preventDefault(); saveEditedAssetRow();" class="p-5 space-y-3.5 text-xs sm:text-sm">
+            <input type="hidden" id="edit_row_number">
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">เลขครุภัณฑ์ (AssetID) <span class="text-red-500">*</span></label>
+              <input type="text" id="edit_row_asset_id" required class="w-full px-3 py-2 rounded-lg border font-mono font-bold text-blue-600 dark:text-blue-400 dark:bg-gray-700 bg-white dark:border-gray-600 outline-none focus:border-blue-500" oninput="formatAssetId(event)">
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">ลักษณะ/คุณสมบัติ</label>
+              <input type="text" id="edit_row_name" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">รุ่น/ยี่ห้อ</label>
+                <input type="text" id="edit_row_brand" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">สถานที่ตั้ง</label>
+                <input type="text" id="edit_row_location" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">สถานะ</label>
+                <select id="edit_row_status" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500">
+                  <option value="ปกติ">ปกติ</option>
+                  <option value="ชำรุด">ชำรุด</option>
+                  <option value="ส่งซ่อม">ส่งซ่อม</option>
+                  <option value="สูญหาย">สูญหาย</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">วันที่รับ</label>
+                <input type="text" id="edit_row_date" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500">
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">หมายเหตุ</label>
+              <textarea id="edit_row_note" rows="2" class="w-full px-3 py-2 rounded-lg border dark:bg-gray-700 bg-white dark:text-white dark:border-gray-600 outline-none focus:border-blue-500"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <button type="button" onclick="closeEditAssetRowModal()" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 transition font-medium">ยกเลิก</button>
+              <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-md flex items-center gap-1.5">
+                <i class="fas fa-save"></i>
+                <span>บันทึกการแก้ไข</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- Modal: รายการพัสดุรอซิงค์เข้าฐานข้อมูล (Offline Queue Modal) -->
@@ -3130,15 +3263,15 @@
         }
       }
 
-      const adminElements = ['menu_admin_assign', 'menu_admin_users', 'menu_admin_logs', 'menu_settings'];
-      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+      const adminElements = ['menu_admin_assign', 'menu_admin_users', 'menu_admin_duplicates', 'menu_admin_logs', 'menu_settings'];
+      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_duplicates', 'admin_logs'];
 
       if (currentUser.role === 'Admin') {
         adminElements.forEach(id => {
           const el = document.getElementById(id);
           if (el) { 
             el.classList.remove('hidden'); 
-            if (id === 'menu_admin_users') {
+            if (id === 'menu_admin_users' || id === 'menu_admin_duplicates') {
               el.classList.add('flex');
             } else {
               el.classList.add('block'); 
@@ -3299,7 +3432,7 @@
     };
     
     window.nav = function(viewId) {
-      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_logs'];
+      const adminOnlyViews = ['settings', 'assign', 'admin_users', 'admin_duplicates', 'admin_logs'];
       if (adminOnlyViews.includes(viewId) && (!currentUser || currentUser.role !== 'Admin')) {
         Swal.fire({
           icon: 'warning',
@@ -3327,6 +3460,7 @@
         settings: 'ตั้งค่าระบบ',
         profile: 'ข้อมูลส่วนตัว',
         admin_users: 'จัดการผู้ใช้งาน',
+        admin_duplicates: 'ตรวจสอบและจัดการเลขครุภัณฑ์ซ้ำ',
         admin_logs: 'ประวัติระบบ',
         tutorial: 'คู่มือการใช้งานระบบ'
       };
@@ -3338,6 +3472,7 @@
       stopScanner();
       if (viewId === 'report') { populateReportFilters(); renderReportView(); } 
       if (viewId === 'admin_users') loadAdminUsers(); 
+      if (viewId === 'admin_duplicates') loadAdminDuplicates();
       if (viewId === 'print') renderPrintTablePaginated(currentPrintPage); 
       if (viewId === 'admin_logs') loadAdminLogs(); 
       if (viewId === 'assign') renderAssignView(); 
@@ -3832,6 +3967,14 @@
       filterTableAssets();
     };
 
+    let _filterAssetsTimer = null;
+    window.filterTableAssetsDebounced = function() {
+      if (_filterAssetsTimer) clearTimeout(_filterAssetsTimer);
+      _filterAssetsTimer = setTimeout(() => {
+        filterTableAssets();
+      }, 180);
+    };
+
     window.filterTableAssets = function() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const currentRound = globalData.settings.round || '';
@@ -3969,10 +4112,21 @@
           let imgBtn = a.ImageURL ? `<button onclick="event.stopPropagation(); viewImage('${a.ImageURL}')" class="text-blue-500 hover:text-blue-700 bg-blue-100 p-1.5 rounded-full shadow-sm"><i class="fas fa-image"></i></button>` : `<span class="text-gray-300">-</span>`;
           let borrowBadge = a.BorrowStatus === 'ถูกยืม' ? `<span class="text-red-500 font-bold"><i class="fas fa-user text-xs"></i> ${a.Borrower}</span>` : `<span class="text-green-500 font-bold">ว่าง</span>`;
 
+          const isRecentlyInspected = !!(window.lastInspectedAssetId && (
+            (typeof window.isAssetIdMatch === 'function' && window.isAssetIdMatch(a.AssetID, window.lastInspectedAssetId)) ||
+            String(a.AssetID).trim().toLowerCase() === String(window.lastInspectedAssetId).trim().toLowerCase()
+          ));
+          const rowCls = isRecentlyInspected 
+            ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-l-4 border-l-emerald-500 dark:border-l-emerald-400' 
+            : 'border-b dark:border-gray-700 hover:bg-blue-50/50 dark:hover:bg-gray-700/50';
+          const recentBadge = isRecentlyInspected 
+            ? '<span class="inline-flex items-center gap-0.5 ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-600 text-white shadow-xs animate-pulse">⚡ เพิ่งตรวจ</span>' 
+            : '';
+
           htmlContent += `
-          <tr onclick="showAssetDetailModal('${a.AssetID}')" class="border-b dark:border-gray-700 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 dark:text-gray-200 text-sm cursor-pointer transition">
+          <tr onclick="showAssetDetailModal('${a.AssetID}')" class="${rowCls} dark:text-gray-200 text-sm cursor-pointer transition">
             <td class="p-2 text-center w-12">${imgBtn}</td>
-            <td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400">${a.AssetID}</td>
+            <td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">${a.AssetID}${recentBadge}</td>
             <td class="p-2">
               <p class="font-bold">${a.Name}</p>
               <p class="text-xs text-gray-500">${a.Location}</p>
@@ -4854,6 +5008,341 @@
           }
         }
       });
+    };
+
+    // ==========================================
+    // 🔍 ระบบจัดการเลขครุภัณฑ์ซ้ำสำหรับ Admin (Duplicate Asset Manager)
+    // ==========================================
+    window.currentDuplicateGroups = [];
+
+    window.loadAdminDuplicates = async function(manual = false) {
+      if (!currentUser || currentUser.role !== 'Admin') return;
+      const container = document.getElementById('admin-duplicates-container');
+      const icon = document.getElementById('admin-duplicates-refresh-icon');
+      if (icon) icon.classList.add('fa-spin');
+      if (container) {
+        container.innerHTML = `
+          <div class="p-8 text-center bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
+            <i class="fas fa-spinner fa-spin text-3xl text-rose-500 mb-3"></i>
+            <p class="text-sm font-bold text-gray-700 dark:text-gray-300">กำลังสแกนหาเลขครุภัณฑ์ซ้ำในชีต Assets...</p>
+            <p class="text-xs text-gray-400 mt-1">กำลังเปรียบเทียบข้อมูลทุกแถว</p>
+          </div>
+        `;
+      }
+
+      try {
+        let res = await callAPI('apiGetDuplicateAssets', { adminUsername: currentUser.username });
+        if (icon) icon.classList.remove('fa-spin');
+        if (res && res.success) {
+          window.currentDuplicateGroups = Array.isArray(res.duplicates) ? res.duplicates : [];
+          updateDuplicateBadges(res.groupCount || 0, res.totalDuplicateCount || 0);
+          renderAdminDuplicatesList();
+          if (manual) {
+            Swal.fire({
+              icon: res.groupCount > 0 ? 'warning' : 'success',
+              title: res.groupCount > 0 ? `พบเลขซ้ำ ${res.groupCount} กลุ่ม` : 'ไม่พบเลขซ้ำในระบบ',
+              text: res.groupCount > 0 ? `พบครุภัณฑ์ที่มีเลขซ้ำรวม ${res.totalDuplicateCount} แถว` : 'เลขครุภัณฑ์ทุกรายการในชีต Assets ไม่ซ้ำกัน',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        } else {
+          if (container) {
+            container.innerHTML = `<div class="p-6 text-center text-red-500 font-bold bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-800">${res.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'}</div>`;
+          }
+        }
+      } catch(err) {
+        if (icon) icon.classList.remove('fa-spin');
+        if (container) {
+          container.innerHTML = `<div class="p-6 text-center text-red-500 font-bold bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-800">${err.message}</div>`;
+        }
+      }
+    };
+
+    function updateDuplicateBadges(groupCount, totalRows) {
+      const gEl = document.getElementById('dup-stat-groups');
+      const rEl = document.getElementById('dup-stat-rows');
+      const badge = document.getElementById('duplicates-badge');
+      if (gEl) gEl.innerText = groupCount;
+      if (rEl) rEl.innerText = totalRows;
+      if (badge) {
+        if (groupCount > 0) {
+          badge.innerText = groupCount;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+    }
+
+    window.filterAdminDuplicatesList = function() {
+      renderAdminDuplicatesList();
+    };
+
+    window.renderAdminDuplicatesList = function() {
+      const container = document.getElementById('admin-duplicates-container');
+      if (!container) return;
+      const searchVal = (document.getElementById('admin-duplicates-search')?.value || '').trim().toLowerCase();
+      let list = window.currentDuplicateGroups || [];
+
+      if (searchVal) {
+        list = list.filter(g => {
+          if (g.displayId.toLowerCase().includes(searchVal)) return true;
+          return g.rows.some(r => 
+            r.assetId.toLowerCase().includes(searchVal) ||
+            r.name.toLowerCase().includes(searchVal) ||
+            r.location.toLowerCase().includes(searchVal)
+          );
+        });
+      }
+
+      if (list.length === 0) {
+        if (window.currentDuplicateGroups.length === 0) {
+          container.innerHTML = `
+            <div class="p-10 text-center bg-emerald-50/80 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 space-y-3">
+              <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/60 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-300 text-2xl shadow-inner">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h3 class="text-base font-bold">ยอดเยี่ยม! ไม่พบเลขครุภัณฑ์ซ้ำในชีต Assets</h3>
+              <p class="text-xs text-emerald-600/80 dark:text-emerald-300/80 max-w-md mx-auto">ฐานข้อมูลครุภัณฑ์มีความถูกต้องและไม่พบรายการที่ซ้ำซ้อนกัน</p>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="p-8 text-center text-gray-500 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
+              <i class="fas fa-search text-2xl mb-2 text-gray-400"></i>
+              <p class="text-sm font-bold">ไม่พบข้อมูลที่ตรงกับคำค้นหา "${escapeHTML(searchVal)}"</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      let html = '';
+      list.forEach((g, gIdx) => {
+        const rowsCount = g.rows.length;
+        const deleteRowNums = g.rows.slice(1).map(r => r.rowNumber);
+        const jsonDeleteRows = JSON.stringify(deleteRowNums);
+
+        let rowsHtml = '';
+        g.rows.forEach((r, rIdx) => {
+          const isFirst = (rIdx === 0);
+          const badgeFirst = isFirst 
+            ? `<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full"><i class="fas fa-star mr-0.5"></i> แถวแรก</span>` 
+            : `<span class="bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">ซ้ำ</span>`;
+
+          const rowDataJson = escapeHTML(JSON.stringify(r));
+
+          rowsHtml += `
+            <tr class="border-b dark:border-gray-700/60 hover:bg-white/60 dark:hover:bg-gray-700/40 text-xs transition">
+              <td class="p-3 text-center font-mono font-bold text-gray-500 dark:text-gray-400">
+                <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-lg">แถว ${r.rowNumber}</span>
+              </td>
+              <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                ${escapeHTML(r.assetId)}
+                <div class="mt-0.5">${badgeFirst}</div>
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-gray-800 dark:text-gray-100">${escapeHTML(r.name || 'ไม่ระบุชื่อ')}</div>
+                <div class="text-[11px] text-gray-500">${escapeHTML(r.brand || '-')}</div>
+              </td>
+              <td class="p-3 text-gray-700 dark:text-gray-300">
+                <i class="fas fa-map-marker-alt text-rose-500 mr-1 text-[10px]"></i>${escapeHTML(r.location || '-')}
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status.includes('ชำรุด') ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${escapeHTML(r.status)}</span>
+              </td>
+              <td class="p-3 text-gray-500 dark:text-gray-400">
+                <div>${escapeHTML(r.inspector || '-')}</div>
+                <div class="text-[10px] text-gray-400">${escapeHTML(r.inspectDate || '-')}</div>
+              </td>
+              <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button type="button" onclick="openEditAssetRowModal(${rowDataJson})" class="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-600 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-300 font-bold text-xs transition" title="แก้ไขแถวนี้">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button type="button" onclick="confirmDeleteAssetRow(${r.rowNumber}, '${escapeHTML(r.assetId)}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-600 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:text-rose-300 font-bold text-xs transition" title="ลบแถวนี้ออกจากชีต">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `
+          <div class="bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-rose-200 dark:border-rose-900/40 shadow-sm overflow-hidden">
+            <div class="p-4 bg-rose-50/70 dark:bg-rose-950/30 border-b border-rose-100 dark:border-rose-900/30 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-rose-500 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                  ${gIdx + 1}
+                </span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-black font-mono text-gray-800 dark:text-white">${escapeHTML(g.displayId)}</span>
+                    <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">
+                      พบซ้ำ ${rowsCount} แถว
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    แถวที่: ${g.rows.map(r => `<b>${r.rowNumber}</b>`).join(', ')}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="confirmResolveDuplicateGroup('${escapeHTML(g.displayId)}', ${g.rows[0].rowNumber}, ${jsonDeleteRows})" class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 active:bg-amber-200 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs transition border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 shadow-2xs">
+                  <i class="fas fa-magic text-amber-500"></i>
+                  <span>เก็บแถวแรก ลบแถวที่เหลือ (${rowsCount - 1} แถว)</span>
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr class="bg-gray-50/50 dark:bg-gray-700/30 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-700/60">
+                    <th class="p-3 text-center w-20">แถวในชีต</th>
+                    <th class="p-3">เลขครุภัณฑ์</th>
+                    <th class="p-3">ลักษณะ / รายการ</th>
+                    <th class="p-3">สถานที่</th>
+                    <th class="p-3">สถานะ</th>
+                    <th class="p-3">ผู้ตรวจ / วันที่</th>
+                    <th class="p-3 text-center w-24">การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/40">
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    };
+
+    window.openEditAssetRowModal = function(rowData) {
+      if (!rowData) return;
+      document.getElementById('edit_row_number').value = rowData.rowNumber;
+      document.getElementById('modal-edit-row-badge').innerText = `แถวที่ ${rowData.rowNumber}`;
+      document.getElementById('edit_row_asset_id').value = rowData.assetId || '';
+      document.getElementById('edit_row_name').value = rowData.name || '';
+      document.getElementById('edit_row_brand').value = rowData.brand || '';
+      document.getElementById('edit_row_location').value = rowData.location || '';
+      document.getElementById('edit_row_status').value = rowData.status || 'ปกติ';
+      document.getElementById('edit_row_date').value = rowData.date || '';
+      document.getElementById('edit_row_note').value = rowData.note || '';
+
+      const modal = document.getElementById('modal-edit-asset-row');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.closeEditAssetRowModal = function() {
+      const modal = document.getElementById('modal-edit-asset-row');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.saveEditedAssetRow = async function() {
+      const rowNumber = document.getElementById('edit_row_number').value;
+      const data = {
+        assetId: document.getElementById('edit_row_asset_id').value.trim(),
+        name: document.getElementById('edit_row_name').value.trim(),
+        brand: document.getElementById('edit_row_brand').value.trim(),
+        location: document.getElementById('edit_row_location').value.trim(),
+        status: document.getElementById('edit_row_status').value.trim(),
+        date: document.getElementById('edit_row_date').value.trim(),
+        note: document.getElementById('edit_row_note').value.trim()
+      };
+      if (!data.assetId) return Swal.fire('แจ้งเตือน', 'กรุณาระบุเลขครุภัณฑ์', 'warning');
+
+      showLoader('กำลังบันทึกข้อมูลแก้ไขลง Google Sheets...');
+      try {
+        let res = await callAPI('apiUpdateAssetRow', {
+          rowNumber: rowNumber,
+          data: data,
+          adminUsername: currentUser.username
+        });
+        hideLoader();
+        if (res.success) {
+          closeEditAssetRowModal();
+          Swal.fire('สำเร็จ', res.message || 'แก้ไขข้อมูลเรียบร้อยแล้ว', 'success');
+          loadAdminDuplicates(false);
+          fetchGlobalData(true, true);
+        } else {
+          Swal.fire('เกิดข้อผิดพลาด', res.message || 'ไม่สามารถแก้ไขได้', 'error');
+        }
+      } catch(e) {
+        hideLoader();
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    };
+
+    window.confirmDeleteAssetRow = async function(rowNumber, assetId) {
+      const ask = await Swal.fire({
+        title: `ยืนยันการลบแถวที่ ${rowNumber}?`,
+        html: `คุณกำลังจะลบครุภัณฑ์รหัส <b>"${escapeHTML(assetId)}"</b> (แถวที่ ${rowNumber}) ออกจากชีต Assets<br><span class="text-xs text-red-500 font-bold">⚠️ การดำเนินการนี้ไม่สามารถยกเลิกได้</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-trash-alt mr-1"></i> ลบแถวนี้',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!ask.isConfirmed) return;
+
+      showLoader(`กำลังลบแถวที่ ${rowNumber}...`);
+      try {
+        let res = await callAPI('apiDeleteAssetRow', {
+          rowNumber: rowNumber,
+          assetId: assetId,
+          adminUsername: currentUser.username
+        });
+        hideLoader();
+        if (res.success) {
+          Swal.fire('สำเร็จ', res.message || 'ลบข้อมูลเรียบร้อยแล้ว', 'success');
+          loadAdminDuplicates(false);
+          fetchGlobalData(true, true);
+        } else {
+          Swal.fire('ล้มเหลว', res.message || 'ไม่สามารถลบแถวได้', 'error');
+        }
+      } catch(e) {
+        hideLoader();
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    };
+
+    window.confirmResolveDuplicateGroup = async function(assetId, keepRow, deleteRows) {
+      if (!Array.isArray(deleteRows) || deleteRows.length === 0) return;
+      const ask = await Swal.fire({
+        title: `ผสานและลบรายการซ้ำ "${escapeHTML(assetId)}"?`,
+        html: `ระบบจะ<b>เก็บแถวที่ ${keepRow} ไว้</b>เป็นรายการหลัก<br>และจะ<b>ลบแถวที่ซ้ำซ้อนออก ${deleteRows.length} แถว</b> (แถวที่ ${deleteRows.join(', ')})<br><span class="text-xs text-amber-600 font-bold">แนะนำตรวจสอบข้อมูลก่อนดำเนินการ</span>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-magic mr-1"></i> ยืนยันการลบรายการซ้ำ',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!ask.isConfirmed) return;
+
+      showLoader(`กำลังลบแถวที่ซ้ำ ${deleteRows.length} รายการ...`);
+      try {
+        let res = await callAPI('apiResolveDuplicatesBatch', {
+          deleteRowNumbers: deleteRows,
+          adminUsername: currentUser.username
+        });
+        hideLoader();
+        if (res.success) {
+          Swal.fire('สำเร็จ', res.message || 'ลบรายการที่ซ้ำเรียบร้อยแล้ว', 'success');
+          loadAdminDuplicates(false);
+          fetchGlobalData(true, true);
+        } else {
+          Swal.fire('ล้มเหลว', res.message || 'ไม่สามารถดำเนินการได้', 'error');
+        }
+      } catch(e) {
+        hideLoader();
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
     };
 
     window.loadAdminLogs = async function() {
@@ -7024,6 +7513,7 @@
           : (typeof getTodayThaiDate === 'function' ? getTodayThaiDate() : (typeof formatDisplayDate === 'function' ? formatDisplayDate(inspectTime) : new Date().toLocaleDateString('th-TH')));
 
         // อัปเดตข้อมูลในหน่วยความจำทันที (Instant UI feedback)
+        window.lastInspectedAssetId = normAsset.AssetID;
         normAsset.Status = 'ปกติ';
         normAsset.InspectRound = currentRound;
         normAsset.Inspector = inspectorName;
@@ -8176,6 +8666,7 @@
 
           // อัปเดตข้อมูลในหน่วยความจำและ LocalStorage ทันที เพื่อให้หน้าจอแสดงผลตรวจนับสำเร็จ
           if (actionFunc === 'apiAddInspection' && assetObj) {
+            window.lastInspectedAssetId = dataObj.assetId;
             assetObj.Status = (dataObj.condition || 'ปกติ').replace(/^[0-9]+\.\s*/, '').trim();
             assetObj.InspectRound = currentRound;
             assetObj.Inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
@@ -8230,6 +8721,7 @@
         if (res.success) {
           // อัปเดตข้อมูลในหน่วยความจำและ LocalStorage ทันที
           if (actionFunc === 'apiAddInspection' && assetObj) {
+            window.lastInspectedAssetId = dataObj.assetId;
             assetObj.Status = (dataObj.condition || 'ปกติ').replace(/^[0-9]+\.\s*/, '').trim();
             assetObj.InspectRound = currentRound;
             assetObj.Inspector = currentUser ? (currentUser.name || currentUser.username) : 'จนท.';
